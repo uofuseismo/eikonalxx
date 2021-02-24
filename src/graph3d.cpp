@@ -19,25 +19,25 @@ class Graph3D<E>::Graph3DImpl
 public:
     /// Map from the level to the start index of the nodes in that level.
     /// This has dimension [mNumberOfLevels + 1].
-    std::vector<int> mLevelPointer;
-    /// Map from a node to the corresponding level.  This has dimension
-    /// mGrid. 
-    std::vector<int> mNodeToLevel;
+    std::vector<int> mLevelStartPointer;
+    /// Map from a global grid idnex to the corresponding level.  This has
+    /// dimension [mGrid]. 
+    std::vector<int> mIndexToLevel;
     /// Converts the node in a level to the global grid index.
     /// This is an array whose dimension is [mGrid] but is accessed with
-    /// mLevelPtr.
+    /// mLevelStartPointer.
     std::vector<int> mNodeInLevelToIndex;
     /// Converts the node in a level to the corresponding grid point in x.
     /// This is an array whose dimension is [mGrid] but is accessed with
-    /// mLevelPtr.
+    /// mLevelStartPointer.
     std::vector<int> mNodeInLevelToXGridPoint;
     /// Converts the node in a level to the corresponding grid point in y.
     /// This is an array whose dimension is [mGrid] but is accessed with
-    /// mLevelPtr.
+    /// mLevelStartPointer.
     std::vector<int> mNodeInLevelToYGridPoint;
     /// Converts the node in a level to the corresponding grid point in z.
     /// This is an array whose dimension is [mGrid] but is accessed with
-    /// mLevelPtr.
+    /// mLevelStartPointer.
     std::vector<int> mNodeInLevelToZGridPoint;
     /// Number of grid points in (x,y,z)
     int mNx = 0;
@@ -78,8 +78,12 @@ Graph3D<E>::Graph3D(Graph3D &&graph) noexcept
 template<EikonalXX::SweepNumber3D E>
 void Graph3D<E>::clear() noexcept
 {
-    pImpl->mLevelPointer.clear();
-    pImpl->mNodeToLevel.clear();
+    pImpl->mLevelStartPointer.clear();
+    pImpl->mNodeInLevelToIndex.clear();
+    pImpl->mNodeInLevelToXGridPoint.clear();
+    pImpl->mNodeInLevelToYGridPoint.clear();
+    pImpl->mNodeInLevelToZGridPoint.clear();
+    pImpl->mIndexToLevel.clear();
     pImpl->mNx = 0;
     pImpl->mNy = 0;
     pImpl->mNz = 0;
@@ -125,22 +129,21 @@ void Graph3D<E>::initialize(const int nx, const int ny, const int nz)
     pImpl->mNz = nz;
     pImpl->mGrid = pImpl->mNx*pImpl->mNy*pImpl->mNz;
     // Allocate space
-    pImpl->mNodeToLevel.resize(pImpl->mGrid, -1);
+    pImpl->mIndexToLevel.resize(pImpl->mGrid, -1);
     pImpl->mNodeInLevelToIndex.resize(pImpl->mGrid, -1);
     pImpl->mNodeInLevelToXGridPoint.resize(pImpl->mGrid, -1);
     pImpl->mNodeInLevelToYGridPoint.resize(pImpl->mGrid, -1);
     pImpl->mNodeInLevelToZGridPoint.resize(pImpl->mGrid, -1);
-    std::vector<int> work(pImpl->mGrid, 0);
     // Get pointers
-    pImpl->mLevelPointer.resize(pImpl->mNumberOfLevels + 1, -1);
-    auto nodeToLevelPtr = pImpl->mNodeToLevel.data();
+    pImpl->mLevelStartPointer.resize(pImpl->mNumberOfLevels + 1, -1);
+    auto indexToLevelPtr = pImpl->mIndexToLevel.data();
     auto nodeInLevelToIndexPtr = pImpl->mNodeInLevelToIndex.data();
     auto nodeInLevelToXGridPointPtr = pImpl->mNodeInLevelToXGridPoint.data();
     auto nodeInLevelToYGridPointPtr = pImpl->mNodeInLevelToYGridPoint.data();
     auto nodeInLevelToZGridPointPtr = pImpl->mNodeInLevelToZGridPoint.data();
-    auto levelPtr = pImpl->mLevelPointer.data();
+    auto levelStartPtr = pImpl->mLevelStartPointer.data();
     // Build up pointers
-    levelPtr[0] = 0;
+    levelStartPtr[0] = 0;
     for (int level = 0; level < pImpl->mNumberOfLevels; ++level)
     {
         // Solve level = constant = ix + iy + iz.
@@ -154,53 +157,53 @@ void Graph3D<E>::initialize(const int nx, const int ny, const int nz)
         k1 = std::min(k1, nz - 1);
         auto k2 = std::min(nz - 1, level);
         int nNodesInLevel = 0;
-        int offset = levelPtr[level];
+        int offset = levelStartPtr[level];
         for (int iz = k1; iz <= k2; ++iz)
         {
             auto j1 = std::max(0, level - iz - (nx - 1));
-            j1 = std::min(j1, ny - 1); // Don't include boundary layer
+            j1 = std::min(j1, ny - 1); // Ensure y start is in bounds
             auto j2 = std::min(ny - 1, level - iz);
             for (int iy = j1; iy <= j2; ++iy)
             {
                 auto i1 = std::max(0, level - iz - iy);
-                i1 = std::min(i1, nx - 1); // Don't include boundary layer
+                i1 = std::min(i1, nx - 1); // Ensure x start is in bounds 
                 auto i2 = std::min(nx - 1, level - iz - iy);
                 for (int ix = i1; ix <= i2; ++ix)
                 {
-std::cout << level << " " << ix << " " << iy << " " << iz << " " << gridToIndex(nx, ny, ix, iy, iz) << std::endl;
                     int jx, jy, jz;
                     permuteGrid<E>(ix, iy, iz, nx, ny, nz, &jx, &jy, &jz);
-                    work[nNodesInLevel] = gridToIndex(nx, ny, jx, jy, jz);
-                    nodeToLevelPtr[offset + nNodesInLevel] = level;
+                    nodeInLevelToIndexPtr[offset + nNodesInLevel]
+                        = gridToIndex(nx, ny, jx, jy, jz);
+                    indexToLevelPtr[offset + nNodesInLevel] = level;
                     nNodesInLevel = nNodesInLevel + 1; 
                 }
             } 
         }
-std::cout << std::endl;
         // Update pointers
         pImpl->mMaxLevelSize = std::max(pImpl->mMaxLevelSize, nNodesInLevel);
-        levelPtr[level + 1] = levelPtr[level] + nNodesInLevel;
+        levelStartPtr[level + 1] = levelStartPtr[level] + nNodesInLevel;
         // Sort in increasing grid order to make travel time table accesses in
         // solver phase slightly less random and promote a little cache
         // coherency.
-        std::sort(work.data(), work.data() + nNodesInLevel);
-        // Convert grid to node
-        const int *workPtr = work.data();
+        std::sort(nodeInLevelToIndexPtr + offset,
+                  nodeInLevelToIndexPtr + offset + nNodesInLevel);
+        // Convert grid indices in level to (ix, iy, iz) grid point
         #pragma omp simd
         for (int i = 0; i < nNodesInLevel; ++i)
         {
             int ix, iy, iz, jx, jy, jz;
-            indexToGrid(workPtr[i], nx, ny, &ix, &iy, &iz);
-            permuteGrid<E>(ix, iy, iz, nx, ny, nz, &jx, &jy, &jz);
-            nodeInLevelToIndexPtr[offset + i] = workPtr[i];
-            nodeInLevelToXGridPointPtr[offset + i] = jx;
-            nodeInLevelToYGridPointPtr[offset + i] = jy;
-            nodeInLevelToZGridPointPtr[offset + i] = jz;
+            indexToGrid(nodeInLevelToIndexPtr[offset + i],
+                        nx, ny, &ix, &iy, &iz);
+            //permuteGrid<E>(ix, iy, iz, nx, ny, nz, &jx, &jy, &jz);
+//std::cout << static_cast<int> (E) << " " << level << " " << ix << " " << iy << " " << iz << " " << nodeInLevelToIndexPtr[offset + i] << std::endl;
+            nodeInLevelToXGridPointPtr[offset + i] = ix;
+            nodeInLevelToYGridPointPtr[offset + i] = iy;
+            nodeInLevelToZGridPointPtr[offset + i] = iz;
         }
     }
 #ifndef NDEBUG
-    auto mm = std::minmax_element(pImpl->mNodeToLevel.begin(),
-                                  pImpl->mNodeToLevel.end());
+    auto mm = std::minmax_element(pImpl->mIndexToLevel.begin(),
+                                  pImpl->mIndexToLevel.end());
     assert(*mm.first == 0);
     assert(*mm.second == pImpl->mNumberOfLevels - 1);
     mm = std::minmax_element(pImpl->mNodeInLevelToXGridPoint.begin(),
@@ -226,6 +229,14 @@ bool Graph3D<E>::isInitialized() const noexcept
     return pImpl->mInitialized;
 }
 
+/// Number of grid points
+template<EikonalXX::SweepNumber3D E>
+int Graph3D<E>::getNumberOfGridPoints() const
+{
+    if (!isInitialized()){throw std::runtime_error("Class not initialized");}
+    return pImpl->mGrid;
+}
+
 /// Number of levels
 template<EikonalXX::SweepNumber3D E>
 int Graph3D<E>::getNumberOfLevels() const
@@ -240,6 +251,54 @@ int Graph3D<E>::getMaximumLevelSize() const
 {
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     return pImpl->mMaxLevelSize;
+}
+
+/// Map from grid index to level
+template<EikonalXX::SweepNumber3D E>
+const int *Graph3D<E>::getIndexToLevelPointer() const
+{
+    if (!isInitialized()){throw std::runtime_error("Class is not initialized");}
+    return pImpl->mIndexToLevel.data();
+}
+
+/// Map from node in level to global index
+template<EikonalXX::SweepNumber3D E>
+const int *Graph3D<E>::getNodeInLevelToIndexPointer() const
+{
+    if (!isInitialized()){throw std::runtime_error("Class is not initialized");}
+    return pImpl->mNodeInLevelToIndex.data();
+}
+
+/// Map from level to start index in nodeInLevel arrays
+template<EikonalXX::SweepNumber3D E>
+const int *Graph3D<E>::getLevelStartPointer() const
+{
+    if (!isInitialized()){throw std::runtime_error("Class is not initialized");}
+    return pImpl->mLevelStartPointer.data();
+}
+
+/// Map from the node in level to x grid point
+template<EikonalXX::SweepNumber3D E>
+const int *Graph3D<E>::getNodeInLevelToXGridPointPointer() const
+{
+    if (!isInitialized()){throw std::runtime_error("Class is not initialized");}
+    return pImpl->mNodeInLevelToXGridPoint.data();
+}
+
+/// Map from the node in level to y grid point
+template<EikonalXX::SweepNumber3D E>
+const int *Graph3D<E>::getNodeInLevelToYGridPointPointer() const
+{
+    if (!isInitialized()){throw std::runtime_error("Class is not initialized");}
+    return pImpl->mNodeInLevelToYGridPoint.data();
+}
+
+/// Map from the node in level to z grid point
+template<EikonalXX::SweepNumber3D E>
+const int *Graph3D<E>::getNodeInLevelToZGridPointPointer() const
+{
+    if (!isInitialized()){throw std::runtime_error("Class is not initialized");}
+    return pImpl->mNodeInLevelToZGridPoint.data();
 }
 
 /// @brief From the number of grid points this returns the number of levels.

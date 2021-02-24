@@ -54,12 +54,47 @@ public:
     void clear() noexcept;
     /// @}
 
+    /// @result The number of grid points in the model.
+    /// @throws std::runtime_error if \c isInitialized() is false.
+    [[nodiscard]] int getNumberOfGridPoints() const;
     /// @result The maximum number of nodes in a level.
-    /// @throws std::invalid_argument if \c isInitialized() is false.
-    int getMaximumLevelSize() const;
+    /// @throws std::runtime_error if \c isInitialized() is false.
+    [[nodiscard]] int getMaximumLevelSize() const;
     /// @result The number of levels.
-    /// @throws std::invalid_argument if \c isInitialized() is false.
-    int getNumberOfLevels() const;
+    /// @throws std::runtime_error if \c isInitialized() is false.
+    [[nodiscard]] int getNumberOfLevels() const;
+    /// @result A map from a global grid index to the level.  This is an array
+    ///         whose dimension is [\c getNumberOfGridPoints()].
+    /// @throws std::runtime_error if \c isInitialized() is false.
+    [[nodiscard]] const int *getIndexToLevelPointer() const;
+    /// @result The level'th index maps to the start index of the
+    ///         nodes in that level'th level.  The number of nodes in
+    ///         the level'th level are given by
+    ///         levelPtr[level+1] - levelPtr[level].  This is an array
+    ///         whose dimension is [\c getNumberOfLevels() + 1].
+    /// @throws std::runtime_error if \c isInitialized() is false.
+    [[nodiscard]] const int *getLevelStartPointer() const;
+    /// @result This is a map from the node in a level to the global grid
+    ///         index value.  This is an array whose dimension is 
+    ///         [ \c getNumberOfGridPoints() ].
+    ///         @sa \c getLevelStartPointer().
+    /// @throws std::runtime_error if \c isInitialized() is false.
+    [[nodiscard]] const int *getNodeInLevelToIndexPointer() const;
+    /// @result This is a map from the node in a level to the x grid
+    ///         point.  This is an array whose dimension is
+    ///         [ \c getNumberOfGridPoints() ]. 
+    /// @throws std::runtime_error if \c isInitialized() is false.
+    [[nodiscard]] const int *getNodeInLevelToXGridPointPointer() const;
+    /// @result This is a map from the node in a level to the y grid
+    ///         point.  This is an array whose dimension is
+    ///         [ \c getNumberOfGridPoints() ]. 
+    /// @throws std::runtime_error if \c isInitialized() is false.
+    [[nodiscard]] const int *getNodeInLevelToYGridPointPointer() const;
+    /// @result This is a map from the node in a level to the z grid
+    ///         point.  This is an array whose dimension is
+    ///         [ \c getNumberOfGridPoints() ]. 
+    /// @throws std::runtime_error if \c isInitialized() is false.
+    [[nodiscard]] const int *getNodeInLevelToZGridPointPointer() const;
 private:
     class Graph3DImpl;
     std::unique_ptr<Graph3DImpl> pImpl;
