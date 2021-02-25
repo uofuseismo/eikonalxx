@@ -9,7 +9,7 @@ class Geometry2D;
 template<class T> class Model2D;
 class SolverOptions;
 /// @class Solver2D "solver2d.hpp" "eikonalx/solver2d.hpp"
-/// @brief Solves the eikonal equation.
+/// @brief Solves the eikonal equation in a 2D slice.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 template<class T>
 class Solver2D

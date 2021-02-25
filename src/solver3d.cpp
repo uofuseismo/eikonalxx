@@ -1,3 +1,4 @@
+#include "eikonalxx/solver3d.hpp"
 #include "eikonalxx/graph3d.hpp"
 
 using namespace EikonalXX;
@@ -9,3 +10,19 @@ public:
 
 };
 
+/// C'tor 
+template<class T>
+Solver3D<T>::Solver3D() :
+    pImpl(std::make_unique<Solver3DImpl> ())
+{
+}
+
+/// Destructor
+template<class T>
+Solver3D<T>::~Solver3D() = default;
+
+///--------------------------------------------------------------------------///
+///                           Template Class Instantiation                   ///
+///--------------------------------------------------------------------------///
+template class EikonalXX::Solver3D<double>;
+template class EikonalXX::Solver3D<float>;

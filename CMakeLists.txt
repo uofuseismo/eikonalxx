@@ -28,7 +28,8 @@ set(LIBSRC
     src/geometry2d.cpp src/geometry3d.cpp
     src/graph3d.cpp
     src/model2d.cpp src/model3d.cpp
-    src/solver2d.cpp)
+    src/solver2d.cpp
+    src/solver3d.cpp)
 
 set(BUILD_SHARED_LIBS YES)
 add_library(eikonalxx ${LIBSRC})
