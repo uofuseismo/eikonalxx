@@ -388,8 +388,8 @@ T finiteDifference(const int sphericalRadius,
         T t0Update2 = sycl::fmin(t0a, t0b);
 
         // Three-point operator (Vidale, 1988)
-        T tildeTx = t1 - t3 + t2;
-        T tildeTz = t3 - t1 + t2;
+        //T tildeTx = t1 - t3 + t2;
+        //T tildeTz = t3 - t1 + t2;
         T dtCross = t1 - t3; // tildeX - tildeZ = 2*t1 - t3
         T detc = 2*(hs0*hs0) - dtCross*dtCross;
         T t0Update3 = huge;
@@ -1380,15 +1380,15 @@ void slownessToSweepSlowness(const SweepNumber2D sweep, //const int sweep,
                              const T *slow,
                              SweepSlowness2D<T> *sweepSlowness)
 {
-    auto nCell = static_cast<size_t> (nCellX)*static_cast<size_t> (nCellZ); 
-    auto nGrid = static_cast<size_t> (nGridX)*static_cast<size_t> (nGridZ);
+    //auto nCell = static_cast<size_t> (nCellX)*static_cast<size_t> (nCellZ); 
+    //auto nGrid = static_cast<size_t> (nGridX)*static_cast<size_t> (nGridZ);
     tbb::parallel_for(tbb::blocked_range<int> (0, nLevels),
                       [=](const tbb::blocked_range<int> &localLevel)
     {
         int iDst, i0, i1, ix, iz;
         int iCell0, iCell1, iCell3 = 0;
-        int iCell0X, iCell1X, iCell2X, iCell3X = 0;
-        int iCell0Z, iCell1Z, iCell2Z, iCell3Z = 0;
+        //int iCell0X, iCell1X, iCell2X, iCell3X = 0;
+        //int iCell0Z, iCell1Z, iCell2Z, iCell3Z = 0;
         for (int level=localLevel.begin(); level != localLevel.end(); ++level)
         {
             auto s0 = sweepSlowness[level].s0;

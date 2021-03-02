@@ -191,7 +191,7 @@ void Graph3D<E>::initialize(const int nx, const int ny, const int nz)
         #pragma omp simd
         for (int i = 0; i < nNodesInLevel; ++i)
         {
-            int ix, iy, iz, jx, jy, jz;
+            int ix, iy, iz;
             indexToGrid(nodeInLevelToIndexPtr[offset + i],
                         nx, ny, &ix, &iy, &iz);
             //permuteGrid<E>(ix, iy, iz, nx, ny, nz, &jx, &jy, &jz);

@@ -10,7 +10,7 @@ namespace
 /// @result The index in a row-major [nz x nx] matrix corresponding to the
 ///         given (ix, iz)'th grid point.
 #pragma omp declare(simd) uniform(nx)
-[[nodiscard]]
+[[nodiscard]] [[maybe_unused]]
 int gridToIndex(const int nx, const int ix, const int iz)
 {
     return iz*nx + ix;
