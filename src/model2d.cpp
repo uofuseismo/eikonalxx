@@ -7,12 +7,12 @@
    #include <pstl/algorithm>
    #define USE_PSTL
 #endif
-#if __has_include(<oneapi/dpl/execution>)
-   #include <oneapi/dpl/execution>
-   #include <oneapi/dpl/algorithm>
-   #define ONE_API
-#else
-#endif
+//#if __has_include(<oneapi/dpl/execution>)
+//   #include <oneapi/dpl/execution>
+//   #include <oneapi/dpl/algorithm>
+//   #define ONE_API
+//#else
+//#endif
 #include "eikonalxx/model2d.hpp"
 #include "eikonalxx/geometry2d.hpp"
 #include "private/grid.hpp"
