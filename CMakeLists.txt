@@ -13,9 +13,12 @@ endif()
 
 find_package(GTest REQUIRED)
 find_package(Boost COMPONENTS graph)
+set(FindTBB_DIR ${CMAKE_SOURCE_DIR}/CMakeModules)
+find_package(FindTBB REQUIRED)
 
 include_directories(
    ${CMAKE_SOURCE_DIR}/include
+   ${TBB_INCLUDE_DIR}
 )
 
 set(PUBLIC_HEADER_DIRECTORIES
@@ -28,12 +31,13 @@ set(LIBSRC
     src/geometry2d.cpp src/geometry3d.cpp
     src/graph3d.cpp
     src/model2d.cpp src/model3d.cpp
+    src/source2d.cpp
     src/solver2d.cpp
     src/solver3d.cpp)
 
 set(BUILD_SHARED_LIBS YES)
 add_library(eikonalxx ${LIBSRC})
-target_link_libraries(eikonalxx PRIVATE sycl)# ${TBB_LIBRARY})
+target_link_libraries(eikonalxx PRIVATE sycl ${TBB_LIBRARY})
 if (${Boost_FOUND})
    target_compile_definitions(eikonalxx PRIVATE USE_BOOST)
    target_include_directories(eikonalxx PRIVATE ${Boost_INCLUDE_DIRS})
@@ -52,7 +56,7 @@ add_executable(unitTests
                testing/solver2d.cpp
                testing/solver3d.cpp
                )
-target_link_libraries(unitTests PRIVATE eikonalxx ${GTEST_BOTH_LIBRARIES} OpenCL pthread)
+target_link_libraries(unitTests PRIVATE eikonalxx ${GTEST_BOTH_LIBRARIES} ${TBB_LIBRARY} OpenCL pthread)
 target_include_directories(unitTests PRIVATE ${GTEST_INCLUDE_DIRS})
 set_target_properties(unitTests PROPERTIES
                       CXX_STANDARD_REQUIRED YES

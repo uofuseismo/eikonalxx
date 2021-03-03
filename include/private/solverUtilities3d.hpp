@@ -122,8 +122,8 @@ struct SweepSlowness3D
     /// Gets the min slowness in the sweep
     T getMinimumValue() const noexcept    
     {    
-        T sMin = 0; 
-        if (nNodes > 0) 
+        T sMin = 0;
+        if (nNodes > 0)
         {
             sMin = *std::min_element(s0, s0 + nNodes);
             sMin = std::min(sMin, *std::min_element(s1, s1 + nNodes));
@@ -283,8 +283,7 @@ void computeAnalyticalTravelTime(const int ix, const int iy, const int iz,
 /// @param[out] signZ    The sign on the derivative in z.  This makes the
 ///                      derivative sign consistent with the sweep direction.
 template<EikonalXX::SweepNumber3D E>
-void getSweepFiniteDifferenceSigns(//const EikonalXX::SweepNumber3D sweep,
-                                   int *ixShift, int *iyShift, int *izShift,
+void getSweepFiniteDifferenceSigns(int *ixShift, int *iyShift, int *izShift,
                                    int *signX, int *signY, int *signZ)
 {
     if constexpr(E == EikonalXX::SweepNumber3D::SWEEP1)
@@ -591,6 +590,140 @@ void gridToLevel(const int ix, const int iy, const int iz,
     permuteGrid<E>(ix, iy, iz, nx, ny, nz, &jx, &jy, &jz);
     //*indx = jz;
     *level = jx + jy + jz;
+}
+
+/// @param[out] iCell0  The index of the slowness field corresponding to
+///                     the home cell.
+/// @param[out] iCell1  The index of the slowness field corresponding to
+///                     the cell to the left or right of the home cell.
+/// @param[out] icell3  The index of the slowness field corresponding to
+///                     the cell in front of or in back of the home cell.
+/// @param[out] iCell4  The index of the slowness field corresponding to
+///                     the cell above or below the home cell.
+/// @param[out] iCell5  The index of the slowness field corresponding to
+///                     the cell to the lower right or upper right of
+///                     the home cell.
+/// @param[out] iCell7  The index of the slowness field corresponding to
+///                     the cell to the 
+template<EikonalXX::SweepNumber3D E>
+void gridToSurroundingSlowness(
+    const int ix, const int iy, const int iz,
+    const int nCellX, const int nCellY, const int nCellZ,
+    int *iCell0, int *iCell1, int *iCell3,
+    int *iCell4, int *iCell5, int *iCell7)
+{
+    int shiftVelX, shiftVelY, shiftVelZ = 0;
+    int iCell0X, iCell0Y, iCell0Z = 0;
+    if constexpr (E == SweepNumber3D::SWEEP1)
+    {
+       shiftVelX = 1;
+       shiftVelY = 1;
+       shiftVelZ = 1;
+       iCell0X = sycl::max(0, ix - 1);
+       iCell0Y = sycl::max(0, iy - 1);
+       iCell0Z = sycl::max(0, iz - 1);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP2)
+    {
+       shiftVelX = 0;
+       shiftVelY = 1;
+       shiftVelZ = 1;
+       iCell0X = ix;
+       iCell0Y = sycl::max(0, iy - 1);
+       iCell0Z = sycl::max(0, iz - 1);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP3)
+    {
+       shiftVelX = 1;
+       shiftVelY = 0;
+       shiftVelZ = 1;
+       iCell0X = sycl::max(0, ix - 1);
+       iCell0Y = iy;
+       iCell0Z = sycl::max(0, iz - 1);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP4)
+    {
+       shiftVelX = 0;
+       shiftVelY = 0;
+       shiftVelZ = 1;
+       iCell0X = ix;
+       iCell0Y = iy;
+       iCell0Z = sycl::max(0, iz - 1);
+
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP5)
+    {
+       shiftVelX = 1;
+       shiftVelY = 1;
+       shiftVelZ = 0;
+       iCell0X = sycl::max(0, ix - 1); 
+       iCell0Y = sycl::max(0, iy - 1); 
+       iCell0Z = iz;
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP6)
+    {
+       shiftVelX = 0;
+       shiftVelY = 1;
+       shiftVelZ = 0;
+       iCell0X = ix;
+       iCell0Y = sycl::max(0, iy - 1); 
+       iCell0Z = iz;
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP7)
+    {
+       shiftVelX = 1;
+       shiftVelY = 0;
+       shiftVelZ = 0;
+       iCell0X = sycl::max(0, ix - 1); 
+       iCell0Y = iy; 
+       iCell0Z = iz;
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP8)
+    {
+       shiftVelX = 0;
+       shiftVelY = 0;
+       shiftVelZ = 0;
+       iCell0X = ix;
+       iCell0Y = iy;
+       iCell0Z = iz;
+    }
+#ifndef NDEBUG
+    {
+        assert(false);
+    }
+#endif
+    auto iCell1X = sycl::min(nCellX - 1, sycl::max(0, ix - shiftVelX));
+    auto iCell1Y = iCell0Y;
+    auto iCell1Z = iCell0Z;
+
+    auto iCell3X = iCell0X;
+    auto iCell3Y = sycl::min(nCellY - 1, sycl::max(0, iy - shiftVelY));
+    auto iCell3Z = iCell0Z;
+
+    auto iCell4X = iCell0X;
+    auto iCell4Y = iCell0Y;
+    auto iCell4Z = sycl::min(nCellZ - 1, sycl::max(0, iz - shiftVelZ));
+
+    auto iCell5X = sycl::min(nCellX - 1, sycl::max(0, ix - shiftVelX));
+    auto iCell5Y = iCell0Y;
+    auto iCell5Z = sycl::min(nCellZ - 1, sycl::max(0, iz - shiftVelZ));
+
+    //auto iCell6X = sycl::min(nCellX - 1, sycl::max(0, ix - shiftVelX));
+    //auto iCell6Y = sycl::min(nCellY - 1, sycl::max(0, iy - shiftVelY));
+    //auto iCell6Z = sycl::min(nCellZ - 1, sycl::max(0, iz - shiftVelZ));
+
+    auto iCell7X = iCell0X;
+    auto iCell7Y = sycl::min(nCellY - 1, sycl::max(0, iy - shiftVelY));
+    auto iCell7Z = sycl::min(nCellZ - 1, sycl::max(0, iz - shiftVelZ));
+   
+    *iCell0 = gridToIndex(nCellX, nCellY, iCell0X, iCell0Y, iCell0Z); 
+    *iCell1 = gridToIndex(nCellX, nCellY, iCell1X, iCell1Y, iCell1Z); 
+    //*iCell2 = gridToIndex(nCellX, nCellY, iCell2X, iCell2Y, iCell2Z);
+    *iCell3 = gridToIndex(nCellX, nCellY, iCell3X, iCell3Y, iCell3Z);
+    *iCell4 = gridToIndex(nCellX, nCellY, iCell4X, iCell4Y, iCell4Z);
+    *iCell5 = gridToIndex(nCellX, nCellY, iCell5X, iCell5Y, iCell5Z);
+    //*iCell6 = gridToIndex(nCellX, nCellY, iCell6X, iCell6Y, iCell6Z);
+    *iCell7 = gridToIndex(nCellX, nCellY, iCell7X, iCell7Y, iCell7Z);
 }
 
 

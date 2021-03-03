@@ -11,6 +11,7 @@
 #include "private/solver2d.hpp"
 #include "private/timer.hpp"
 #include "eikonalxx/solverOptions.hpp"
+#include "eikonalxx/source2d.hpp"
 #include "eikonalxx/model2d.hpp"
 #include "eikonalxx/geometry2d.hpp"
 
