@@ -1,5 +1,6 @@
 #ifndef EIKONALXX_SOURCE2D_HPP
 #define EIKONALXX_SOURCE2D_HPP
+#include <ostream>
 #include <memory>
 namespace EikonalXX
 {
@@ -59,9 +60,12 @@ public:
     /// @result The source's location in x in meters.
     /// @throws std::runtime_error if \c haveLocationInX() is false.
     [[nodiscard]] double getLocationInX() const;
+    /// @result The source's offset from the origin in x in meters.
+    /// @throws std::runtime_error if \c haveLocationInX() is false.
+    [[nodiscard]] double getOffsetInX() const;
     /// @result The x cell containing the source.
     /// @throws std::runtime_error if \c haveLocationInX() is false.
-    [[nodiscard]] int getSourceCellInX() const;
+    [[nodiscard]] int getCellInX() const;
     /// @result True indicates that z location was set.
     [[nodiscard]] bool haveLocationInX() const noexcept;
     /// @}
@@ -72,12 +76,20 @@ public:
     /// @throws std::runtime_error if \c haveGeometry() is false.
     /// @throws std::invalid_argument if the z position is not in the model.
     void setLocationInZ(double z);
+    /// @brief Sets the z position to the free surface in the rectilinear
+    ///        geometry.  This is useful when computing reciprocity travel time
+    ///        fields or modeling surface shots.
+    /// @throws std::runtime_error if \c haveGeometry() is false.
+    void setZToFreeSurface();
     /// @result The source's location in z in meters.
     /// @throws std::runtime_error if \c haveLocationInZ() is false.
     [[nodiscard]] double getLocationInZ() const;
+    /// @result The source's offset from the origin in z in meters.
+    /// @throws std::runtime_error if \c haveLocationInZ() is false.
+    [[nodiscard]] double getOffsetInZ() const;
     /// @result The z cell containing the source.
     /// @throws std::runtime_error if \c haveLocationInZ() is false.
-    [[nodiscard]] int getSourceCellInZ() const;
+    [[nodiscard]] int getCellInZ() const;
     /// @result True indicates that z location was set.
     [[nodiscard]] bool haveLocationInZ() const noexcept;
     /// @}
@@ -93,5 +105,6 @@ private:
     class Source2DImpl;
     std::unique_ptr<Source2DImpl> pImpl;
 };
+std::ostream& operator<<(std::ostream &os, const Source2D &source);
 }
 #endif

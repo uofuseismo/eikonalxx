@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include "eikonalxx/solver2d.hpp"
+#include "eikonalxx/source2d.hpp"
 #include "eikonalxx/geometry2d.hpp"
 #include "eikonalxx/model2d.hpp"
 #include "private/solverUtilities2d.hpp"
@@ -1038,7 +1039,12 @@ TEST(Solver2D, solveHomogeneous)
     vModel.setNodalVelocities(vConstant.size(), vConstant.data(),
                               EikonalXX::Ordering2D::NATURAL);
 
-/*
+    // Set the source
+    Source2D source;
+    source.setGeometry(geometry);
+    source.setLocationInX(xSrc);
+    source.setLocationInZ(zSrc); 
+
     // Set the solver options
     SolverOptions options;
     options.setNumberOfSweeps(nSweeps);
@@ -1050,13 +1056,12 @@ TEST(Solver2D, solveHomogeneous)
     EXPECT_NO_THROW(solver.initialize(options, geometry));
     EXPECT_TRUE(solver.isInitialized());
     EXPECT_NO_THROW(solver.setVelocityModel(vModel));
-    EXPECT_NO_THROW(solver.setSourceLocation(std::pair(xSrc, zSrc)));
+    EXPECT_NO_THROW(solver.setSource(std::pair(xSrc, zSrc)));
     EXPECT_TRUE(solver.haveVelocityModel());
-    EXPECT_TRUE(solver.haveSourceLocation());
+    EXPECT_TRUE(solver.haveSource());
     // Solve
-    EXPECT_NO_THROW(solver.solve());
-*/
 /*
+    EXPECT_NO_THROW(solver.solve());
     EXPECT_TRUE(solver.haveTravelTimeField());
     auto tEst = solver.getTravelTimeField();
     std::ofstream ofl("ttimes.txt");

@@ -135,7 +135,16 @@ double Source2D::getLocationInX() const
     return pImpl->mX;
 }
 
-int Source2D::getSourceCellInX() const
+double Source2D::getOffsetInX() const
+{
+    if (!haveLocationInX())
+    {
+        throw std::runtime_error("x location not yet set");
+    }
+    return pImpl->mXOffset;
+}
+
+int Source2D::getCellInX() const
 {
     if (!haveLocationInX())
     {
@@ -169,6 +178,13 @@ void Source2D::setLocationInZ(const double z)
     pImpl->mHaveZLocation = true;
 }
 
+void Source2D::setZToFreeSurface()
+{
+    if (!haveGeometry()){throw std::runtime_error("Geometry not yet set");}
+    double z0 = pImpl->mGeometry.getOriginInZ();
+    setLocationInZ(z0);
+}
+
 double Source2D::getLocationInZ() const
 {
     if (!haveLocationInZ())
@@ -178,7 +194,16 @@ double Source2D::getLocationInZ() const
     return pImpl->mZ;
 }
 
-int Source2D::getSourceCellInZ() const
+double Source2D::getOffsetInZ() const
+{
+    if (!haveLocationInZ())
+    {
+        throw std::runtime_error("z location not yet set");
+    }
+    return pImpl->mZOffset;
+}
+
+int Source2D::getCellInZ() const
 {
     if (!haveLocationInZ())
     {
@@ -192,3 +217,26 @@ bool Source2D::haveLocationInZ() const noexcept
     return pImpl->mHaveZLocation;
 }
 
+/// sdt::cout << source << std::endl;
+std::ostream&
+EikonalXX::operator<<(std::ostream &os, const Source2D &source)
+{
+    std::string result;
+    if (source.haveLocationInX() && source.haveLocationInZ())
+    {
+        result = "Source location: (x,z) = ("
+               + std::to_string(source.getLocationInX()) + ","
+               + std::to_string(source.getLocationInZ()) + ")\n"
+               + "Source offset: (x,z) = ("
+               + std::to_string(source.getOffsetInX()) + ","
+               + std::to_string(source.getOffsetInZ()) + ")\n"
+               + "Source cell: (iCellX,iCellZ) = ("
+               + std::to_string(source.getCellInX()) + ","
+               + std::to_string(source.getCellInZ()) + ")\n";
+    }
+    else
+    {
+        result = "Source location not completely specified";
+    }
+    return os << result;
+}

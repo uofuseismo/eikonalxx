@@ -6,6 +6,7 @@ namespace EikonalXX
 {
 // Forward declarations
 class Geometry2D;
+class Source2D;
 template<class T> class Model2D;
 class SolverOptions;
 /// @class Solver2D "solver2d.hpp" "eikonalx/solver2d.hpp"
@@ -62,6 +63,12 @@ public:
     /// @name Step 3: Source
     /// @{
     /// @brief Sets the source location.
+    /// @param[in] source   A class defining the source.
+    /// @throws std::invalid_argument if the source location in x and z
+    ///         is not set.
+    /// @throws std::runtime_error if the class is not initialized.
+    void setSource(const Source2D &source);
+    /// @brief Sets the source location.
     /// @param[in] location   The source location.  location.first is the x
     ///                       position in the model and location.second is
     ///                       the z location in the model.
@@ -69,19 +76,19 @@ public:
     /// @throws std::invalid_argument if the source location is not in the
     ///         model.
     /// @sa \c isInitialized()
-    void setSourceLocation(const std::pair<double, double> &location);
-    /// @result The source location.
-    /// @throws std::runtime_error if \c haveSourceLocation() is false.
-    [[nodiscard]] std::pair<double, double> getSourceLocation() const;
-    /// @result True indicates that the source location was set.
-    [[nodiscard]] bool haveSourceLocation() const noexcept;
+    void setSource(const std::pair<double, double> &location);
+    /// @result The source information.
+    /// @throws std::runtime_error if \c haveSource() is false.
+    [[nodiscard]] Source2D getSource() const;
+    /// @result True indicates that the source was set.
+    [[nodiscard]] bool haveSource() const noexcept;
     // @}
 
     /// @name Step 4: Solve
     /// @{
     /// @brief Solves the eikonal equation for the given source/velocity model.
     /// @throws std::runtime_error if the source or velocity model is not set.
-    /// @sa \c isInitialized(), \c haveVelocityModel(), \c haveSourceLocation()
+    /// @sa \c isInitialized(), \c haveVelocityModel(), \c haveSource()
     void solve(); 
     /// @} 
 

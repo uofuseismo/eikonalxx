@@ -36,14 +36,16 @@ public:
         auto sourceSlowness = static_cast<T> (sPtr[mSourceCell]);
         auto dx = static_cast<T> (mGeometry.getGridSpacingInX());
         auto dz = static_cast<T> (mGeometry.getGridSpacingInZ());
-        auto xShiftedSource = static_cast<T> (mShiftedSource.first);
-        auto zShiftedSource = static_cast<T> (mShiftedSource.second);
+        auto xShiftedSource = static_cast<T> (mSource.getOffsetInX()); //static_cast<T> (mShiftedSource.first);
+        auto zShiftedSource = static_cast<T> (mSource.getOffsetInZ()); //static_cast<T> (mShiftedSource.second);
         std::fill(mTravelTimeField.begin(), mTravelTimeField.end(), mHuge);
         std::vector<std::pair<int, int>> sourceNodes;
-        sourceNodes.push_back({mSourceCellX    , mSourceCellZ});
-        sourceNodes.push_back({mSourceCellX + 1, mSourceCellZ});
-        sourceNodes.push_back({mSourceCellX,     mSourceCellZ + 1});
-        sourceNodes.push_back({mSourceCellX + 1, mSourceCellZ + 1}); 
+        auto sourceCellX = mSource.getCellInX();
+        auto sourceCellZ = mSource.getCellInZ();
+        sourceNodes.push_back({sourceCellX    , sourceCellZ});
+        sourceNodes.push_back({sourceCellX + 1, sourceCellZ});
+        sourceNodes.push_back({sourceCellX,     sourceCellZ + 1});
+        sourceNodes.push_back({sourceCellX + 1, sourceCellZ + 1});
         for (int i=0; i<static_cast<int> (sourceNodes.size()); ++i)
         {
             auto iSrc = gridToIndex(nGridX,
@@ -75,6 +77,8 @@ public:
     Geometry2D mGeometry;
     /// The solver options
     SolverOptions mOptions;
+    /// The source
+    Source2D mSource;
     /// Solver for each sweep direction
     Solver2DSweep<T, SweepNumber2D::SWEEP1> mSolverSweep1;
     Solver2DSweep<T, SweepNumber2D::SWEEP2> mSolverSweep2; 
@@ -83,15 +87,15 @@ public:
     /// The travel time field.
     std::vector<T> mTravelTimeField;
     /// The source location
-    std::pair<double, double> mSourceLocation{0, 0};
+    //std::pair<double, double> mSourceLocation{0, 0};
     /// The shifted source location in (x,z).  This is useful to the solver.
-    std::pair<T, T> mShiftedSource{0, 0};
+    //std::pair<T, T> mShiftedSource{0, 0};
     /// Huge value for travel time initialization
     const T mHuge = HUGE;
     /// The source cell index in x.
-    int mSourceCellX = 0;
+    //int mSourceCellX = 0;
     /// The source cell index in z.
-    int mSourceCellZ = 0;
+    //int mSourceCellZ = 0;
     /// The source cell - this is used to extract the slowness at the source.
     int mSourceCell = 0;
     /// Initialized?
@@ -103,7 +107,7 @@ public:
     /// Uniform grid?
     bool mUniformGrid = false;
     /// Have the source?
-    bool mHaveSourceLocation = false;
+    bool mHaveSource = false;
 };
 
 /// C'tor
@@ -124,18 +128,19 @@ void Solver2D<T>::clear() noexcept
     pImpl->mVelocityModel.clear();
     pImpl->mGeometry.clear();
     pImpl->mOptions.clear();
+    pImpl->mSource.clear();
     pImpl->mSolverSweep1.clear();
     pImpl->mSolverSweep2.clear();
     pImpl->mSolverSweep3.clear();
     pImpl->mSolverSweep4.clear();
     pImpl->mTravelTimeField.clear();
-    pImpl->mSourceLocation = std::make_pair<double, double> (0, 0);
-    pImpl->mShiftedSource = std::make_pair<T, T> (0, 0);
-    pImpl->mSourceCellX = 0;
-    pImpl->mSourceCellZ = 0;
+    //pImpl->mSourceLocation = std::make_pair<double, double> (0, 0);
+    //pImpl->mShiftedSource = std::make_pair<T, T> (0, 0);
+    //pImpl->mSourceCellX = 0;
+    //pImpl->mSourceCellZ = 0;
     pImpl->mSourceCell = 0;
     pImpl->mHaveVelocityModel = false;
-    pImpl->mHaveSourceLocation = false;
+    pImpl->mHaveSource = false;
     pImpl->mHaveTravelTimeField = false;
     pImpl->mUniformGrid = false;
     pImpl->mInitialized = false;
@@ -219,10 +224,38 @@ SolverOptions Solver2D<T>::getOptions() const
 }
 
 template<class T>
-void Solver2D<T>::setSourceLocation(
-    const std::pair<double, double> &sourceLocation)
+void Solver2D<T>::setSource(const Source2D &source)
 {
-    pImpl->mHaveSourceLocation = false;
+    pImpl->mHaveSource = false;
+    pImpl->mHaveTravelTimeField = false;
+    if (!isInitialized()){throw std::runtime_error("Class not initialized");}
+    if (!source.haveLocationInX())
+    {
+        throw std::invalid_argument("Source location in x not set");
+    }
+    if (!source.haveLocationInZ())
+    {
+        throw std::invalid_argument("Source location in z not set");
+    }
+    //pImpl->mShiftedSource = std::make_pair<T, T> (source.getOffsetInX(),
+    //                                              source.getOffsetInZ());
+    //pImpl->mSourceCellX = source.getSourceCellInX();
+    //pImpl->mSourceCellZ = source.getSourceCellInZ(); 
+    pImpl->mSourceCell = gridToIndex(pImpl->mGeometry.getNumberOfCellsInX(),
+                                     source.getCellInX(), source.getCellInZ());
+    //                                 pImpl->mSourceCellX, pImpl->mSourceCellZ);
+    pImpl->mSource = source;
+    pImpl->mHaveSource = true;
+    if (pImpl->mOptions.getVerbosity() == Verbosity::DEBUG)
+    {
+        std::cout << pImpl->mSource << std::endl;
+    } 
+}
+
+template<class T>
+void Solver2D<T>::setSource(const std::pair<double, double> &sourceLocation)
+{
+    pImpl->mHaveSource = false;
     pImpl->mHaveTravelTimeField = false;
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     auto dx = pImpl->mGeometry.getGridSpacingInX(); 
@@ -254,6 +287,12 @@ void Solver2D<T>::setSourceLocation(
                   << "," << sourceLocation.second << ")" << std::endl;
     }
     // Get some solver information 
+    Source2D source;
+    source.setGeometry(pImpl->mGeometry);
+    source.setLocationInX(sourceLocation.first);
+    source.setLocationInZ(sourceLocation.second);
+    setSource(source);
+/*
     pImpl->mShiftedSource = std::make_pair<T, T> (sourceLocation.first  - xmin,
                                                   sourceLocation.second - zmin);
     pImpl->mSourceCellX = static_cast<int> (pImpl->mShiftedSource.first/dx);
@@ -261,7 +300,7 @@ void Solver2D<T>::setSourceLocation(
     pImpl->mSourceCell = gridToIndex(pImpl->mGeometry.getNumberOfCellsInX(),
                                      pImpl->mSourceCellX, pImpl->mSourceCellZ);
     pImpl->mSourceLocation = sourceLocation;
-    pImpl->mHaveSourceLocation = true;
+    pImpl->mHaveSource = true;
     // Some fine-grained debug
     if (pImpl->mOptions.getVerbosity() == Verbosity::DEBUG)
     {
@@ -272,24 +311,25 @@ void Solver2D<T>::setSourceLocation(
                   << pImpl->mSourceCellX << "," << pImpl->mSourceCellZ
                   << ")" << std::endl;
     }
+*/
 }
 
-/// Get source location
+/// Get source
 template<class T>
-std::pair<double, double> Solver2D<T>::getSourceLocation() const
+Source2D Solver2D<T>::getSource() const
 {
-    if (!haveSourceLocation())
+    if (!haveSource())
     {
         throw std::runtime_error("Source location not set");
     }
-    return pImpl->mSourceLocation;
+    return pImpl->mSource;
 }
 
 /// Have source location?
 template<class T>
-bool Solver2D<T>::haveSourceLocation() const noexcept
+bool Solver2D<T>::haveSource() const noexcept
 {
-    return pImpl->mHaveSourceLocation;
+    return pImpl->mHaveSource;
 }
 
 /// Sets the velocity model
@@ -353,7 +393,7 @@ void Solver2D<T>::solve()
     {
         throw std::runtime_error("Velocity model not set");
     }
-    if (!haveSourceLocation())
+    if (!haveSource())
     {
         throw std::runtime_error("Source location not set");
     }
@@ -369,10 +409,10 @@ void Solver2D<T>::solve()
                   << timer.getDuration() << " (s)" << std::endl;
     }
     // Set source information on solver
-    int iSrcX = pImpl->mSourceCellX;
-    int iSrcZ = pImpl->mSourceCellZ;
-    T xSourceOffset = pImpl->mShiftedSource.first;
-    T zSourceOffset = pImpl->mShiftedSource.second;
+    int iSrcX = pImpl->mSource.getCellInX(); //pImpl->mSourceCellX;
+    int iSrcZ = pImpl->mSource.getCellInZ(); //pImpl->mSourceCellZ;
+    T xSourceOffset = static_cast<T> (pImpl->mSource.getOffsetInX()); //pImpl->mShiftedSource.first;
+    T zSourceOffset = static_cast<T> (pImpl->mSource.getOffsetInZ()); //pImpl->mShiftedSource.second;
     auto slownessPtr = pImpl->mVelocityModel.getSlownessPointer();
     T sourceSlowness = slownessPtr[pImpl->mSourceCell];
     pImpl->mSolverSweep1.setSourceInformation(iSrcX, iSrcZ,
