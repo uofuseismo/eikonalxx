@@ -15,6 +15,50 @@ namespace
 
 using namespace EikonalXX;
 
+TEST(Solver3D, analyticSolutions)
+{
+    double dx = 100.;
+    double dy = 150;
+    double dz = 200.;
+    double xSrc = 500;
+    double ySrc = 750;
+    double zSrc = 1000; 
+    double slowness = 1./5000.;
+    double t, dtdx, dtdy, dtdz;
+    
+    int ix = 1;
+    int iy = 1;
+    int iz = 1;
+    auto x = ix*dx;
+    auto y = iy*dy;
+    auto z = iz*dz;
+    double distance = std::sqrt((x - xSrc)*(x - xSrc) 
+                              + (y - ySrc)*(y - ySrc)
+                              + (z - zSrc)*(z - zSrc));
+    double tRef = distance*slowness;
+    // dT/dx, dT/dy, and dT/dz are really just apparent slownesses
+    // so compute normal vector in that direction then scale by slowness.
+    auto nx = (x - xSrc)/distance;
+    auto ny = (y - ySrc)/distance;
+    auto nz = (z - zSrc)/distance;
+    auto sx = nx*slowness;
+    auto sy = ny*slowness;
+    auto sz = nz*slowness;
+
+    t = computeAnalyticalTravelTime(ix, iy, iz, dx, dy, dz,
+                                    xSrc, ySrc, zSrc, slowness);
+    EXPECT_NEAR(t, tRef, 1.e-14);
+
+    computeAnalyticalTravelTime(ix, iy, iz,
+                                dx, dy, dz,
+                                xSrc, ySrc, zSrc,
+                                slowness,
+                                &t, &dtdx, &dtdy, &dtdz);
+    EXPECT_NEAR(t,  tRef, 1.e-14);
+    EXPECT_NEAR(sx, dtdx, 1.e-14);
+    EXPECT_NEAR(sy, dtdy, 1.e-14);
+    EXPECT_NEAR(sz, dtdz, 1.e-14); 
+}
 
 TEST(Solver3D, sweepSigns)
 {
@@ -67,6 +111,184 @@ TEST(Solver3D, sweepSigns)
     EXPECT_EQ(ixShift, +1); EXPECT_EQ(signX, -1); 
     EXPECT_EQ(iyShift, +1); EXPECT_EQ(signY, -1);
     EXPECT_EQ(izShift, +1); EXPECT_EQ(signZ, -1);
+}
+
+TEST(Solver3D, sweepToGridTravelTimeIndices)
+{
+    int nx = 32;
+    int ny = 43;
+    int nz = 56;
+    auto nGrid = nx*ny*nz;
+    int ixShift, iyShift, izShift;
+    int signX, signY, signZ;
+    int i0, i1, i2, i3, i4, i5, i6, i7;
+    int i0Ref, i1Ref, i2Ref, i3Ref, i4Ref, i5Ref, i6Ref, i7Ref;
+    for (int is = 0; is < 8; ++is)
+    {
+        if (is == 0)
+        {
+            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP1>(
+                &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
+        }
+        else if (is == 1)
+        {
+            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP2>(
+                &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
+        }
+        else if (is == 2)
+        {
+            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP3>(
+                &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
+        }
+        else if (is == 3)
+        {
+            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP4>(
+                &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
+        }
+        else if (is == 4)
+        {
+            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP5>(
+                &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
+        }
+        else if (is == 5)
+        {
+            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP6>(
+                &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
+        }
+        else if (is == 6)
+        {
+            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP7>(
+                &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
+        }
+        else
+        {
+            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP8>(
+                &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
+        }
+        // Loop on grid
+        for (int iz = 0; iz < nz; ++iz)
+        {
+            for (int iy = 0; iy < ny; ++iy)
+            {
+                for (int ix = 0; ix < nx; ++ix)
+                {
+                    i0Ref = gridToIndex(nx, ny, ix, iy, iz);
+                    i1Ref = gridToIndex(nx, ny, 
+                                   std::max(0, std::min(nx - 1, ix + ixShift)),
+                                   iy,
+                                   iz); 
+                    i2Ref = gridToIndex(nx, ny,
+                                   std::max(0, std::min(nx - 1, ix + ixShift)),
+                                   std::max(0, std::min(ny - 1, iy + iyShift)),
+                                   iz);
+                    i3Ref = gridToIndex(nx, ny,
+                                   ix,
+                                   std::max(0, std::min(ny - 1, iy + iyShift)),
+                                   iz);
+                    i4Ref = gridToIndex(nx ,ny,
+                                   ix,
+                                   iy,
+                                   std::max(0, std::min(nz - 1, iz + izShift)));
+                    i5Ref = gridToIndex(nx, ny, 
+                                   std::max(0, std::min(nx - 1, ix + ixShift)),
+                                   iy, 
+                                   std::max(0, std::min(nz - 1, iz + izShift)));
+                    i6Ref = gridToIndex(nx, ny, 
+                                   std::max(0, std::min(nx - 1, ix + ixShift)),
+                                   std::max(0, std::min(ny - 1, iy + iyShift)),
+                                   std::max(0, std::min(nz - 1, iz + izShift)));
+                    i7Ref = gridToIndex(nx, ny, 
+                                   ix, 
+                                   std::max(0, std::min(ny - 1, iy + iyShift)),
+                                   std::max(0, std::min(nz - 1, iz + izShift)));
+                    if (is == 0)
+                    {
+                        gridToSurroundingTravelTimes<SweepNumber3D::SWEEP1>(
+                                                 ix, iy, iz,
+                                                 nx, ny, nz,
+                                                 &i0, &i1, &i2, &i3,
+                                                 &i4, &i5, &i6, &i7);
+                    }
+                    else if (is == 1)
+                    {
+                        gridToSurroundingTravelTimes<SweepNumber3D::SWEEP2>(
+                                                 ix, iy, iz, 
+                                                 nx, ny, nz, 
+                                                 &i0, &i1, &i2, &i3,
+                                                 &i4, &i5, &i6, &i7);
+                    }
+                    else if (is == 2)
+                    {
+                        gridToSurroundingTravelTimes<SweepNumber3D::SWEEP3>(
+                                                 ix, iy, iz,
+                                                 nx, ny, nz, 
+                                                 &i0, &i1, &i2, &i3,
+                                                 &i4, &i5, &i6, &i7);
+                    }
+                    else if (is == 3)
+                    {
+                        gridToSurroundingTravelTimes<SweepNumber3D::SWEEP4>(
+                                                 ix, iy, iz,
+                                                 nx, ny, nz, 
+                                                 &i0, &i1, &i2, &i3,
+                                                 &i4, &i5, &i6, &i7);
+                    }
+                    else if (is == 4)
+                    {
+                        gridToSurroundingTravelTimes<SweepNumber3D::SWEEP5>(
+                                                 ix, iy, iz,
+                                                 nx, ny, nz, 
+                                                 &i0, &i1, &i2, &i3,
+                                                 &i4, &i5, &i6, &i7);
+                    }
+                    else if (is == 5)
+                    {
+                        gridToSurroundingTravelTimes<SweepNumber3D::SWEEP6>(
+                                                 ix, iy, iz,
+                                                 nx, ny, nz, 
+                                                 &i0, &i1, &i2, &i3,
+                                                 &i4, &i5, &i6, &i7);
+                    }
+                    else if (is == 6)
+                    {
+                        gridToSurroundingTravelTimes<SweepNumber3D::SWEEP7>(
+                                                 ix, iy, iz,
+                                                 nx, ny, nz, 
+                                                 &i0, &i1, &i2, &i3,
+                                                 &i4, &i5, &i6, &i7);
+                    }
+                    else
+                    {
+                        gridToSurroundingTravelTimes<SweepNumber3D::SWEEP8>(
+                                                 ix, iy, iz,
+                                                 nx, ny, nz, 
+                                                 &i0, &i1, &i2, &i3,
+                                                 &i4, &i5, &i6, &i7);
+                    }
+                    EXPECT_TRUE(i0 >= 0 && i0 < nGrid);
+                    EXPECT_TRUE(i1 >= 0 && i1 < nGrid);
+                    EXPECT_TRUE(i2 >= 0 && i2 < nGrid);
+                    EXPECT_TRUE(i3 >= 0 && i3 < nGrid);
+                    EXPECT_TRUE(i4 >= 0 && i4 < nGrid);
+                    EXPECT_TRUE(i5 >= 0 && i5 < nGrid);
+                    EXPECT_TRUE(i6 >= 0 && i6 < nGrid);
+                    EXPECT_TRUE(i7 >= 0 && i7 < nGrid);
+                    EXPECT_EQ(i0Ref, i0);
+                    EXPECT_EQ(i1Ref, i1);
+                    EXPECT_EQ(i2Ref, i2);
+                    EXPECT_EQ(i3Ref, i3);
+                    EXPECT_EQ(i4Ref, i4);
+                    EXPECT_EQ(i5Ref, i5);
+                    EXPECT_EQ(i6Ref, i6);
+                    EXPECT_EQ(i7Ref, i7);
+                    //std::cout << "(" << ix << "," << iy << "," << iz << ") "
+                    //          << i0 << " " << i1 << " " << i2 << " " << i3 << " "
+                    //          << i4 << " " << i5 << " " << i6 << " " << i7
+                    //          <<  std::endl;
+                }
+            }
+        }
+    }
 }
 
 TEST(Solver3D, loopLimits)

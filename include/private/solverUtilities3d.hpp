@@ -17,6 +17,10 @@
 namespace
 {
 
+template<EikonalXX::SweepNumber3D E>
+void getSweepFiniteDifferenceSigns(int *ixShift, int *iyShift, int *izShift,
+                                   int *signX, int *signY, int *signZ);
+
 using namespace EikonalXX;
 
 /// @brief Container for the slownesses in a level for the 2D solver.
@@ -265,6 +269,154 @@ void computeAnalyticalTravelTime(const int ix, const int iy, const int iz,
         *dtdz = (slowness*deltaZ)/distance; 
     }    
 }
+///--------------------------------------------------------------------------///
+///                              Finite Differences                          ///
+///--------------------------------------------------------------------------///
+
+template<typename T>
+[[nodiscard]]
+T finiteDifference(const int sphericalRadius,
+                   const T huge,
+                   const T h,
+                   const int ix, const int iy, const int iz,
+                   const int signX, const int signY, const int signZ,
+                   const int ixShift, const int iyShift, const int izShift,
+                   const int iSrcX, const int iSrcY, const int iSrcZ,
+                   const T xSourceOffset,
+                   const T ySourceOffset,
+                   const T zSourceOffset,
+                   const T s0, const T s1, const T s2, const T s3,
+                   const T s4, const T s5, const T s7,
+                   const T t1, const T t2, const T t3,
+                   const T t4, const T t5, const T t6, const T t7)
+{
+    // Default result
+    T tUpd = huge;
+    // Some mins I'll need for the refracted plane operators
+    auto minS0S3 = sycl::fmin(s0, s3); 
+    auto minS0S1 = sycl::fmin(s0, s1);
+    auto minS0S4 = sycl::fmin(s0, s4);
+    // 1D operators critically refracted operators
+    auto t1d1 = t1 + h*sycl::fmin(minS0S3, sycl::fmin(s4, s7)); 
+    auto t1d2 = t3 + h*sycl::fmin(minS0S4, sycl::fmin(s1, s5));
+    auto t1d3 = t4 + h*sycl::fmin(minS0S1, sycl::fmin(s2, s3));
+    auto t1d = sycl::min(sycl::fmin(t1d1, t1d2), t1d3);
+    // Cartesian
+    T t2d = 0;
+    if (sycl::abs(iSrcX - ix) > sphericalRadius ||
+        sycl::abs(iSrcY - iy) > sphericalRadius ||
+        sycl::abs(iSrcZ - iz) > sphericalRadius)
+    {
+        // 2D critically refracted operators
+        T dTxXZ =-t1 + t4 - t5;
+        T dTzXZ =-t4 + t1 - t5;
+        T dtCrossXZ = t1 - t4;
+        T hs03 = h*minS0S3;
+        T detXZ = 2*(hs03*hs03) - dtCrossXZ*dtCrossXZ;
+        T t2d1 = huge;
+        if (detXZ > 0 && t4 <= t1 + hs03 && t1 <= t4 + hs03)
+        {
+            t2d1 = t5 + sycl::sqrt(detXZ);
+        }
+        t2d = sycl::fmin(t1d, t2d1);
+
+        T dTyYZ =-t3 + t4 - t7;
+        T dTzYZ =-t4 + t3 - t7;
+        T dtCrossYZ = t3 - t4;
+        T hs01 = h*minS0S1;
+        T detYZ = 2*(hs01*hs01) - dtCrossYZ*dtCrossYZ;
+        T t2d2 = huge;
+        if (detYZ > 0 && t3 <= t4 + hs01 && t4 <= t3 + hs01)
+        {
+            t2d2 = t7 + sycl::sqrt(detYZ);
+        }
+        t2d = sycl::fmin(t2d, t2d2);
+
+        T dTxXY =-t1 + t3 - t2;
+        T dTyXY =-t3 + t1 - t2;
+        T dtCrossXY = t1 - t3;
+        T hs04 = h*minS0S4;
+        T detXY = 2*(hs04*hs04) - dtCrossXY*dtCrossXY;
+        T t2d3 = huge;
+        if (detXY > 0 && t3 <= t1 + hs04 && t1 <= t3 + hs04)
+        {
+            t2d3 = t2 + sycl::sqrt(detXY);
+        }
+        t2d = sycl::fmin(t2d, t2d3);
+
+        // 3D operator
+        T t3d = huge;
+
+    }
+    else
+    {
+        T t0, dtdx, dtdy, dtdz;
+        computeAnalyticalTravelTime(ix, iy, iz,
+                                    h, h, h,
+                                    xSourceOffset, ySourceOffset, zSourceOffset,
+                                    s0,
+                                    &t0, &dtdx, &dtdy, &dtdz);
+        T tau1 = t1 - computeAnalyticalTravelTime(ix + ixShift,
+                                                  iy,
+                                                  iz, 
+                                                  h, h, h,
+                                                  xSourceOffset,
+                                                  ySourceOffset,
+                                                  zSourceOffset,
+                                                  s0);  
+        T tau2 = t2 - computeAnalyticalTravelTime(ix + ixShift,
+                                                  iy + iyShift,
+                                                  iz,
+                                                  h, h, h,
+                                                  xSourceOffset,
+                                                  ySourceOffset,
+                                                  zSourceOffset,
+                                                  s0);
+        T tau3 = t3 - computeAnalyticalTravelTime(ix,
+                                                  iy + iyShift,
+                                                  iz,
+                                                  h, h, h,
+                                                  xSourceOffset,
+                                                  ySourceOffset,
+                                                  zSourceOffset,
+                                                  s0);
+        T tau4 = t4 - computeAnalyticalTravelTime(ix,
+                                                  iy, 
+                                                  iz + izShift,
+                                                  h, h, h,
+                                                  xSourceOffset,
+                                                  ySourceOffset,
+                                                  zSourceOffset,
+                                                  s0);
+        T tau5 = t5 - computeAnalyticalTravelTime(ix + ixShift,
+                                                  iy,
+                                                  iz + izShift,
+                                                  h, h, h,
+                                                  xSourceOffset,
+                                                  ySourceOffset,
+                                                  zSourceOffset,
+                                                  s0);  
+        T tau6 = t6 - computeAnalyticalTravelTime(ix + ixShift,
+                                                  iy + iyShift,
+                                                  iz + izShift,
+                                                  h, h, h,
+                                                  xSourceOffset,
+                                                  ySourceOffset,
+                                                  zSourceOffset,
+                                                  s0);
+        T tau7 = t7 - computeAnalyticalTravelTime(ix,
+                                                  iy + iyShift,
+                                                  iz + izShift,
+                                                  h, h, h,
+                                                  xSourceOffset,
+                                                  ySourceOffset,
+                                                  zSourceOffset,
+                                                  s0);
+    }
+    return tUpd;
+}
+
+
 ///--------------------------------------------------------------------------///
 ///                              Grid Calculations                           ///
 ///--------------------------------------------------------------------------///
@@ -584,11 +736,10 @@ void permuteGrid(const int ix, const int iy, const int iz,
 template<EikonalXX::SweepNumber3D E>
 void gridToLevel(const int ix, const int iy, const int iz,
                  const int nx, const int ny, const int nz,
-                 int *level)//, int *indx)
+                 int *level)
 {
     int jx, jy, jz;
     permuteGrid<E>(ix, iy, iz, nx, ny, nz, &jx, &jy, &jz);
-    //*indx = jz;
     *level = jx + jy + jz;
 }
 
@@ -612,118 +763,276 @@ void gridToSurroundingSlowness(
     int *iCell0, int *iCell1, int *iCell3,
     int *iCell4, int *iCell5, int *iCell7)
 {
-    int shiftVelX, shiftVelY, shiftVelZ = 0;
-    int iCell0X, iCell0Y, iCell0Z = 0;
     if constexpr (E == SweepNumber3D::SWEEP1)
     {
-       shiftVelX = 1;
-       shiftVelY = 1;
-       shiftVelZ = 1;
-       iCell0X = sycl::max(0, ix - 1);
-       iCell0Y = sycl::max(0, iy - 1);
-       iCell0Z = sycl::max(0, iz - 1);
+        int ixUpdate = std::max(0, std::min(nCellX - 1, ix - 1));
+        int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate + 1));
+        int iyUpdate = std::max(0, std::min(nCellY - 1, iy - 1));
+        int iyOffset = std::max(0, std::min(nCellY - 1, iyUpdate + 1));
+        int izUpdate = std::max(0, std::min(nCellX - 1, iz - 1));
+        int izOffset = std::max(0, std::min(nCellX - 1, izUpdate + 1));
+        *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
+        *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
+        *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
+        *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
+        *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
     else if constexpr (E == SweepNumber3D::SWEEP2)
     {
-       shiftVelX = 0;
-       shiftVelY = 1;
-       shiftVelZ = 1;
-       iCell0X = ix;
-       iCell0Y = sycl::max(0, iy - 1);
-       iCell0Z = sycl::max(0, iz - 1);
+        int ixUpdate = std::max(0, std::min(nCellX - 1, ix));
+        int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate - 1));
+        int iyUpdate = std::max(0, std::min(nCellY - 1, iy - 1));
+        int iyOffset = std::max(0, std::min(nCellY - 1, iyUpdate + 1));
+        int izUpdate = std::max(0, std::min(nCellZ - 1, iz - 1));
+        int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate + 1));
+        *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
+        *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
+        *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
+        *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
+        *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
     else if constexpr (E == SweepNumber3D::SWEEP3)
     {
-       shiftVelX = 1;
-       shiftVelY = 0;
-       shiftVelZ = 1;
-       iCell0X = sycl::max(0, ix - 1);
-       iCell0Y = iy;
-       iCell0Z = sycl::max(0, iz - 1);
+        int ixUpdate = std::max(0, std::min(nCellX - 1, ix - 1));
+        int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate + 1));
+        int iyUpdate = std::max(0, std::min(nCellY - 1, iy));
+        int iyOffset = std::max(0, std::min(nCellY - 1, iyUpdate - 1));
+        int izUpdate = std::max(0, std::min(nCellZ - 1, iz - 1));
+        int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate + 1));
+        *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
+        *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
+        *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
+        *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
+        *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
     else if constexpr (E == SweepNumber3D::SWEEP4)
     {
-       shiftVelX = 0;
-       shiftVelY = 0;
-       shiftVelZ = 1;
-       iCell0X = ix;
-       iCell0Y = iy;
-       iCell0Z = sycl::max(0, iz - 1);
-
+        int ixUpdate = std::max(0, std::min(nCellX - 1, ix));
+        int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate - 1));
+        int iyUpdate = std::max(0, std::min(nCellY - 1, iy));
+        int iyOffset = std::max(0, std::min(nCellY - 1, iyUpdate - 1));
+        int izUpdate = std::max(0, std::min(nCellZ - 1, iz - 1));
+        int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate + 1));
+        *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
+        *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
+        *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
+        *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
+        *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
     else if constexpr (E == SweepNumber3D::SWEEP5)
     {
-       shiftVelX = 1;
-       shiftVelY = 1;
-       shiftVelZ = 0;
-       iCell0X = sycl::max(0, ix - 1); 
-       iCell0Y = sycl::max(0, iy - 1); 
-       iCell0Z = iz;
+        int ixUpdate = std::max(0, std::min(nCellX - 1, ix - 1));
+        int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate + 1));
+        int iyUpdate = std::max(0, std::min(nCellY - 1, iy - 1));
+        int iyOffset = std::max(0, std::min(nCellY - 1, iyUpdate + 1));
+        int izUpdate = std::max(0, std::min(nCellZ - 1, iz));
+        int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate - 1));
+        *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
+        *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
+        *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
+        *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
+        *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
     else if constexpr (E == SweepNumber3D::SWEEP6)
     {
-       shiftVelX = 0;
-       shiftVelY = 1;
-       shiftVelZ = 0;
-       iCell0X = ix;
-       iCell0Y = sycl::max(0, iy - 1); 
-       iCell0Z = iz;
+        int ixUpdate = std::max(0, std::min(nCellX - 1, ix));
+        int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate - 1));
+        int iyUpdate = std::max(0, std::min(nCellY - 1, iy - 1));
+        int iyOffset = std::max(0, std::min(nCellY - 1, iyUpdate + 1));
+        int izUpdate = std::max(0, std::min(nCellZ - 1, iz));
+        int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate - 1));
+        *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
+        *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
+        *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
+        *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
+        *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
     else if constexpr (E == SweepNumber3D::SWEEP7)
     {
-       shiftVelX = 1;
-       shiftVelY = 0;
-       shiftVelZ = 0;
-       iCell0X = sycl::max(0, ix - 1); 
-       iCell0Y = iy; 
-       iCell0Z = iz;
+        int ixUpdate = std::max(0, std::min(nCellX - 1, ix - 1));
+        int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate + 1));
+        int iyUpdate = std::max(0, std::min(nCellY - 1, iy));
+        int iyOffset = std::max(0, std::min(nCellY - 1, iyUpdate - 1));
+        int izUpdate = std::max(0, std::min(nCellZ - 1, iz));
+        int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate - 1));
+        *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
+        *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
+        *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
+        *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
+        *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
     else if constexpr (E == SweepNumber3D::SWEEP8)
     {
-       shiftVelX = 0;
-       shiftVelY = 0;
-       shiftVelZ = 0;
-       iCell0X = ix;
-       iCell0Y = iy;
-       iCell0Z = iz;
+        int ixUpdate = std::max(0, std::min(nCellX - 1, ix));
+        int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate - 1));
+        int iyUpdate = std::max(0, std::min(nCellY - 1, iy));
+        int iyOffset = std::max(0, std::min(nCellY - 1, iyUpdate - 1));
+        int izUpdate = std::max(0, std::min(nCellZ - 1, iz));
+        int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate - 1));
+        *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
+        *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
+        *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
+        *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
+        *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
 #ifndef NDEBUG
     {
         assert(false);
     }
 #endif
-    auto iCell1X = sycl::min(nCellX - 1, sycl::max(0, ix - shiftVelX));
-    auto iCell1Y = iCell0Y;
-    auto iCell1Z = iCell0Z;
+}
 
-    auto iCell3X = iCell0X;
-    auto iCell3Y = sycl::min(nCellY - 1, sycl::max(0, iy - shiftVelY));
-    auto iCell3Z = iCell0Z;
-
-    auto iCell4X = iCell0X;
-    auto iCell4Y = iCell0Y;
-    auto iCell4Z = sycl::min(nCellZ - 1, sycl::max(0, iz - shiftVelZ));
-
-    auto iCell5X = sycl::min(nCellX - 1, sycl::max(0, ix - shiftVelX));
-    auto iCell5Y = iCell0Y;
-    auto iCell5Z = sycl::min(nCellZ - 1, sycl::max(0, iz - shiftVelZ));
-
-    //auto iCell6X = sycl::min(nCellX - 1, sycl::max(0, ix - shiftVelX));
-    //auto iCell6Y = sycl::min(nCellY - 1, sycl::max(0, iy - shiftVelY));
-    //auto iCell6Z = sycl::min(nCellZ - 1, sycl::max(0, iz - shiftVelZ));
-
-    auto iCell7X = iCell0X;
-    auto iCell7Y = sycl::min(nCellY - 1, sycl::max(0, iy - shiftVelY));
-    auto iCell7Z = sycl::min(nCellZ - 1, sycl::max(0, iz - shiftVelZ));
-   
-    *iCell0 = gridToIndex(nCellX, nCellY, iCell0X, iCell0Y, iCell0Z); 
-    *iCell1 = gridToIndex(nCellX, nCellY, iCell1X, iCell1Y, iCell1Z); 
-    //*iCell2 = gridToIndex(nCellX, nCellY, iCell2X, iCell2Y, iCell2Z);
-    *iCell3 = gridToIndex(nCellX, nCellY, iCell3X, iCell3Y, iCell3Z);
-    *iCell4 = gridToIndex(nCellX, nCellY, iCell4X, iCell4Y, iCell4Z);
-    *iCell5 = gridToIndex(nCellX, nCellY, iCell5X, iCell5Y, iCell5Z);
-    //*iCell6 = gridToIndex(nCellX, nCellY, iCell6X, iCell6Y, iCell6Z);
-    *iCell7 = gridToIndex(nCellX, nCellY, iCell7X, iCell7Y, iCell7Z);
+/// @brief Converts a grid index to the surrounding travel time indices 
+///        used in the finite difference stencils.
+/// @param[in] ix      The grid index in x.
+/// @param[in] iy      The grid index in y.
+/// @param[in] iz      The grid index in z.
+/// @param[in] nGridX  The number of grid points in x.
+/// @param[in] nGridY  The number of grid points in y.
+/// @param[in] nGridZ  The number of grid points in z.
+/// @param[out] i0     The update node.
+/// @param[out] i1     The node to the left or the right of i0.
+/// @param[out] i2     The node diagonal but in the same plane as i0.
+/// @param[out] i3     The node to the front of back of i0.
+/// @param[out] i4     The node above or below i0.
+/// @param[out] i5     The node above or below i1.
+/// @param[out] i6     The node above or below i2.
+/// @param[out] i7     The node above or below i3.
+#pragma omp declare simd uniform(nGridX, nGridY, nGridZ)
+template<EikonalXX::SweepNumber3D E>
+void gridToSurroundingTravelTimes(const int ix, const int iy, const int iz,
+                                  const int nGridX,
+                                  const int nGridY,
+                                  const int nGridZ,
+                                  int *i0, int *i1, int *i2, int *i3,
+                                  int *i4, int *i5, int *i6, int *i7)
+{
+    if constexpr (E == SweepNumber3D::SWEEP1)
+    {
+        int ixShift = std::max(0, std::min(nGridX - 1, ix - 1));
+        int iyShift = std::max(0, std::min(nGridY - 1, iy - 1));
+        int izShift = std::max(0, std::min(nGridZ - 1, iz - 1));
+        *i0 = gridToIndex(nGridX, nGridY, ix,      iy,      iz);
+        *i1 = gridToIndex(nGridX, nGridY, ixShift, iy,      iz);
+        *i2 = gridToIndex(nGridX, nGridY, ixShift, iyShift, iz);
+        *i3 = gridToIndex(nGridX, nGridY, ix,      iyShift, iz);
+        *i4 = gridToIndex(nGridX, nGridY, ix,      iy,      izShift);
+        *i5 = gridToIndex(nGridX, nGridY, ixShift, iy,      izShift);
+        *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
+        *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP2)
+    {
+        int ixShift = std::max(0, std::min(nGridX - 1, ix + 1));
+        int iyShift = std::max(0, std::min(nGridY - 1, iy - 1));
+        int izShift = std::max(0, std::min(nGridZ - 1, iz - 1));
+        *i0 = gridToIndex(nGridX, nGridY, ix,      iy,      iz);
+        *i1 = gridToIndex(nGridX, nGridY, ixShift, iy,      iz);
+        *i2 = gridToIndex(nGridX, nGridY, ixShift, iyShift, iz);
+        *i3 = gridToIndex(nGridX, nGridY, ix,      iyShift, iz);
+        *i4 = gridToIndex(nGridX, nGridY, ix,      iy,      izShift);
+        *i5 = gridToIndex(nGridX, nGridY, ixShift, iy,      izShift);
+        *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
+        *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP3)
+    {
+        int ixShift = std::max(0, std::min(nGridX - 1, ix - 1));
+        int iyShift = std::max(0, std::min(nGridY - 1, iy + 1));
+        int izShift = std::max(0, std::min(nGridZ - 1, iz - 1));
+        *i0 = gridToIndex(nGridX, nGridY, ix,      iy,      iz);
+        *i1 = gridToIndex(nGridX, nGridY, ixShift, iy,      iz);
+        *i2 = gridToIndex(nGridX, nGridY, ixShift, iyShift, iz);
+        *i3 = gridToIndex(nGridX, nGridY, ix,      iyShift, iz);
+        *i4 = gridToIndex(nGridX, nGridY, ix,      iy,      izShift);
+        *i5 = gridToIndex(nGridX, nGridY, ixShift, iy,      izShift);
+        *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
+        *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP4)
+    {
+        int ixShift = std::max(0, std::min(nGridX - 1, ix + 1));
+        int iyShift = std::max(0, std::min(nGridY - 1, iy + 1));
+        int izShift = std::max(0, std::min(nGridZ - 1, iz - 1));
+        *i0 = gridToIndex(nGridX, nGridY, ix,      iy,      iz);
+        *i1 = gridToIndex(nGridX, nGridY, ixShift, iy,      iz);
+        *i2 = gridToIndex(nGridX, nGridY, ixShift, iyShift, iz);
+        *i3 = gridToIndex(nGridX, nGridY, ix,      iyShift, iz);
+        *i4 = gridToIndex(nGridX, nGridY, ix,      iy,      izShift);
+        *i5 = gridToIndex(nGridX, nGridY, ixShift, iy,      izShift);
+        *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
+        *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP5)
+    {
+        int ixShift = std::max(0, std::min(nGridX - 1, ix - 1));
+        int iyShift = std::max(0, std::min(nGridY - 1, iy - 1));
+        int izShift = std::max(0, std::min(nGridZ - 1, iz + 1));
+        *i0 = gridToIndex(nGridX, nGridY, ix,      iy,      iz);
+        *i1 = gridToIndex(nGridX, nGridY, ixShift, iy,      iz);
+        *i2 = gridToIndex(nGridX, nGridY, ixShift, iyShift, iz);
+        *i3 = gridToIndex(nGridX, nGridY, ix,      iyShift, iz);
+        *i4 = gridToIndex(nGridX, nGridY, ix,      iy,      izShift);
+        *i5 = gridToIndex(nGridX, nGridY, ixShift, iy,      izShift);
+        *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
+        *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP6)
+    {
+        int ixShift = std::max(0, std::min(nGridX - 1, ix + 1));
+        int iyShift = std::max(0, std::min(nGridY - 1, iy - 1));
+        int izShift = std::max(0, std::min(nGridZ - 1, iz + 1));
+        *i0 = gridToIndex(nGridX, nGridY, ix,      iy,      iz);
+        *i1 = gridToIndex(nGridX, nGridY, ixShift, iy,      iz);
+        *i2 = gridToIndex(nGridX, nGridY, ixShift, iyShift, iz);
+        *i3 = gridToIndex(nGridX, nGridY, ix,      iyShift, iz);
+        *i4 = gridToIndex(nGridX, nGridY, ix,      iy,      izShift);
+        *i5 = gridToIndex(nGridX, nGridY, ixShift, iy,      izShift);
+        *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
+        *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP7)
+    {
+        int ixShift = std::max(0, std::min(nGridX - 1, ix - 1));
+        int iyShift = std::max(0, std::min(nGridY - 1, iy + 1));
+        int izShift = std::max(0, std::min(nGridZ - 1, iz + 1));
+        *i0 = gridToIndex(nGridX, nGridY, ix,      iy,      iz);
+        *i1 = gridToIndex(nGridX, nGridY, ixShift, iy,      iz);
+        *i2 = gridToIndex(nGridX, nGridY, ixShift, iyShift, iz);
+        *i3 = gridToIndex(nGridX, nGridY, ix,      iyShift, iz);
+        *i4 = gridToIndex(nGridX, nGridY, ix,      iy,      izShift);
+        *i5 = gridToIndex(nGridX, nGridY, ixShift, iy,      izShift);
+        *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
+        *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP8)
+    {
+        int ixShift = std::max(0, std::min(nGridX - 1, ix + 1));
+        int iyShift = std::max(0, std::min(nGridY - 1, iy + 1));
+        int izShift = std::max(0, std::min(nGridZ - 1, iz + 1));
+        *i0 = gridToIndex(nGridX, nGridY, ix,      iy,      iz);
+        *i1 = gridToIndex(nGridX, nGridY, ixShift, iy,      iz);
+        *i2 = gridToIndex(nGridX, nGridY, ixShift, iyShift, iz);
+        *i3 = gridToIndex(nGridX, nGridY, ix,      iyShift, iz);
+        *i4 = gridToIndex(nGridX, nGridY, ix,      iy,      izShift);
+        *i5 = gridToIndex(nGridX, nGridY, ixShift, iy,      izShift);
+        *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
+        *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
+    }
+#ifndef NDEBUG
+    else
+    {
+        assert(false);
+    }
+#endif 
 }
 
 
