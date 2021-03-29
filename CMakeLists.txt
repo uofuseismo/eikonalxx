@@ -32,6 +32,7 @@ set(LIBSRC
     src/graph3d.cpp
     src/model2d.cpp src/model3d.cpp
     src/source2d.cpp
+    src/source3d.cpp
     src/solver2d.cpp
     src/solver3d.cpp)
 
@@ -50,6 +51,7 @@ set_target_properties(eikonalxx PROPERTIES
 add_executable(unitTests
                testing/main.cpp
                testing/geometry.cpp
+               testing/source.cpp
                testing/model.cpp
                testing/solverOptions.cpp
                testing/graph.cpp

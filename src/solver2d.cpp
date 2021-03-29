@@ -283,7 +283,7 @@ void Solver2D<T>::setSource(const std::pair<double, double> &sourceLocation)
     // Tell user what is about to happen
     if (pImpl->mOptions.getVerbosity() >= Verbosity::INFO)
     {
-        std::cout << "Setting source location (x,z)=" << sourceLocation.first
+        std::cout << "Setting source location (x,z)=(" << sourceLocation.first
                   << "," << sourceLocation.second << ")" << std::endl;
     }
     // Get some solver information 

@@ -1,29 +1,29 @@
-#ifndef EIKONALXX_SOURCE2D_HPP
-#define EIKONALXX_SOURCE2D_HPP
+#ifndef EIKONALXX_SOURCE3D_HPP
+#define EIKONALXX_SOURCE3D_HPP
 #include <ostream>
 #include <memory>
 namespace EikonalXX
 {
-class Geometry2D;
-/// @class Source2D "source2d.hpp" "eikonalxx/source2d.hpp"
-/// @brief Defines a source in a 2D model.
+class Geometry3D;
+/// @class Source3D "source3d.hpp" "eikonalxx/source3d.hpp"
+/// @brief Defines a source in a 3D model.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
-class Source2D
+class Source3D
 {
 public:
     /// @name Constructors
     /// @{
     /// @brief Constructor.
-    Source2D();
+    Source3D();
     /// @brief Copy constructor.
     /// @param[in] source  The source location from which to initialize
     ///                    this class.
-    Source2D(const Source2D &source);
+    Source3D(const Source3D &source);
     /// @brief Move constructor.
     /// @param[in,out] source  The source location from which to initialize
     ///                        this class.  On exit, source's behavior is
     ///                        undefined.
-    Source2D(Source2D &&source) noexcept;
+    Source3D(Source3D &&source) noexcept;
     /// @}
 
     /// @name Operators
@@ -31,12 +31,12 @@ public:
     /// @brief Copy assignment operator.
     /// @param[in] source  The source location to copy to this.
     /// @result A deep copy of the input source.
-    Source2D& operator=(const Source2D &source);
+    Source3D& operator=(const Source3D &source);
     /// @brief Move assignment operator.
     /// @param[in] source  The source location whose memory will be moved to
     ///                    this.  On exit, source's behavior is undefined.
     /// @result The memory from source moved to this.
-    Source2D& operator=(Source2D &&source) noexcept;
+    Source3D& operator=(Source3D &&source) noexcept;
     /// @}
 
     /// @name Initialization
@@ -44,9 +44,9 @@ public:
     /// @brief Sets the model geometry.
     /// @param[in] geometry   The model geometry.  At the very least the grid
     ///                       spacing and number of grid points must be set.
-    void setGeometry(const Geometry2D &geometry);
+    void setGeometry(const Geometry3D &geometry);
     /// @result The geometry.
-    [[nodiscard]] Geometry2D getGeometry() const;
+    [[nodiscard]] Geometry3D getGeometry() const;
     /// @result True indicates that the geometry was set.
     [[nodiscard]] bool haveGeometry() const noexcept;
     /// @}
@@ -68,6 +68,25 @@ public:
     [[nodiscard]] int getCellInX() const;
     /// @result True indicates that the x location was set.
     [[nodiscard]] bool haveLocationInX() const noexcept;
+    /// @}
+
+    /// @name Y Location
+    /// @{
+    /// @param[in] y   The source location in y in meters.
+    /// @throws std::runtime_error if \c haveGeometry() is false.
+    /// @throws std::invalid_argument if the x position is not in the model.
+    void setLocationInY(double y);
+    /// @result The source's location in y in meters.
+    /// @throws std::runtime_error if \c haveLocationInY() is false.
+    [[nodiscard]] double getLocationInY() const;
+    /// @result The source's offset from the origin in y in meters.
+    /// @throws std::runtime_error if \c haveLocationInY() is false.
+    [[nodiscard]] double getOffsetInY() const;
+    /// @result The y cell containing the source.
+    /// @throws std::runtime_error if \c haveLocationInY() is false.
+    [[nodiscard]] int getCellInY() const;
+    /// @result True indicates that the y location was set.
+    [[nodiscard]] bool haveLocationInY() const noexcept;
     /// @}
 
     /// @name Z Location
@@ -97,14 +116,14 @@ public:
     /// @name Destructor
     /// @{
     /// @brief Destructor.
-    ~Source2D();
+    ~Source3D();
     /// @brief Releases memory and resets the class.
     void clear() noexcept;
     /// @}
 private:
-    class Source2DImpl;
-    std::unique_ptr<Source2DImpl> pImpl;
+    class Source3DImpl;
+    std::unique_ptr<Source3DImpl> pImpl;
 };
-std::ostream& operator<<(std::ostream &os, const Source2D &source);
+std::ostream& operator<<(std::ostream &os, const Source3D &source);
 }
 #endif

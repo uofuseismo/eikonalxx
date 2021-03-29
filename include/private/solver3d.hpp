@@ -1,9 +1,12 @@
 #ifndef EIKONALXX_PRIVATE_SOLVER3D_HPP
 #define EIKONALXX_PRIVATE_SOLVER3D_HPP
-#define HUGE 1.e10
+#include <limits>
 #include "eikonalxx/geometry3d.hpp"
 #include "eikonalxx/graph3d.hpp"
 #include "solverUtilities3d.hpp"
+
+
+#define HUGE 1.e10
 
 namespace
 {
@@ -19,6 +22,20 @@ public:
     void initialize(const EikonalXX::Geometry3D &geometry,
                     const EikonalXX::SolverOptions &options)
     {
+        // Uniform grid?
+        auto dx = geometry.getGridSpacingInX();
+        auto dy = geometry.getGridSpacingInY();
+        auto dz = geometry.getGridSpacingInZ();
+        mUniformGrid = false;
+        if (std::abs(dx - dy) < std::numeric_limits<T>::epsilon()*100 &&
+            std::abs(dx - dz) < std::numeric_limits<T>::epsilon()*100)
+        {
+            mUniformGrid = true;
+        }
+        mDx = static_cast<T> (dx);
+        mDy = static_cast<T> (dy);
+        mDz = static_cast<T> (dz);
+        // Initialize the graph
         mX = geometry.getNumberOfGridPointsInX();
         mY = geometry.getNumberOfGridPointsInY();
         mZ = geometry.getNumberOfGridPointsInZ();
@@ -31,10 +48,15 @@ public:
     }
 //private:
     Graph3D<E> mGraph;
-    /// Number of grid points in x.
+    /// Grid spacing in x, y, and z
+    float mDx = 0;
+    float mDy = 0;
+    float mDz = 0;
+    /// Number of grid points in x, y, and z.
     int mX = 0;
     int mY = 0;
     int mZ = 0;
+    bool mUniformGrid = true;
 };
 
 ///--------------------------------------------------------------------------///

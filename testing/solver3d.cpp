@@ -1,9 +1,10 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-//#include "eikonalxx/solver3d.hpp"
-//#include "eikonalxx/geometry3d.hpp"
-//#include "eikonalxx/model3d.hpp"
+#include "eikonalxx/solver3d.hpp"
+#include "eikonalxx/geometry3d.hpp"
+#include "eikonalxx/source3d.hpp"
+#include "eikonalxx/model3d.hpp"
 //#include "private/solverUtilities2d.hpp"
 #include "private/solverUtilities3d.hpp"
 //#include "private/solver3d.hpp"
@@ -419,5 +420,43 @@ TEST(Solver3D, permuteGrid)
         }
     }
 }
+
+TEST(Solver3D, solve3d)
+{
+    int nx = 9;
+    int ny = 10;
+    int nz = 11; 
+    double dx = 100;
+    double dy = dx;
+    double dz = dx;
+    double x0 = 0;
+    double y0 = 0;
+    double z0 = 0;
+    double xSrc = x0 + dx*(nx/2) + dx/4;
+    double ySrc = y0 + dy*(ny/2) - dy/4;
+    double zSrc = z0 + dz*(nz/2);
+    SolverOptions options;
+
+    // Set the geometry
+    Geometry3D geometry;
+    geometry.setNumberOfGridPointsInX(nx);
+    geometry.setNumberOfGridPointsInY(ny);
+    geometry.setNumberOfGridPointsInZ(nz);
+    geometry.setGridSpacingInX(dx);
+    geometry.setGridSpacingInY(dy);
+    geometry.setGridSpacingInZ(dz); 
+
+    // Set the source
+    Source3D source;
+    source.setGeometry(geometry);
+    source.setLocationInX(xSrc);
+    source.setLocationInY(ySrc);
+    source.setLocationInZ(zSrc);
+
+    // Initialize the solver
+    Solver3D<double> solver;
+    solver.initialize(options, geometry);
+    solver.setSource(source);
+} 
 
 }
