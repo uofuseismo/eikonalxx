@@ -63,12 +63,18 @@ public:
     /// @result The number of levels.
     /// @throws std::runtime_error if \c isInitialized() is false.
     [[nodiscard]] int getNumberOfLevels() const;
+    /// @param[in] level  The level for which the number of nodes is requested.
+    /// @result The number of nodes in the level'th level.
+    /// @throws std::runtime_error if \c isInitialized() is false.
+    /// @throws std::invalid_argument if level is not in the range of
+    ///         [0, \c getNumberOfLevels() - 1].
+    [[nodiscard]] int getNumberOfNodesInLevel(int level) const;
     /// @result A map from a global grid index to the level.  This is an array
     ///         whose dimension is [\c getNumberOfGridPoints()].
     /// @throws std::runtime_error if \c isInitialized() is false.
     [[nodiscard]] const int *getIndexToLevelPointer() const;
     /// @result The level'th index maps to the start index of the
-    ///         nodes in that level'th level.  The number of nodes in
+    ///         nodes in the level'th level.  The number of nodes in
     ///         the level'th level are given by
     ///         levelPtr[level+1] - levelPtr[level].  This is an array
     ///         whose dimension is [\c getNumberOfLevels() + 1].

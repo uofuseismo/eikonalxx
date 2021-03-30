@@ -194,8 +194,6 @@ void Graph3D<E>::initialize(const int nx, const int ny, const int nz)
             int ix, iy, iz;
             indexToGrid(nodeInLevelToIndexPtr[offset + i],
                         nx, ny, &ix, &iy, &iz);
-            //permuteGrid<E>(ix, iy, iz, nx, ny, nz, &jx, &jy, &jz);
-//std::cout << static_cast<int> (E) << " " << level << " " << ix << " " << iy << " " << iz << " " << nodeInLevelToIndexPtr[offset + i] << std::endl;
             nodeInLevelToXGridPointPtr[offset + i] = ix;
             nodeInLevelToYGridPointPtr[offset + i] = iy;
             nodeInLevelToZGridPointPtr[offset + i] = iz;
@@ -243,6 +241,23 @@ int Graph3D<E>::getNumberOfLevels() const
 {
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     return pImpl->mNumberOfLevels;
+}
+
+/// Get number of nodes in a level
+template<EikonalXX::SweepNumber3D E>
+int Graph3D<E>::getNumberOfNodesInLevel(int level) const
+{
+    if (!isInitialized()){throw std::runtime_error("Class not initialized");}
+    auto nLevels = getNumberOfLevels();
+    if (level < 0 || level >= nLevels)
+    {
+        throw std::invalid_argument("level = " + std::to_string(level)
+                                  + " must be in range [0," 
+                                  + std::to_string(nLevels - 1) + "]");
+    }
+    auto i0 = pImpl->mLevelStartPointer.at(level);
+    auto i1 = pImpl->mLevelStartPointer.at(level + 1);
+    return i1 - i0;
 }
 
 /// Max level size

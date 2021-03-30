@@ -7,7 +7,10 @@
 #include <cassert>
 #endif
 #include <tbb/tbb.h>
+#include <tbb/cache_aligned_allocator.h>
 #include "eikonalxx/enums.hpp"
+#include "eikonalxx/graph3d.hpp"
+#include "eikonalxx/geometry3d.hpp"
 #include "private/grid.hpp"
 #include "private/pad.hpp"
 
@@ -20,6 +23,12 @@ namespace
 template<EikonalXX::SweepNumber3D E>
 void getSweepFiniteDifferenceSigns(int *ixShift, int *iyShift, int *izShift,
                                    int *signX, int *signY, int *signZ);
+template<EikonalXX::SweepNumber3D E>
+void gridToSurroundingSlowness(
+    const int ix, const int iy, const int iz,
+    const int nCellX, const int nCellY, const int nCellZ,
+    int *iCell0, int *iCell1, int *iCell2, int *iCell3,
+    int *iCell4, int *iCell5, int *iCell7);
 
 using namespace EikonalXX;
 
@@ -27,100 +36,32 @@ using namespace EikonalXX;
 template<class T>
 struct SweepSlowness3D
 {
-    /// C'tor
-    SweepSlowness3D() = default;
-    /// Copy c'tor
-    SweepSlowness3D(const SweepSlowness3D &slowness)
-    {
-        *this = slowness;
-    }
-    /// Move c'tor
-    SweepSlowness3D(SweepSlowness3D &&slowness) noexcept
-    {
-        *this = std::move(slowness);
-    }
-    /// Copy assingment
-    SweepSlowness3D& operator=(const SweepSlowness3D &slowness)
-    {
-        if (&slowness == this){return *this;}
-        if (slowness.nNodes > 0)
-        {
-            allocate(nNodes);
-            std::copy(slowness.s0, s0, nNodes);
-            std::copy(slowness.s1, s1, nNodes);
-            std::copy(slowness.s3, s3, nNodes);
-            std::copy(slowness.s4, s4, nNodes);
-            std::copy(slowness.s5, s5, nNodes);
-            std::copy(slowness.s6, s6, nNodes);
-            std::copy(slowness.s7, s7, nNodes);
-        }
-        else
-        {
-            nNodes = 0;
-            s0 = nullptr;
-            s1 = nullptr;
-            s3 = nullptr;
-            s4 = nullptr;
-            s5 = nullptr;
-            s6 = nullptr;
-            s7 = nullptr;
-        }
-        return *this;
-    }
-    /// Move assignment
-    SweepSlowness3D& operator=(SweepSlowness3D &&slowness) noexcept
-    {
-        if (&slowness == this){return *this;}
-        nNodes = slowness.nNodes;
-        s0 = std::move(slowness.s0);
-        s1 = std::move(slowness.s1);
-        s3 = std::move(slowness.s3);
-        s4 = std::move(slowness.s4);
-        s5 = std::move(slowness.s5);
-        s6 = std::move(slowness.s6);
-        s7 = std::move(slowness.s7);
-        return *this;
-    }
-    /// Destructor
-    ~SweepSlowness3D()
-    {
-        clear();
-    }
     /// Allocates space to hold slownesses for the n nodes in the sweep.
     void allocate(int n)
     {
         clear();
         if (n <= 0){throw std::invalid_argument("n must be positive");}
         nNodes = n; 
-        auto nPad = padLength(n, sizeof(T), 64); 
-        auto nBytes = static_cast<size_t> (nPad)*sizeof(T);
-        s0 = static_cast<T *> (std::aligned_alloc(64, nBytes));
-        s1 = static_cast<T *> (std::aligned_alloc(64, nBytes));
-        s3 = static_cast<T *> (std::aligned_alloc(64, nBytes));
-        s4 = static_cast<T *> (std::aligned_alloc(64, nBytes));
-        s5 = static_cast<T *> (std::aligned_alloc(64, nBytes));
-        s6 = static_cast<T *> (std::aligned_alloc(64, nBytes));
-        s7 = static_cast<T *> (std::aligned_alloc(64, nBytes));
-        std::fill(s0, s0 + nPad, 0);
-        std::fill(s1, s1 + nPad, 0);
-        std::fill(s3, s3 + nPad, 0);
-        std::fill(s4, s4 + nPad, 0);
-        std::fill(s5, s5 + nPad, 0);
-        std::fill(s6, s6 + nPad, 0);
-        std::fill(s7, s7 + nPad, 0);
+        s0.resize(static_cast<size_t> (nNodes), 0);
+        s1.resize(static_cast<size_t> (nNodes), 0);
+        s2.resize(static_cast<size_t> (nNodes), 0);
+        s3.resize(static_cast<size_t> (nNodes), 0);
+        s4.resize(static_cast<size_t> (nNodes), 0);
+        s5.resize(static_cast<size_t> (nNodes), 0);
+        s7.resize(static_cast<size_t> (nNodes), 0); 
     }    
     /// This sets all the slownesses in the level to 0
     void zero() noexcept
     {
         if (nNodes > 0) 
         {
-            std::fill(s0, s0 + nNodes, 0);
-            std::fill(s1, s1 + nNodes, 0);
-            std::fill(s3, s3 + nNodes, 0);
-            std::fill(s4, s4 + nNodes, 0);
-            std::fill(s5, s5 + nNodes, 0);
-            std::fill(s6, s6 + nNodes, 0);
-            std::fill(s7, s7 + nNodes, 0);
+            std::fill(s0.begin(), s0.end(), 0);
+            std::fill(s1.begin(), s1.end(), 0);
+            std::fill(s2.begin(), s2.end(), 0);
+            std::fill(s3.begin(), s3.end(), 0);
+            std::fill(s4.begin(), s4.end(), 0);
+            std::fill(s5.begin(), s5.end(), 0);
+            std::fill(s7.begin(), s7.end(), 0);
         }    
     }    
     /// Gets the min slowness in the sweep
@@ -129,52 +70,47 @@ struct SweepSlowness3D
         T sMin = 0;
         if (nNodes > 0)
         {
-            sMin = *std::min_element(s0, s0 + nNodes);
-            sMin = std::min(sMin, *std::min_element(s1, s1 + nNodes));
-            sMin = std::min(sMin, *std::min_element(s3, s3 + nNodes));
-            sMin = std::min(sMin, *std::min_element(s4, s4 + nNodes));
-            sMin = std::min(sMin, *std::min_element(s5, s5 + nNodes));
-            sMin = std::min(sMin, *std::min_element(s6, s6 + nNodes));
-            sMin = std::min(sMin, *std::min_element(s7, s7 + nNodes));
+            sMin = *std::min_element(s0.begin(), s0.end());
+            sMin = std::min(sMin, *std::min_element(s1.begin(), s1.end()));
+            sMin = std::min(sMin, *std::min_element(s2.begin(), s2.end()));
+            sMin = std::min(sMin, *std::min_element(s3.begin(), s3.end()));
+            sMin = std::min(sMin, *std::min_element(s4.begin(), s4.end()));
+            sMin = std::min(sMin, *std::min_element(s5.begin(), s5.end()));
+            sMin = std::min(sMin, *std::min_element(s7.begin(), s7.end()));
         }
         return sMin;
     }    
     /// Releases memory.
     void clear() noexcept
     {
-        if (s0){free(s0);}
-        if (s1){free(s1);}
-        if (s3){free(s3);}
-        if (s4){free(s4);}
-        if (s5){free(s5);}
-        if (s6){free(s6);}
-        if (s7){free(s7);}
-        s0 = nullptr;
-        s1 = nullptr;
-        s3 = nullptr;
-        s4 = nullptr;
-        s5 = nullptr;
-        s6 = nullptr;
-        s7 = nullptr;
+        s0.clear();
+        s1.clear();
+        s2.clear();
+        s3.clear();
+        s4.clear();
+        s5.clear();
+        s7.clear();
         nNodes = 0; 
     }    
     /// The slowness (s/m) in the home cell.
     /// This is an array whose dimension is at least [nNodes].
-    T *__attribute__((aligned(64))) s0 = nullptr;
+    std::vector<T, tbb::cache_aligned_allocator<T>> s0;
     /// The slowness (s/m) in the cell to the right or left of the home cell.
     /// This is an array whose dimension is at least [nNodes].
-    T *__attribute__((aligned(64))) s1 = nullptr;
+    std::vector<T, tbb::cache_aligned_allocator<T>> s1;
+    /// The slowness (s/m) in the cell diagonal but in the same plane as the
+    /// home cell.
+    std::vector<T, tbb::cache_aligned_allocator<T>> s2;
     /// The slowness (s/m) in the cell in front of or in back of the home cell.
     /// This is an array whose dimension is at least [nNodes].
-    T *__attribute__((aligned(64))) s3 = nullptr;
+    std::vector<T, tbb::cache_aligned_allocator<T>> s3;
     /// The slowness (s/m) in the cell above or below the home cell.
     /// This is an array whose dimension is at least [nNodes].
-    T *__attribute__((aligned(64))) s4 = nullptr;
+    std::vector<T, tbb::cache_aligned_allocator<T>> s4;
     /// The slowness (s/m) in the cell above or below cell s1.
-    T *__attribute__((aligned(64))) s5 = nullptr;
+    std::vector<T, tbb::cache_aligned_allocator<T>> s5;
     /// The slowness (s/m) in the cell above or below cell s3.
-    T *__attribute__((aligned(64))) s6 = nullptr;
-    T *__attribute__((aligned(64))) s7 = nullptr;
+    std::vector<T, tbb::cache_aligned_allocator<T>> s7;
     /// The number of nodes in the sweep.
     int nNodes = 0; 
 };
@@ -747,6 +683,9 @@ void gridToLevel(const int ix, const int iy, const int iz,
 ///                     the home cell.
 /// @param[out] iCell1  The index of the slowness field corresponding to
 ///                     the cell to the left or right of the home cell.
+/// @param[out] iCell2  The index of the slowness field corresponding to
+///                     the cell adjacent from but in the same plane as
+///                     the home cell.
 /// @param[out] icell3  The index of the slowness field corresponding to
 ///                     the cell in front of or in back of the home cell.
 /// @param[out] iCell4  The index of the slowness field corresponding to
@@ -756,11 +695,12 @@ void gridToLevel(const int ix, const int iy, const int iz,
 ///                     the home cell.
 /// @param[out] iCell7  The index of the slowness field corresponding to
 ///                     the cell to the 
+#pragma omp declare simd uniform(nCellX, nCellY, nCellZ)
 template<EikonalXX::SweepNumber3D E>
-void gridToSurroundingSlowness(
+void gridToSurroundingSlownessIndices(
     const int ix, const int iy, const int iz,
     const int nCellX, const int nCellY, const int nCellZ,
-    int *iCell0, int *iCell1, int *iCell3,
+    int *iCell0, int *iCell1, int *iCell2, int *iCell3,
     int *iCell4, int *iCell5, int *iCell7)
 {
     if constexpr (E == SweepNumber3D::SWEEP1)
@@ -769,10 +709,11 @@ void gridToSurroundingSlowness(
         int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate + 1));
         int iyUpdate = std::max(0, std::min(nCellY - 1, iy - 1));
         int iyOffset = std::max(0, std::min(nCellY - 1, iyUpdate + 1));
-        int izUpdate = std::max(0, std::min(nCellX - 1, iz - 1));
-        int izOffset = std::max(0, std::min(nCellX - 1, izUpdate + 1));
+        int izUpdate = std::max(0, std::min(nCellZ - 1, iz - 1));
+        int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate + 1));
         *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
         *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell2 = gridToIndex(nCellX, nCellY, ixOffset, iyOffset, izUpdate); 
         *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
         *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
@@ -788,6 +729,7 @@ void gridToSurroundingSlowness(
         int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate + 1));
         *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
         *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell2 = gridToIndex(nCellX, nCellY, ixOffset, iyOffset, izUpdate);
         *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
         *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
@@ -803,6 +745,7 @@ void gridToSurroundingSlowness(
         int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate + 1));
         *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
         *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell2 = gridToIndex(nCellX, nCellY, ixOffset, iyOffset, izUpdate);
         *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
         *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
@@ -818,6 +761,7 @@ void gridToSurroundingSlowness(
         int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate + 1));
         *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
         *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell2 = gridToIndex(nCellX, nCellY, ixOffset, iyOffset, izUpdate);
         *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
         *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
@@ -833,6 +777,7 @@ void gridToSurroundingSlowness(
         int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate - 1));
         *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
         *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell2 = gridToIndex(nCellX, nCellY, ixOffset, iyOffset, izUpdate);
         *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
         *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
@@ -848,6 +793,7 @@ void gridToSurroundingSlowness(
         int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate - 1));
         *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
         *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell2 = gridToIndex(nCellX, nCellY, ixOffset, iyOffset, izUpdate);
         *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
         *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
@@ -863,6 +809,7 @@ void gridToSurroundingSlowness(
         int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate - 1));
         *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
         *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell2 = gridToIndex(nCellX, nCellY, ixOffset, iyOffset, izUpdate);
         *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
         *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
@@ -878,12 +825,14 @@ void gridToSurroundingSlowness(
         int izOffset = std::max(0, std::min(nCellZ - 1, izUpdate - 1));
         *iCell0 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izUpdate);
         *iCell1 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izUpdate);
+        *iCell2 = gridToIndex(nCellX, nCellY, ixOffset, iyOffset, izUpdate);
         *iCell3 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izUpdate);
         *iCell4 = gridToIndex(nCellX, nCellY, ixUpdate, iyUpdate, izOffset);
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
         *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
 #ifndef NDEBUG
+    else
     {
         assert(false);
     }
@@ -908,12 +857,11 @@ void gridToSurroundingSlowness(
 /// @param[out] i7     The node above or below i3.
 #pragma omp declare simd uniform(nGridX, nGridY, nGridZ)
 template<EikonalXX::SweepNumber3D E>
-void gridToSurroundingTravelTimes(const int ix, const int iy, const int iz,
-                                  const int nGridX,
-                                  const int nGridY,
-                                  const int nGridZ,
-                                  int *i0, int *i1, int *i2, int *i3,
-                                  int *i4, int *i5, int *i6, int *i7)
+void gridToSurroundingTravelTimeIndices(
+    const int ix, const int iy, const int iz,
+    const int nGridX, const int nGridY, const int nGridZ,
+    int *i0, int *i1, int *i2, int *i3,
+    int *i4, int *i5, int *i6, int *i7)
 {
     if constexpr (E == SweepNumber3D::SWEEP1)
     {
@@ -1035,6 +983,68 @@ void gridToSurroundingTravelTimes(const int ix, const int iy, const int iz,
 #endif 
 }
 
+/// @brief Fills the slowness vectors in each sweep with their slowness.
+/// @param[in] nCellX          The number of cells in the x direction.
+/// @param[in] nCellY          The number of cells in the y direction.
+/// @param[in] nCellZ          The number of cells in the z direction.
+/// @param[in] graph           Defines the computational graph for this sweep.
+/// @param[in] slow            The cell-based slownesses in s/m.  This is an
+///                            array whose dimension is [nCellX*nCellY*nCellZ].
+/// @param[out] sweepSlowness  The sweep slownesses in each direction.
+template<typename T, EikonalXX::SweepNumber3D E>
+void slownessToSweepSlowness(const int nCellX,
+                             const int nCellY,
+                             const int nCellZ,
+                             const Graph3D<E> &graph,
+                             const T *__restrict__ slow,
+                             SweepSlowness3D<T> *sweepSlowness)
+{
+    auto nLevels = graph.getNumberOfLevels();
+    auto levelStartPtr = graph.getLevelStartPointer();
+    const int *__restrict__ nodeToX = graph.getNodeInLevelToXGridPointPointer();
+    const int *__restrict__ nodeToY = graph.getNodeInLevelToYGridPointPointer();
+    const int *__restrict__ nodeToZ = graph.getNodeInLevelToZGridPointPointer();
+    tbb::parallel_for(tbb::blocked_range<int> (0, nLevels),
+                      [=](const tbb::blocked_range<int> &localLevel)
+    {
+        int i0, i1, ix, iy, iz;
+        int iCell0, iCell1, iCell2, iCell3, iCell4, iCell5, iCell7 = 0;
+        for (int level=localLevel.begin(); level != localLevel.end(); ++level)
+        {
+            auto i0 = levelStartPtr[level];
+            auto i1 = levelStartPtr[level + 1];
+            if (sweepSlowness[level].s0.size() < static_cast<size_t> (i1 - i0))
+            {
+                sweepSlowness[level].allocate(i1 - i0);
+            }
+            T *__restrict__ s0 = sweepSlowness[level].s0.data();
+            T *__restrict__ s1 = sweepSlowness[level].s1.data();
+            T *__restrict__ s2 = sweepSlowness[level].s2.data();
+            T *__restrict__ s3 = sweepSlowness[level].s3.data();
+            T *__restrict__ s4 = sweepSlowness[level].s4.data();
+            T *__restrict__ s5 = sweepSlowness[level].s5.data();
+            T *__restrict__ s7 = sweepSlowness[level].s7.data();
+            for (int node = i0; node < i1; ++node)
+            {
+                ix = nodeToX[node];
+                iy = nodeToY[node];
+                iz = nodeToZ[node];
+                gridToSurroundingSlownessIndices<E>(
+                    ix, iy, iz,
+                    nCellX, nCellY, nCellZ,
+                    &iCell0, &iCell1, &iCell2, &iCell3,
+                    &iCell4, &iCell5, &iCell7);
+                s0[node - i0] = slow[iCell0];
+                s1[node - i0] = slow[iCell1];
+                s2[node - i0] = slow[iCell2];
+                s3[node - i0] = slow[iCell3];
+                s4[node - i0] = slow[iCell4];
+                s5[node - i0] = slow[iCell5];
+                s7[node - i0] = slow[iCell7];
+            }
+        }
+    });
+}
 
 }
 #endif

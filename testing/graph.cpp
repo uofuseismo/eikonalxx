@@ -171,6 +171,11 @@ TEST(Graph, Graph3D)
     for (int level = 0; level < graph1.getNumberOfLevels() + 1; ++level)
     {
         EXPECT_EQ(levelStartPtrRef[level], levelStartPtr[level]);
+        if (level < graph1.getNumberOfLevels())
+        {
+            EXPECT_EQ(levelStartPtrRef[level + 1] - levelStartPtrRef[level],
+                      graph1.getNumberOfNodesInLevel(level));
+        }
     }
     EXPECT_EQ(maxLevelSizeRef, graph1.getMaximumLevelSize());
     auto nodeInLevelToGridPointPtr = graph1.getNodeInLevelToIndexPointer();

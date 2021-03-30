@@ -12,8 +12,8 @@ template<class T>
 class Solver3D<T>::Solver3DImpl
 {
 public:
-    Solver3DSweep<T, SweepNumber3D::SWEEP1> mSweep1;
-    Solver3DSweep<T, SweepNumber3D::SWEEP1> mSweep2;
+    Solver3DSweep<T, SweepNumber3D::SWEEP1> mSolverSweep1;
+    Solver3DSweep<T, SweepNumber3D::SWEEP1> mSolverSweep2;
     Model3D<T> mVelocityModel;
     Geometry3D mGeometry;
     Source3D mSource;
@@ -40,8 +40,8 @@ Solver3D<T>::~Solver3D() = default;
 template<class T>
 void Solver3D<T>::clear() noexcept
 {
-    pImpl->mSweep1.clear();
-    pImpl->mSweep2.clear();
+    pImpl->mSolverSweep1.clear();
+    pImpl->mSolverSweep2.clear();
     pImpl->mVelocityModel.clear();
     pImpl->mGeometry.clear();
     pImpl->mOptions.clear();
@@ -85,7 +85,8 @@ void Solver3D<T>::initialize(const SolverOptions &options,
     pImpl->mGeometry = geometry;
     pImpl->mOptions = options;
     // Initialize each solver sweep
-
+    pImpl->mSolverSweep1.initialize(options, geometry);
+    pImpl->mSolverSweep2.initialize(options, geometry);
     pImpl->mInitialized = true;
 }
 
@@ -96,7 +97,6 @@ bool Solver3D<T>::isInitialized() const noexcept
     return pImpl->mInitialized;
 }
 
-/*
 /// Sets the velocity model
 template<class T>
 void Solver3D<T>::setVelocityModel(const Model3D<T> &velocityModel)
@@ -124,6 +124,7 @@ void Solver3D<T>::setVelocityModel(const Model3D<T> &velocityModel)
     pImpl->mVelocityModel = velocityModel;
     // Set the velocity models for each sweep
     pImpl->mSolverSweep1.setVelocityModel(velocityModel);
+/*
     pImpl->mSolverSweep2.setVelocityModel(velocityModel);
     pImpl->mSolverSweep3.setVelocityModel(velocityModel);
     pImpl->mSolverSweep4.setVelocityModel(velocityModel);
@@ -131,9 +132,9 @@ void Solver3D<T>::setVelocityModel(const Model3D<T> &velocityModel)
     pImpl->mSolverSweep6.setVelocityModel(velocityModel);
     pImpl->mSolverSweep7.setVelocityModel(velocityModel);
     pImpl->mSolverSweep8.setVelocityModel(velocityModel);
+*/
     pImpl->mHaveVelocityModel = true;
 }
-*/
 
 /// Gets the velocity model
 template<class T>
