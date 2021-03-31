@@ -13,7 +13,13 @@ class Solver3D<T>::Solver3DImpl
 {
 public:
     Solver3DSweep<T, SweepNumber3D::SWEEP1> mSolverSweep1;
-    Solver3DSweep<T, SweepNumber3D::SWEEP1> mSolverSweep2;
+    Solver3DSweep<T, SweepNumber3D::SWEEP2> mSolverSweep2;
+    Solver3DSweep<T, SweepNumber3D::SWEEP3> mSolverSweep3;
+    Solver3DSweep<T, SweepNumber3D::SWEEP4> mSolverSweep4;
+    Solver3DSweep<T, SweepNumber3D::SWEEP5> mSolverSweep5;
+    Solver3DSweep<T, SweepNumber3D::SWEEP6> mSolverSweep6;
+    Solver3DSweep<T, SweepNumber3D::SWEEP7> mSolverSweep7;
+    Solver3DSweep<T, SweepNumber3D::SWEEP8> mSolverSweep8;
     Model3D<T> mVelocityModel;
     Geometry3D mGeometry;
     Source3D mSource;
@@ -42,6 +48,8 @@ void Solver3D<T>::clear() noexcept
 {
     pImpl->mSolverSweep1.clear();
     pImpl->mSolverSweep2.clear();
+    pImpl->mSolverSweep3.clear();
+    pImpl->mSolverSweep4.clear();
     pImpl->mVelocityModel.clear();
     pImpl->mGeometry.clear();
     pImpl->mOptions.clear();
@@ -87,6 +95,8 @@ void Solver3D<T>::initialize(const SolverOptions &options,
     // Initialize each solver sweep
     pImpl->mSolverSweep1.initialize(options, geometry);
     pImpl->mSolverSweep2.initialize(options, geometry);
+    pImpl->mSolverSweep3.initialize(options, geometry);
+    pImpl->mSolverSweep4.initialize(options, geometry);
     pImpl->mInitialized = true;
 }
 
@@ -124,10 +134,10 @@ void Solver3D<T>::setVelocityModel(const Model3D<T> &velocityModel)
     pImpl->mVelocityModel = velocityModel;
     // Set the velocity models for each sweep
     pImpl->mSolverSweep1.setVelocityModel(velocityModel);
-/*
     pImpl->mSolverSweep2.setVelocityModel(velocityModel);
     pImpl->mSolverSweep3.setVelocityModel(velocityModel);
     pImpl->mSolverSweep4.setVelocityModel(velocityModel);
+/*
     pImpl->mSolverSweep5.setVelocityModel(velocityModel);
     pImpl->mSolverSweep6.setVelocityModel(velocityModel);
     pImpl->mSolverSweep7.setVelocityModel(velocityModel);
@@ -234,11 +244,7 @@ void Solver3D<T>::setSource(const Source3D &source)
     {   
         throw std::invalid_argument("Source location in z not set");
     }   
-    pImpl->mSourceCell = gridToIndex(pImpl->mGeometry.getNumberOfCellsInX(),
-                                     pImpl->mGeometry.getNumberOfCellsInY(),
-                                     source.getCellInX(),
-                                     source.getCellInY(),
-                                     source.getCellInZ());
+    pImpl->mSourceCell = source.getCell();
     pImpl->mSource = source;
     pImpl->mHaveSource = true;
     if (pImpl->mOptions.getVerbosity() == Verbosity::DEBUG)

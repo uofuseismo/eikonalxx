@@ -51,6 +51,7 @@ TEST(Source2D, source2d)
     EXPECT_NEAR(sourceCopy.getLocationInZ(), zSrc, 1.e-14);
     EXPECT_EQ(sourceCopy.getCellInX(), 10);
     EXPECT_EQ(sourceCopy.getCellInZ(), 10);
+    EXPECT_EQ(sourceCopy.getCell(), (nx - 1)*10 + 10); 
     // Shift source to free surface
     sourceCopy.setZToFreeSurface(); 
     EXPECT_NEAR(sourceCopy.getOffsetInZ(), 0, 1.e-14);
@@ -115,6 +116,8 @@ TEST(Source3D, source3d)
     EXPECT_EQ(sourceCopy.getCellInX(), 10);
     EXPECT_EQ(sourceCopy.getCellInY(),  8);
     EXPECT_EQ(sourceCopy.getCellInZ(), 10);
+    EXPECT_EQ(sourceCopy.getCell(),
+              10*(nx - 1)*(ny - 1) + 8*(nx - 1) + 10);
     // Shift source to free surface
     sourceCopy.setZToFreeSurface(); 
     EXPECT_NEAR(sourceCopy.getOffsetInZ(), 0, 1.e-14);

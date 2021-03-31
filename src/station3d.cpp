@@ -1,11 +1,10 @@
-#include <string>
-#include "eikonalxx/source3d.hpp"
+#include "eikonalxx/station3d.hpp"
 #include "eikonalxx/geometry3d.hpp"
 #include "private/grid.hpp"
 
 using namespace EikonalXX;
 
-class Source3D::Source3DImpl
+class Station3D::Station3DImpl
 {
 public:
     void updateCell()
@@ -21,6 +20,7 @@ public:
         }
     }
     Geometry3D mGeometry;
+    std::string mName;
     double mX = 0; 
     double mY = 0;
     double mZ = 0;
@@ -38,9 +38,10 @@ public:
 };
 
 /// Reset the class
-void Source3D::clear() noexcept
+void Station3D::clear() noexcept
 {
     pImpl->mGeometry.clear();
+    pImpl->mName.clear();
     pImpl->mX = 0;
     pImpl->mY = 0;
     pImpl->mZ = 0;
@@ -58,44 +59,44 @@ void Source3D::clear() noexcept
 }
 
 /// C'tor
-Source3D::Source3D() :
-    pImpl(std::make_unique<Source3DImpl> ())
+Station3D::Station3D() :
+    pImpl(std::make_unique<Station3DImpl> ())
 {
 }
 
 /// Copy c'tor
-Source3D::Source3D(const Source3D &source)
+Station3D::Station3D(const Station3D &station)
 {
-    *this = source;
+    *this = station;
 }
 
 /// Move c'tor
-Source3D::Source3D(Source3D &&source) noexcept
+Station3D::Station3D(Station3D &&station) noexcept
 {
-    *this = std::move(source);
+    *this = std::move(station);
 }
 
 /// Copy assignment operator
-Source3D& Source3D::operator=(const Source3D &source)
+Station3D& Station3D::operator=(const Station3D &station)
 {
-    if (&source == this){return *this;}
-    pImpl = std::make_unique<Source3DImpl> (*source.pImpl);
+    if (&station == this){return *this;}
+    pImpl = std::make_unique<Station3DImpl> (*station.pImpl);
     return *this;
 }
 
 /// Move assignment operator
-Source3D& Source3D::operator=(Source3D &&source) noexcept
+Station3D& Station3D::operator=(Station3D &&station) noexcept
 {
-    if (&source == this){return *this;}
-    pImpl = std::move(source.pImpl);
+    if (&station == this){return *this;}
+    pImpl = std::move(station.pImpl);
     return *this;
 }
 
 /// Destructor
-Source3D::~Source3D() = default;
+Station3D::~Station3D() = default;
 
 /// Geometry
-void Source3D::setGeometry(const Geometry3D &geometry)
+void Station3D::setGeometry(const Geometry3D &geometry)
 {
     if (!geometry.haveGridSpacingInX())
     {
@@ -128,19 +129,31 @@ void Source3D::setGeometry(const Geometry3D &geometry)
     pImpl->mHaveGeometry = true;
 }
 
-Geometry3D Source3D::getGeometry() const
+Geometry3D Station3D::getGeometry() const
 {
     if (!haveGeometry()){throw std::runtime_error("Geometry not yet set");}
     return pImpl->mGeometry;
 }
 
-bool Source3D::haveGeometry() const noexcept
+bool Station3D::haveGeometry() const noexcept
 {
     return pImpl->mHaveGeometry;
 }
 
+/// Set the station name
+void Station3D::setName(const std::string &name) noexcept
+{
+    pImpl->mName = name;
+}
+
+/// Get the station name
+std::string Station3D::getName() const noexcept
+{
+    return pImpl->mName;
+}
+
 /// Cell
-int Source3D::getCell() const
+int Station3D::getCell() const
 {
     if (pImpl->mCell < 0)
     {
@@ -158,7 +171,7 @@ int Source3D::getCell() const
 }
 
 /// x location
-void Source3D::setLocationInX(const double x)
+void Station3D::setLocationInX(const double x)
 {
     if (!haveGeometry()){throw std::runtime_error("Geometry not yet set");}
     auto nx = pImpl->mGeometry.getNumberOfGridPointsInX();
@@ -179,7 +192,7 @@ void Source3D::setLocationInX(const double x)
     pImpl->updateCell();
 }
 
-double Source3D::getLocationInX() const
+double Station3D::getLocationInX() const
 {
     if (!haveLocationInX())
     {
@@ -188,7 +201,7 @@ double Source3D::getLocationInX() const
     return pImpl->mX;
 }
 
-double Source3D::getOffsetInX() const
+double Station3D::getOffsetInX() const
 {
     if (!haveLocationInX())
     {
@@ -197,7 +210,7 @@ double Source3D::getOffsetInX() const
     return pImpl->mXOffset;
 }
 
-int Source3D::getCellInX() const
+int Station3D::getCellInX() const
 {
     if (!haveLocationInX())
     {
@@ -206,13 +219,13 @@ int Source3D::getCellInX() const
     return pImpl->mCellX;
 }
 
-bool Source3D::haveLocationInX() const noexcept
+bool Station3D::haveLocationInX() const noexcept
 {
     return pImpl->mHaveXLocation;
 }
 
 /// y location
-void Source3D::setLocationInY(const double y)
+void Station3D::setLocationInY(const double y)
 {
     if (!haveGeometry()){throw std::runtime_error("Geometry not yet set");}
     auto ny = pImpl->mGeometry.getNumberOfGridPointsInY();
@@ -233,7 +246,7 @@ void Source3D::setLocationInY(const double y)
     pImpl->updateCell();
 }
 
-double Source3D::getLocationInY() const
+double Station3D::getLocationInY() const
 {
     if (!haveLocationInY())
     {
@@ -242,7 +255,7 @@ double Source3D::getLocationInY() const
     return pImpl->mY;
 }
 
-double Source3D::getOffsetInY() const
+double Station3D::getOffsetInY() const
 {
     if (!haveLocationInY())
     {
@@ -251,7 +264,7 @@ double Source3D::getOffsetInY() const
     return pImpl->mYOffset;
 }
 
-int Source3D::getCellInY() const
+int Station3D::getCellInY() const
 {
     if (!haveLocationInY())
     {
@@ -260,13 +273,13 @@ int Source3D::getCellInY() const
     return pImpl->mCellY;
 }
 
-bool Source3D::haveLocationInY() const noexcept
+bool Station3D::haveLocationInY() const noexcept
 {
     return pImpl->mHaveYLocation;
 }
 
 /// z location
-void Source3D::setLocationInZ(const double z)
+void Station3D::setLocationInZ(const double z)
 {
     if (!haveGeometry()){throw std::runtime_error("Geometry not yet set");}
     auto nz = pImpl->mGeometry.getNumberOfGridPointsInZ();
@@ -287,14 +300,14 @@ void Source3D::setLocationInZ(const double z)
     pImpl->updateCell();
 }
 
-void Source3D::setZToFreeSurface()
+void Station3D::setZToFreeSurface()
 {
     if (!haveGeometry()){throw std::runtime_error("Geometry not yet set");}
     double z0 = pImpl->mGeometry.getOriginInZ();
     setLocationInZ(z0);
 }
 
-double Source3D::getLocationInZ() const
+double Station3D::getLocationInZ() const
 {
     if (!haveLocationInZ())
     {
@@ -303,7 +316,7 @@ double Source3D::getLocationInZ() const
     return pImpl->mZ;
 }
 
-double Source3D::getOffsetInZ() const
+double Station3D::getOffsetInZ() const
 {
     if (!haveLocationInZ())
     {
@@ -312,7 +325,7 @@ double Source3D::getOffsetInZ() const
     return pImpl->mZOffset;
 }
 
-int Source3D::getCellInZ() const
+int Station3D::getCellInZ() const
 {
     if (!haveLocationInZ())
     {
@@ -321,36 +334,36 @@ int Source3D::getCellInZ() const
     return pImpl->mCellZ;
 }
 
-bool Source3D::haveLocationInZ() const noexcept
+bool Station3D::haveLocationInZ() const noexcept
 {
     return pImpl->mHaveZLocation;
 }
 
-/// sdt::cout << source << std::endl;
+/// sdt::cout << station << std::endl;
 std::ostream&
-EikonalXX::operator<<(std::ostream &os, const Source3D &source)
+EikonalXX::operator<<(std::ostream &os, const Station3D &station)
 {
     std::string result;
-    if (source.haveLocationInX() &&
-        source.haveLocationInY() &&
-        source.haveLocationInZ())
+    if (station.haveLocationInX() &&
+        station.haveLocationInY() &&
+        station.haveLocationInZ())
     {
-        result = "Source location: (x,y,z) = ("
-               + std::to_string(source.getLocationInX()) + ","
-               + std::to_string(source.getLocationInY()) + "," 
-               + std::to_string(source.getLocationInZ()) + ")\n"
-               + "Source offset: (x,y,z) = ("
-               + std::to_string(source.getOffsetInX()) + ","
-               + std::to_string(source.getOffsetInY()) + ","
-               + std::to_string(source.getOffsetInZ()) + ")\n"
-               + "Source cell: (iCellX,iCellY,iCellZ) = ("
-               + std::to_string(source.getCellInX()) + ","
-               + std::to_string(source.getCellInY()) + ","
-               + std::to_string(source.getCellInZ()) + ")\n";
+        result = "Station " + station.getName() + " location: (x,y,z) = ("
+               + std::to_string(station.getLocationInX()) + ","
+               + std::to_string(station.getLocationInY()) + "," 
+               + std::to_string(station.getLocationInZ()) + ")\n"
+               + "Station offset: (x,y,z) = ("
+               + std::to_string(station.getOffsetInX()) + ","
+               + std::to_string(station.getOffsetInY()) + ","
+               + std::to_string(station.getOffsetInZ()) + ")\n"
+               + "Station cell: (iCellX,iCellY,iCellZ) = ("
+               + std::to_string(station.getCellInX()) + ","
+               + std::to_string(station.getCellInY()) + ","
+               + std::to_string(station.getCellInZ()) + ")\n";
     }
     else
     {
-        result = "Source location not completely specified";
+        result = "Station location not completely specified";
     }
     return os << result;
 }

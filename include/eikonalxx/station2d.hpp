@@ -1,42 +1,42 @@
-#ifndef EIKONALXX_SOURCE2D_HPP
-#define EIKONALXX_SOURCE2D_HPP
+#ifndef EIKONALXX_STATION2D_HPP
+#define EIKONALXX_STATION2D_HPP
 #include <ostream>
 #include <memory>
 namespace EikonalXX
 {
 class Geometry2D;
-/// @class Source2D "source2d.hpp" "eikonalxx/source2d.hpp"
-/// @brief Defines a source in a 2D model.
+/// @class Station2D "station2d.hpp" "eikonalxx/station2d.hpp"
+/// @brief Defines a station in a 2D model.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
-class Source2D
+class Station2D
 {
 public:
     /// @name Constructors
     /// @{
     /// @brief Constructor.
-    Source2D();
+    Station2D();
     /// @brief Copy constructor.
-    /// @param[in] source  The source location from which to initialize
-    ///                    this class.
-    Source2D(const Source2D &source);
+    /// @param[in] station  The station location from which to initialize
+    ///                     this class.
+    Station2D(const Station2D &station);
     /// @brief Move constructor.
-    /// @param[in,out] source  The source location from which to initialize
-    ///                        this class.  On exit, source's behavior is
-    ///                        undefined.
-    Source2D(Source2D &&source) noexcept;
+    /// @param[in,out] station  The station location from which to initialize
+    ///                         this class.  On exit, station's behavior is
+    ///                         undefined.
+    Station2D(Station2D &&station) noexcept;
     /// @}
 
     /// @name Operators
     /// @{
     /// @brief Copy assignment operator.
-    /// @param[in] source  The source location to copy to this.
-    /// @result A deep copy of the input source.
-    Source2D& operator=(const Source2D &source);
+    /// @param[in] station  The station location to copy to this.
+    /// @result A deep copy of the input station.
+    Station2D& operator=(const Station2D &station);
     /// @brief Move assignment operator.
-    /// @param[in] source  The source location whose memory will be moved to
-    ///                    this.  On exit, source's behavior is undefined.
-    /// @result The memory from source moved to this.
-    Source2D& operator=(Source2D &&source) noexcept;
+    /// @param[in] station  The station location whose memory will be moved to
+    ///                     this.  On exit, station's behavior is undefined.
+    /// @result The memory from station moved to this.
+    Station2D& operator=(Station2D &&station) noexcept;
     /// @}
 
     /// @name Initialization
@@ -51,19 +51,28 @@ public:
     [[nodiscard]] bool haveGeometry() const noexcept;
     /// @}
 
+    /// @name Name
+    /// @{
+    /// @brief Sets the station's name.
+    /// @param[in] name  The name of the station.
+    void setName(const std::string &name) noexcept;
+    /// @result The station's name.
+    std::string getName() const noexcept;
+    /// @}
+
     /// @name X Location
     /// @{
-    /// @param[in] x   The source location in x in meters.
+    /// @param[in] x   The station location in x in meters.
     /// @throws std::runtime_error if \c haveGeometry() is false.
     /// @throws std::invalid_argument if the x position is not in the model.
     void setLocationInX(double x);
-    /// @result The source's location in x in meters.
+    /// @result The station's location in x in meters.
     /// @throws std::runtime_error if \c haveLocationInX() is false.
     [[nodiscard]] double getLocationInX() const;
-    /// @result The source's offset from the origin in x in meters.
+    /// @result The station's offset from the origin in x in meters.
     /// @throws std::runtime_error if \c haveLocationInX() is false.
     [[nodiscard]] double getOffsetInX() const;
-    /// @result The x cell containing the source.
+    /// @result The x cell containing the station.
     /// @throws std::runtime_error if \c haveLocationInX() is false.
     [[nodiscard]] int getCellInX() const;
     /// @result True indicates that the x location was set.
@@ -72,7 +81,7 @@ public:
 
     /// @name Z Location
     /// @{
-    /// @param[in] z    The source location in z in meters.
+    /// @param[in] z    The station location in z in meters.
     /// @throws std::runtime_error if \c haveGeometry() is false.
     /// @throws std::invalid_argument if the z position is not in the model.
     void setLocationInZ(double z);
@@ -81,13 +90,13 @@ public:
     ///        fields or modeling surface shots.
     /// @throws std::runtime_error if \c haveGeometry() is false.
     void setZToFreeSurface();
-    /// @result The source's location in z in meters.
+    /// @result The station's location in z in meters.
     /// @throws std::runtime_error if \c haveLocationInZ() is false.
     [[nodiscard]] double getLocationInZ() const;
-    /// @result The source's offset from the origin in z in meters.
+    /// @result The station's offset from the origin in z in meters.
     /// @throws std::runtime_error if \c haveLocationInZ() is false.
     [[nodiscard]] double getOffsetInZ() const;
-    /// @result The z cell containing the source.
+    /// @result The z cell containing the station.
     /// @throws std::runtime_error if \c haveLocationInZ() is false.
     [[nodiscard]] int getCellInZ() const;
     /// @result True indicates that the z location was set.
@@ -96,7 +105,7 @@ public:
 
     /// @name Cell
     /// @{
-    /// @result The cell index containing the source. 
+    /// @result The cell index containing the station. 
     /// @throws std::runtime_error if \c haveLocationInX() or
     ///         \c haveLocationInZ(), is false.
     [[nodiscard]] int getCell() const;
@@ -105,14 +114,14 @@ public:
     /// @name Destructor
     /// @{
     /// @brief Destructor.
-    ~Source2D();
+    ~Station2D();
     /// @brief Releases memory and resets the class.
     void clear() noexcept;
     /// @}
 private:
-    class Source2DImpl;
-    std::unique_ptr<Source2DImpl> pImpl;
+    class Station2DImpl;
+    std::unique_ptr<Station2DImpl> pImpl;
 };
-std::ostream& operator<<(std::ostream &os, const Source2D &source);
+std::ostream& operator<<(std::ostream &os, const Station2D &station);
 }
 #endif

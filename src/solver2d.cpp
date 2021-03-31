@@ -241,9 +241,7 @@ void Solver2D<T>::setSource(const Source2D &source)
     //                                              source.getOffsetInZ());
     //pImpl->mSourceCellX = source.getSourceCellInX();
     //pImpl->mSourceCellZ = source.getSourceCellInZ(); 
-    pImpl->mSourceCell = gridToIndex(pImpl->mGeometry.getNumberOfCellsInX(),
-                                     source.getCellInX(), source.getCellInZ());
-    //                                 pImpl->mSourceCellX, pImpl->mSourceCellZ);
+    pImpl->mSourceCell = source.getCell();
     pImpl->mSource = source;
     pImpl->mHaveSource = true;
     if (pImpl->mOptions.getVerbosity() == Verbosity::DEBUG)

@@ -1,11 +1,24 @@
+#include <string>
 #include "eikonalxx/source2d.hpp"
 #include "eikonalxx/geometry2d.hpp"
+#include "private/grid.hpp"
 
 using namespace EikonalXX;
 
 class Source2D::Source2DImpl
 {
 public:
+    void updateCell()
+    {
+        if (mCell < 0)
+        {
+            if (mHaveXLocation && mHaveZLocation)
+            {
+                auto nCellX = mGeometry.getNumberOfCellsInX();
+                mCell = gridToIndex(nCellX, mCellX, mCellZ);
+            }
+        }
+    }
     Geometry2D mGeometry;
     double mX = 0; 
     double mZ = 0;
@@ -13,6 +26,7 @@ public:
     double mZOffset = 0;
     int mCellX = 0;
     int mCellZ = 0;
+    int mCell =-1;
     bool mHaveXLocation = false;
     bool mHaveZLocation = false;
     bool mHaveGeometry = false;
@@ -106,6 +120,20 @@ bool Source2D::haveGeometry() const noexcept
     return pImpl->mHaveGeometry;
 }
 
+/// Cell
+int Source2D::getCell() const
+{
+    if (pImpl->mCell < 0)
+    {
+        if (!haveLocationInX())
+        {
+            throw std::runtime_error("x location not yet set");
+        }
+        throw std::runtime_error("z location not yet set");
+    }
+    return pImpl->mCell;
+}
+
 /// x location
 void Source2D::setLocationInX(const double x)
 {
@@ -120,10 +148,12 @@ void Source2D::setLocationInX(const double x)
                                   + " must be in range [" + std::to_string(x0)
                                   + "," + std::to_string(x1) + "]");
     }
+    pImpl->mCell =-1;
     pImpl->mX = x;
     pImpl->mXOffset = x - x0;
     pImpl->mCellX = static_cast<int> (pImpl->mXOffset/dx);
     pImpl->mHaveXLocation = true;
+    pImpl->updateCell();
 }
 
 double Source2D::getLocationInX() const
@@ -172,10 +202,12 @@ void Source2D::setLocationInZ(const double z)
                                   + " must be in range [" + std::to_string(z0)
                                   + "," + std::to_string(z1) + "]");
     }
+    pImpl->mCell =-1;
     pImpl->mZ = z;
     pImpl->mZOffset = z - z0;
     pImpl->mCellZ = static_cast<int> (pImpl->mZOffset/dz);
     pImpl->mHaveZLocation = true;
+    pImpl->updateCell();
 }
 
 void Source2D::setZToFreeSurface()
