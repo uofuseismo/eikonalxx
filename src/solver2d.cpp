@@ -36,9 +36,9 @@ public:
         auto sourceSlowness = static_cast<T> (sPtr[mSourceCell]);
         auto dx = static_cast<T> (mGeometry.getGridSpacingInX());
         auto dz = static_cast<T> (mGeometry.getGridSpacingInZ());
-        auto xShiftedSource = static_cast<T> (mSource.getOffsetInX()); //static_cast<T> (mShiftedSource.first);
-        auto zShiftedSource = static_cast<T> (mSource.getOffsetInZ()); //static_cast<T> (mShiftedSource.second);
-        std::fill(mTravelTimeField.begin(), mTravelTimeField.end(), mHuge);
+        auto xShiftedSource = static_cast<T> (mSource.getOffsetInX());
+        auto zShiftedSource = static_cast<T> (mSource.getOffsetInZ());
+        std::fill(mTravelTimeField.begin(), mTravelTimeField.end(), HUGE);
         std::vector<std::pair<int, int>> sourceNodes;
         auto sourceCellX = mSource.getCellInX();
         auto sourceCellZ = mSource.getCellInZ();
@@ -90,8 +90,6 @@ public:
     //std::pair<double, double> mSourceLocation{0, 0};
     /// The shifted source location in (x,z).  This is useful to the solver.
     //std::pair<T, T> mShiftedSource{0, 0};
-    /// Huge value for travel time initialization
-    const T mHuge = HUGE;
     /// The source cell index in x.
     //int mSourceCellX = 0;
     /// The source cell index in z.

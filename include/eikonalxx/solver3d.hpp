@@ -86,6 +86,13 @@ public:
     [[nodiscard]] bool haveSource() const noexcept;
     // @}
 
+    /// @name Step 4: Solve
+    /// @{
+    /// @brief Solves the eikonal equation for the given source/velocity model.
+    /// @throws std::runtime_error if the source or velocity model is not set.
+    /// @sa \c isInitialized(), \c haveVelocityModel(), \c haveSource()
+    void solve(); 
+    /// @}
 
     /// @brief Destructor.
     ~Solver3D();

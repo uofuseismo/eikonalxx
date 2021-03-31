@@ -983,6 +983,63 @@ void gridToSurroundingTravelTimeIndices(
 #endif 
 }
 
+/// @brief Determines if the grid point is on the sweep's boundary - i.e., 
+///        this grid point should not be updated.
+/// @param[in] ix   The grid point in x.
+/// @param[in] iy   The grid point in y.
+/// @param[in] iz   The grid point in z.
+/// @param[in] nGridX  The number of grid points in x.
+/// @param[in] nGridY  The number of grid points in y.
+/// @param[in] nGridZ  The number of grid points in z.
+/// @result True indicates that the (ix,iy,iz) grid points is on the
+///         sweep's boundary.
+#pragma declare simd uniform(nGridX, nGridY, nGridZ)
+template<EikonalXX::SweepNumber3D E>
+bool isSweepBoundaryNode(const int ix, const int iy, const int iz,
+                         const int nGridX, const int nGridY, const int nGridZ)
+{
+    bool onBoundary = false;
+    if constexpr (E == SweepNumber3D::SWEEP1)
+    {
+        onBoundary = (ix == 0 || iy == 0 || iz == 0);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP2)
+    {
+        onBoundary = (ix == nGridX - 1 || iy == 0 || iz == 0);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP3)
+    {
+        onBoundary = (ix == 0 || iy == nGridY - 1 || iz == 0);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP4)
+    {
+        onBoundary = (ix == nGridX - 1 || iy == nGridY - 1 || iz == 0);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP5)
+    {
+        onBoundary = (ix == 0 || iy == 0 || iz == nGridZ - 1);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP6)
+    {
+        onBoundary = (ix == nGridX - 1 || iy == 0 || iz == nGridZ - 1);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP7)
+    {
+        onBoundary = (ix == 0 || iy == nGridY - 1 || iz == nGridZ - 1);
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP8)
+    {
+        onBoundary = (ix == nGridX - 1 || iy == nGridY - 1 || iz == nGridZ - 1);
+    }
+#ifndef NDEBUG
+    else
+    {
+        assert(false);
+    }
+#endif
+    return onBoundary;
+}
+
 /// @brief Fills the slowness vectors in each sweep with their slowness.
 /// @param[in] nCellX          The number of cells in the x direction.
 /// @param[in] nCellY          The number of cells in the y direction.

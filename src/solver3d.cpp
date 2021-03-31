@@ -1,9 +1,13 @@
+#include <vector>
+#include <string>
+#include <algorithm>
 #include "eikonalxx/solver3d.hpp"
 #include "eikonalxx/source3d.hpp"
 #include "eikonalxx/geometry3d.hpp"
 #include "eikonalxx/graph3d.hpp"
 #include "eikonalxx/model3d.hpp"
 #include "eikonalxx/solverOptions.hpp"
+#include "private/timer.hpp"
 #include "private/solver3d.hpp"
 
 using namespace EikonalXX;
@@ -12,6 +16,78 @@ template<class T>
 class Solver3D<T>::Solver3DImpl
 {
 public:
+    /// Initialize travel times and set travel times around source
+    void initializeTravelTimes()
+    {
+        auto verbosity = mOptions.getVerbosity();
+        bool ldebug = (verbosity == Verbosity::DEBUG);
+        if (ldebug)
+        {
+            std::cout << "Initializing travel times near source" << std::endl;
+        }
+        int nGridX = mGeometry.getNumberOfGridPointsInX();
+        int nGridY = mGeometry.getNumberOfGridPointsInY();
+        const auto sPtr = mVelocityModel.getSlownessPointer();
+        auto sourceSlowness = static_cast<T> (sPtr[mSourceCell]);
+        auto dx = static_cast<T> (mGeometry.getGridSpacingInX());
+        auto dy = static_cast<T> (mGeometry.getGridSpacingInY());
+        auto dz = static_cast<T> (mGeometry.getGridSpacingInZ());
+        auto xShiftedSource = static_cast<T> (mSource.getOffsetInX());
+        auto yShiftedSource = static_cast<T> (mSource.getOffsetInY());
+        auto zShiftedSource = static_cast<T> (mSource.getOffsetInZ());
+        std::fill(mTravelTimeField.begin(), mTravelTimeField.end(), HUGE);
+        std::vector<std::tuple<int, int, int>> sourceNodes;
+        auto sourceCellX = mSource.getCellInX();
+        auto sourceCellY = mSource.getCellInY();
+        auto sourceCellZ = mSource.getCellInZ();
+        sourceNodes.push_back(
+            {sourceCellX,     sourceCellY,     sourceCellZ});
+        sourceNodes.push_back(
+            {sourceCellX + 1, sourceCellY,     sourceCellZ});
+        sourceNodes.push_back(
+            {sourceCellX,     sourceCellY + 1, sourceCellZ});
+        sourceNodes.push_back(
+            {sourceCellX + 1, sourceCellY + 1, sourceCellZ});
+        sourceNodes.push_back(
+            {sourceCellX,     sourceCellY,     sourceCellZ + 1});
+        sourceNodes.push_back(
+            {sourceCellX + 1, sourceCellY,     sourceCellZ + 1});
+        sourceNodes.push_back(
+            {sourceCellX,     sourceCellY + 1, sourceCellZ + 1});
+        sourceNodes.push_back(
+            {sourceCellX + 1, sourceCellY + 1, sourceCellZ + 1});
+        for (int i=0; i<static_cast<int> (sourceNodes.size()); ++i)
+        {
+            auto iSrc = gridToIndex(nGridX, nGridY,
+                                    std::get<0> (sourceNodes[i]),
+                                    std::get<1> (sourceNodes[i]),
+                                    std::get<2> (sourceNodes[i]));
+            mTravelTimeField.at(iSrc)
+                = computeAnalyticalTravelTime(std::get<0> (sourceNodes[i]),
+                                              std::get<1> (sourceNodes[i]),
+                                              std::get<2> (sourceNodes[i]),
+                                              dx, dy, dz, 
+                                              xShiftedSource,
+                                              yShiftedSource,
+                                              zShiftedSource,
+                                              sourceSlowness);
+            if (ldebug || true)
+            {
+                std::cout << "Travel time at node (ix,iy,iz) = ("
+                          << std::get<0> (sourceNodes[i]) << "," 
+                          << std::get<1> (sourceNodes[i]) << ","
+                          << std::get<2> (sourceNodes[i]) << ") is "
+                          << mTravelTimeField[iSrc] << " (s)" << std::endl;
+            }   
+        }
+/*
+        // Initialize update nodes then freeze nodes around source
+        mSolverSweep1.initializeUpdateNodes(sourceNodes, verbosity);
+        mSolverSweep2.initializeUpdateNodes(sourceNodes, verbosity);
+        mSolverSweep3.initializeUpdateNodes(sourceNodes, verbosity);
+        mSolverSweep4.initializeUpdateNodes(sourceNodes, verbosity);
+*/
+    }
     Solver3DSweep<T, SweepNumber3D::SWEEP1> mSolverSweep1;
     Solver3DSweep<T, SweepNumber3D::SWEEP2> mSolverSweep2;
     Solver3DSweep<T, SweepNumber3D::SWEEP3> mSolverSweep3;
@@ -24,6 +100,7 @@ public:
     Geometry3D mGeometry;
     Source3D mSource;
     SolverOptions mOptions;
+    std::vector<T> mTravelTimeField; 
     int mSourceCell = 0;
     bool mHaveTravelTimeField = false;
     bool mHaveVelocityModel = false;
@@ -53,6 +130,7 @@ void Solver3D<T>::clear() noexcept
     pImpl->mVelocityModel.clear();
     pImpl->mGeometry.clear();
     pImpl->mOptions.clear();
+    pImpl->mTravelTimeField.clear();
     pImpl->mSourceCell = 0;
     pImpl->mHaveTravelTimeField = false;
     pImpl->mHaveVelocityModel = false;
@@ -97,6 +175,9 @@ void Solver3D<T>::initialize(const SolverOptions &options,
     pImpl->mSolverSweep2.initialize(options, geometry);
     pImpl->mSolverSweep3.initialize(options, geometry);
     pImpl->mSolverSweep4.initialize(options, geometry);
+    // Set space for travel time field
+    auto nGrid = pImpl->mGeometry.getNumberOfGridPoints();
+    pImpl->mTravelTimeField.resize(nGrid, 0);
     pImpl->mInitialized = true;
 }
 
@@ -270,6 +351,32 @@ template<class T>
 bool Solver3D<T>::haveSource() const noexcept
 {
     return pImpl->mHaveSource;
+}
+
+template<class T>
+void Solver3D<T>::solve()
+{
+    pImpl->mHaveTravelTimeField = false;
+    if (!isInitialized()){throw std::runtime_error("Class not initialized");}
+    if (!haveVelocityModel())
+    {
+        throw std::runtime_error("Velocity model not set");
+    }
+    if (!haveSource())
+    {
+        throw std::runtime_error("Source location not set");
+    }
+    // Initialize travel time field based on the source
+    Timer timer;
+    auto verbosity = pImpl->mOptions.getVerbosity();
+    timer.start();
+    pImpl->initializeTravelTimes();
+    timer.end();
+    if (verbosity == Verbosity::DEBUG)
+    {
+        std::cout << "Travel time field initialization time: "
+                  << timer.getDuration() << " (s)" << std::endl;
+    }
 }
 
 ///--------------------------------------------------------------------------///

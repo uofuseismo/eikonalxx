@@ -612,6 +612,88 @@ TEST(Solver3D, permuteGrid)
     }
 }
 
+TEST(Solver3D, isSweepBoundaryNode)
+{
+    int nx = 5;
+    int ny = 6;
+    int nz = 7;
+    for (int is = 0; is < 8; ++is)
+    {
+        for (int iz =0 ; iz < nz; ++iz)
+        {
+            for (int iy = 0; iy < ny; ++iy)
+            {
+                for (int ix = 0; ix < nx; ++ix)
+                {
+                    bool lb = false;
+                    bool lbRef = false;
+                    if (is == 0)
+                    {
+                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP1>(
+                                 ix, iy, iz, nx, ny, nz);
+                        if (ix == 0 || iy == 0 || iz == 0){lbRef = true;} 
+                    }
+                    else if (is == 1)
+                    {
+                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP2>(
+                                 ix, iy, iz, nx, ny, nz);
+                        if (ix == nx - 1 || iy == 0 || iz == 0){lbRef = true;}
+                    }
+                    else if (is == 2)
+                    {
+                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP3>(
+                                 ix, iy, iz, nx, ny, nz);
+                        if (ix == 0 || iy == ny - 1 || iz == 0){lbRef = true;}
+                    }
+                    else if (is == 3)
+                    {
+                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP4>(
+                                 ix, iy, iz, nx, ny, nz);
+                        if (ix == nx - 1 || iy == ny - 1 || iz == 0)
+                        {
+                            lbRef = true;
+                        }
+                    }
+                    else if (is == 4)
+                    {
+                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP5>(
+                                 ix, iy, iz, nx, ny, nz);
+                        if (ix == 0 || iy == 0 || iz == nz - 1){lbRef = true;} 
+                    }
+                    else if (is == 5)
+                    {
+                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP6>(
+                                 ix, iy, iz, nx, ny, nz);
+                        if (ix == nx - 1 || iy == 0 || iz == nz - 1)
+                        {
+                            lbRef = true;
+                        }
+                    }
+                    else if (is == 6)
+                    {
+                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP7>(
+                                 ix, iy, iz, nx, ny, nz);
+                        if (ix == 0 || iy == ny - 1 || iz == nz - 1)
+                        {
+                            lbRef = true;
+                        }
+                    }
+                    else if (is == 7)
+                    {
+                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP8>(
+                                 ix, iy, iz, nx, ny, nz);
+                        if (ix == nx - 1 || iy == ny - 1 || iz == nz - 1)
+                        {
+                            lbRef = true;
+                        }
+                    }
+                    EXPECT_TRUE(lb == lbRef);
+                }
+            }
+        }
+    }
+}
+
 TEST(Solver3D, solve3d)
 {
     int nx = 9;
@@ -620,13 +702,22 @@ TEST(Solver3D, solve3d)
     double dx = 100;
     double dy = dx;
     double dz = dx;
-    double x0 = 0;
-    double y0 = 0;
-    double z0 = 0;
+    double x0 = 5;
+    double y0 = 6;
+    double z0 = 7;
     double xSrc = x0 + dx*(nx/2) + dx/4;
     double ySrc = y0 + dy*(ny/2) - dy/4;
-    double zSrc = z0 + dz*(nz/2);
+    double zSrc = z0 + dz*(nz/4);
+    double vConst = 3000;
+    int nSweeps = 1;
+    int nEps = 0;
+    auto solverAlgorithm = EikonalXX::SolverAlgorithm::FAST_SWEEPING_METHOD;
+
     SolverOptions options;
+    options.setVerbosity(Verbosity::DEBUG);
+    options.setNumberOfSweeps(nSweeps);
+    options.setSphericalSolverRadius(nEps);
+    options.setAlgorithm(solverAlgorithm);
 
     // Set the geometry
     Geometry3D geometry;
@@ -636,6 +727,16 @@ TEST(Solver3D, solve3d)
     geometry.setGridSpacingInX(dx);
     geometry.setGridSpacingInY(dy);
     geometry.setGridSpacingInZ(dz); 
+    geometry.setOriginInX(x0);
+    geometry.setOriginInY(y0);
+    geometry.setOriginInZ(z0); 
+
+    // Set the velocity model
+    std::vector<double> vConstant(nx*ny*nz, vConst);
+    Model3D<double> vModel;
+    vModel.initialize(geometry);
+    vModel.setNodalVelocities(vConstant.size(), vConstant.data(),
+                              EikonalXX::Ordering3D::NATURAL);
 
     // Set the source
     Source3D source;
@@ -646,8 +747,10 @@ TEST(Solver3D, solve3d)
 
     // Initialize the solver
     Solver3D<double> solver;
-    solver.initialize(options, geometry);
-    solver.setSource(source);
+    EXPECT_NO_THROW(solver.initialize(options, geometry));
+    EXPECT_NO_THROW(solver.setVelocityModel(vModel));
+    EXPECT_NO_THROW(solver.setSource(source));
+    EXPECT_NO_THROW(solver.solve());
 } 
 
 }
