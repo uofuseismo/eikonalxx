@@ -16,6 +16,9 @@ find_package(Boost COMPONENTS graph)
 set(FindTBB_DIR ${CMAKE_SOURCE_DIR}/CMakeModules)
 find_package(FindTBB REQUIRED)
 
+configure_file(${CMAKE_SOURCE_DIR}/include/private/version.hpp.in
+               ${CMAKE_SOURCE_DIR}/include/eikonalxx/version.hpp)
+
 include_directories(
    ${CMAKE_SOURCE_DIR}/include
    ${TBB_INCLUDE_DIR}
@@ -27,6 +30,7 @@ set(PRIVATE_HEADER_DIRECTORIES
     ${CMAKE_SOURCE_DIR}/include/private)
 
 set(LIBSRC
+    src/version.cpp
     src/solverOptions.cpp
     src/geometry2d.cpp src/geometry3d.cpp
     src/graph3d.cpp
@@ -34,7 +38,8 @@ set(LIBSRC
     src/source2d.cpp
     src/source3d.cpp
     src/solver2d.cpp
-    src/solver3d.cpp)
+    src/solver3d.cpp
+    src/station3d.cpp)
 
 set(BUILD_SHARED_LIBS YES)
 add_library(eikonalxx ${LIBSRC})
