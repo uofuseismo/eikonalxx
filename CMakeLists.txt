@@ -53,6 +53,26 @@ set_target_properties(eikonalxx PROPERTIES
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENSIONS NO)
 
+
+if (WRAP_PYTHON)
+   find_package(pybind11 REQUIRED)
+   add_library(pyEikonalXX MODULE
+               python/pyEikonalXX.cpp
+               python/pyGeometry2d.cpp python/pyGeometry3d.cpp)
+   target_link_libraries(pyEikonalXX PRIVATE
+                         pybind11::module eikonalxx)
+   set_target_properties(pyEikonalXX PROPERTIES
+                         PREFIX ""
+                         CXX_STANDARD 17
+                         CXX_STANDARD_REQUIRED YES
+                         CXX_EXTENSIONS NO)
+   target_include_directories(pyEikonalXX PRIVATE pybind11
+                              ${CMAKE_SOURCE_DIR}/python)
+endif()
+
+##########################################################################################
+#                                        Testing                                         #
+##########################################################################################
 add_executable(unitTests
                testing/main.cpp
                testing/geometry.cpp
@@ -68,6 +88,5 @@ target_include_directories(unitTests PRIVATE ${GTEST_INCLUDE_DIRS})
 set_target_properties(unitTests PROPERTIES
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENSIONS NO)
-
 add_test(NAME unitTest
          COMMAND unitTests)
