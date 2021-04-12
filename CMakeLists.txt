@@ -90,3 +90,33 @@ set_target_properties(unitTests PROPERTIES
                       CXX_EXTENSIONS NO)
 add_test(NAME unitTest
          COMMAND unitTests)
+
+##########################################################################################
+#                                         Installation                                   #
+##########################################################################################
+include(GNUInstallDirs)
+if (WRAP_PYTHON)
+   install(TARGETS eikonalxx pyEikonalXX
+           RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+           LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+           ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+           PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+else()
+   install(TARGETS eikonalxx
+           RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+           LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+           ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+           PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
+##########################################################################################
+#                                     CPACK Packaging                                    #
+##########################################################################################
+set(CPACK_PACKAGE_NAME "EikonalXX")
+set(CPACK_PACKAGE_VENDOR "UUSS")
+set(CPACK_PACKAGE_CONTACT "bbaker@seis.utah.edu")
+set(CPACK_PACKAGE_LICENSE "MIT")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A library for solving the eikonal equation.")
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
