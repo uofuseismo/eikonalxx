@@ -1,6 +1,7 @@
 #include "eikonalxx/version.hpp"
 #include "include/pyGeometry2d.hpp"
 #include "include/pyGeometry3d.hpp"
+#include "include/pySolverOptions.hpp"
 #include "eikonalxx/enums.hpp"
 #include <pybind11/pybind11.h>
 
@@ -11,6 +12,7 @@ PYBIND11_MODULE(pyEikonalXX, m)
 
     PEikonalXX::initializeGeometry2D(m);
     PEikonalXX::initializeGeometry3D(m);
+    PEikonalXX::initializeSolverOptions(m);
 
     pybind11::enum_<EikonalXX::Ordering2D> (m, "Ordering2D")
         .value("natural", EikonalXX::Ordering2D::NATURAL,
@@ -35,4 +37,13 @@ PYBIND11_MODULE(pyEikonalXX, m)
         .value("fast_sweeping_method", EikonalXX::SolverAlgorithm::FAST_SWEEPING_METHOD,
                "The solver solves the eikonal equation using fast-sweeping.  All updates during the sweep are performed serially.");
 
+     pybind11::enum_<EikonalXX::Verbosity> (m, "Verbosity")
+         .value("error", EikonalXX::Verbosity::ERROR,
+                "Only errors will be reported.  This is recommended for extended batch jobs with many solution phases.")
+         .value("warning", EikonalXX::Verbosity::WARNING,
+                "Warnings and errors will be reported.")
+         .value("info", EikonalXX::Verbosity::INFO,
+                "Warnings, errors, and general information will be reported.  This is a recommended level for a handful of solves.")
+         .value("debug", EikonalXX::Verbosity::DEBUG,
+                "All information will be reported.  This verbosity level is not recommended.");
 }

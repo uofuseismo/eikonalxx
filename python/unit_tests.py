@@ -60,6 +60,31 @@ def test_geometry3d():
     assert abs(geo3d.z0 - z0) < 1.e-14, 'z0 failed'
     print("Passed geometry3d")
 
+def test_solverOptions():
+    """
+    Test the solver options.
+    """
+    options = pyEikonalXX.SolverOptions()
+    tol = 1.e-2
+    n_gauss_sweeps = 3
+    eps = 4
+    algorithm = pyEikonalXX.SolverAlgorithm.level_set_method
+    verbosity = pyEikonalXX.Verbosity.debug
+ 
+    options.tolerance = tol
+    options.number_of_sweeps = n_gauss_sweeps
+    options.spherical_solver_radius = eps
+    options.algorithm = algorithm
+    options.verbosity = verbosity
+
+    assert abs(options.tolerance - tol) < 1.e-14, 'tolerance failed'
+    assert options.number_of_sweeps == n_gauss_sweeps, 'n sweeps failed'
+    assert options.spherical_solver_radius == eps, 'spherical solver radius failed' 
+    assert options.algorithm == algorithm, 'algorithm failed'
+    assert options.verbosity == verbosity, 'verbosity failed'
+    print("Passed solverOptions")
+
 if __name__ == "__main__":
     test_geometry2d()
     test_geometry3d()
+    test_solverOptions()
