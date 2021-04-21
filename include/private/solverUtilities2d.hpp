@@ -387,13 +387,12 @@ T finiteDifference(const int sphericalRadius,
         }
         T t0Update2 = sycl::fmin(t0a, t0b);
 
-        // Three-point operator (Vidale, 1988)
-        //T tildeTx = t1 - t3 + t2;
-        //T tildeTz = t3 - t1 + t2;
-        T dtCross = t1 - t3; // tildeX - tildeZ = 2*t1 - t3
+        // Three-point operator (Vidale, 1988).  Note, we require detc > 0
+        // since detc = 0 -> t0Update3 = t2 which will not result in an update.
+        T dtCross = t1 - t3; // 1/2*(tildeX - tildeZ)
         T detc = 2*(hs0*hs0) - dtCross*dtCross;
         T t0Update3 = huge;
-        if (dTx >= 0 && dTz >= 0 && detc >= 0 &&
+        if (dTx >= 0 && dTz >= 0 && detc > 0 &&
             t3 <= t1 + hs0 && t1 <= t3 + hs0)
         {
             t0Update3 = t2 + sycl::sqrt(detc);
@@ -455,7 +454,7 @@ T finiteDifference(const int sphericalRadius,
             T det = b*b - four*a*c;
             if (det >= 0)
             {
-                auto tau = (-b + sycl::sqrt(det))/(two*a);
+                T tau = (-b + sycl::sqrt(det))/(two*a);
 //std::cout << t0 << std::endl;
 //std::cout << tau << std::endl;
 //std::cout << tau + t0 << std::endl;
@@ -519,16 +518,16 @@ T finiteDifference(const int sphericalRadius,
         } 
         T t0Update2 = sycl::fmin(t0a, t0b);
 
-        // Three-point operator (Vidale, 1988) 
+        // Three-point operator (Vidale, 1988).  As before, we require detc > 0.
         // Note the following identity
         // (dx*dz)/(dx^2 + dz^2) = dx/sqrt(dx^2 + dz^2) * dz/sqrt(dx^2 + dz^2)
         T dxdz_dx2_p_dz2 = cosTheta*sinTheta;
         T tildeTx = t1 - t3 + t2;
         T tildeTz = t3 - t1 + t2;
-        T dtCross = t1 - t3; // tildeX - tildeZ = 2*(t1 - t3)
+        T dtCross = t1 - t3; // 1/2*(tildeX - tildeZ)
         T detc = hxs0*hxs0 + hzs0*hzs0 - dtCross*dtCross;
         T t0Update3 = huge; 
-        if (dTx >= 0 && dTz >= 0 && detc >= 0 &&
+        if (dTx >= 0 && dTz >= 0 && detc > 0 &&
             t1 < t3 + dz*s0 && t3 < t1 + dx*s0)
         {
             // Note for the first term:
@@ -601,7 +600,7 @@ T finiteDifference(const int sphericalRadius,
 //std::cout << "apoly: " << a << " " << b << " " << c << " " << t0 << std::endl;
             if (det >= 0)
             {
-                auto tau = (-b + sycl::sqrt(det))/(two*a);
+                T tau = (-b + sycl::sqrt(det))/(two*a);
                 t0Update3 = t0 + tau; 
             }
             if (t0Update3 < t1 || t0Update3 < t3){t0Update3 = huge;}
@@ -1113,6 +1112,7 @@ void gridSweepToLevelIndex(const SweepNumber2D sweep, //const int sweep,
 /// @result The index in the travel time field corresponding to the sweep, level,
 ///                   and index in the level.
 #pragma omp declare simd uniform(sweep, level, nx, nz)
+[[maybe_unused]]
 int sweepLevelIndexToIndex(const SweepNumber2D sweep, //const int sweep,
                            const int level,
                            const int indx,
@@ -1138,6 +1138,7 @@ int sweepLevelIndexToIndex(const SweepNumber2D sweep, //const int sweep,
 ///                   update node. 
 /// @param[out] it3   The corresponding grid index above/below the update node.
 #pragma omp declare simd uniform(sweep, level, nx, nz)
+[[maybe_unused]]
 void sweepLevelIndexToTravelTimeIndices(
     const SweepNumber2D sweep, const int level, const int indx,
     const int nx, const int nz,

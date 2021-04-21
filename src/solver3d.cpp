@@ -80,15 +80,9 @@ public:
                           << mTravelTimeField[iSrc] << " (s)" << std::endl;
             }   
         }
-/*
-        // Initialize update nodes then freeze nodes around source
-        mSolverSweep1.initializeUpdateNodes(sourceNodes, verbosity);
-        mSolverSweep2.initializeUpdateNodes(sourceNodes, verbosity);
-        mSolverSweep3.initializeUpdateNodes(sourceNodes, verbosity);
-        mSolverSweep4.initializeUpdateNodes(sourceNodes, verbosity);
-*/
     }
     Solver3DSweep<T, SweepNumber3D::SWEEP1> mSolverSweep1;
+/*
     Solver3DSweep<T, SweepNumber3D::SWEEP2> mSolverSweep2;
     Solver3DSweep<T, SweepNumber3D::SWEEP3> mSolverSweep3;
     Solver3DSweep<T, SweepNumber3D::SWEEP4> mSolverSweep4;
@@ -96,6 +90,7 @@ public:
     Solver3DSweep<T, SweepNumber3D::SWEEP6> mSolverSweep6;
     Solver3DSweep<T, SweepNumber3D::SWEEP7> mSolverSweep7;
     Solver3DSweep<T, SweepNumber3D::SWEEP8> mSolverSweep8;
+*/
     Model3D<T> mVelocityModel;
     Geometry3D mGeometry;
     Source3D mSource;
@@ -124,9 +119,15 @@ template<class T>
 void Solver3D<T>::clear() noexcept
 {
     pImpl->mSolverSweep1.clear();
+/*
     pImpl->mSolverSweep2.clear();
     pImpl->mSolverSweep3.clear();
     pImpl->mSolverSweep4.clear();
+    pImpl->mSolverSweep5.clear();
+    pImpl->mSolverSweep6.clear();
+    pImpl->mSolverSweep7.clear();
+    pImpl->mSolverSweep8.clear();
+*/
     pImpl->mVelocityModel.clear();
     pImpl->mGeometry.clear();
     pImpl->mOptions.clear();
@@ -172,9 +173,15 @@ void Solver3D<T>::initialize(const SolverOptions &options,
     pImpl->mOptions = options;
     // Initialize each solver sweep
     pImpl->mSolverSweep1.initialize(options, geometry);
+/*
     pImpl->mSolverSweep2.initialize(options, geometry);
     pImpl->mSolverSweep3.initialize(options, geometry);
     pImpl->mSolverSweep4.initialize(options, geometry);
+    pImpl->mSolverSweep5.initialize(options, geometry);
+    pImpl->mSolverSweep6.initialize(options, geometry);
+    pImpl->mSolverSweep7.initialize(options, geometry);
+    pImpl->mSolverSweep8.initialize(options, geometry);
+*/
     // Set space for travel time field
     auto nGrid = pImpl->mGeometry.getNumberOfGridPoints();
     pImpl->mTravelTimeField.resize(nGrid, 0);
@@ -215,10 +222,10 @@ void Solver3D<T>::setVelocityModel(const Model3D<T> &velocityModel)
     pImpl->mVelocityModel = velocityModel;
     // Set the velocity models for each sweep
     pImpl->mSolverSweep1.setVelocityModel(velocityModel);
+/*
     pImpl->mSolverSweep2.setVelocityModel(velocityModel);
     pImpl->mSolverSweep3.setVelocityModel(velocityModel);
     pImpl->mSolverSweep4.setVelocityModel(velocityModel);
-/*
     pImpl->mSolverSweep5.setVelocityModel(velocityModel);
     pImpl->mSolverSweep6.setVelocityModel(velocityModel);
     pImpl->mSolverSweep7.setVelocityModel(velocityModel);
@@ -377,10 +384,75 @@ void Solver3D<T>::solve()
         std::cout << "Travel time field initialization time: "
                   << timer.getDuration() << " (s)" << std::endl;
     }
+    // Set source information on solver
+    int iSrcX = pImpl->mSource.getCellInX();
+    int iSrcY = pImpl->mSource.getCellInY();
+    int iSrcZ = pImpl->mSource.getCellInZ();
+    auto xSourceOffset = static_cast<T> (pImpl->mSource.getOffsetInX());
+    auto ySourceOffset = static_cast<T> (pImpl->mSource.getOffsetInY());
+    auto zSourceOffset = static_cast<T> (pImpl->mSource.getOffsetInZ());
+    auto slownessPtr = pImpl->mVelocityModel.getSlownessPointer();
+    T sourceSlowness = slownessPtr[pImpl->mSourceCell];
+    pImpl->mSolverSweep1.setSourceInformation(iSrcX, iSrcY, iSrcZ,
+        xSourceOffset, ySourceOffset, zSourceOffset, sourceSlowness);
+/*
+    pImpl->mSolverSweep2.setSourceInformation(iSrcX, iSrcY, iSrcZ,
+        xSourceOffset, ySourceOffset, zSourceOffset, sourceSlowness);
+    pImpl->mSolverSweep3.setSourceInformation(iSrcX, iSrcY, iSrcZ,
+        xSourceOffset, ySourceOffset, zSourceOffset, sourceSlowness);
+    pImpl->mSolverSweep4.setSourceInformation(iSrcX, iSrcY, iSrcZ,
+        xSourceOffset, ySourceOffset, zSourceOffset, sourceSlowness);
+    pImpl->mSolverSweep5.setSourceInformation(iSrcX, iSrcY, iSrcZ,
+        xSourceOffset, ySourceOffset, zSourceOffset, sourceSlowness);
+    pImpl->mSolverSweep6.setSourceInformation(iSrcX, iSrcY, iSrcZ,
+        xSourceOffset, ySourceOffset, zSourceOffset, sourceSlowness);
+    pImpl->mSolverSweep7.setSourceInformation(iSrcX, iSrcY, iSrcZ,
+        xSourceOffset, ySourceOffset, zSourceOffset, sourceSlowness);
+    pImpl->mSolverSweep8.setSourceInformation(iSrcX, iSrcY, iSrcZ,
+        xSourceOffset, ySourceOffset, zSourceOffset, sourceSlowness);
+*/
+    // Get number of iterations (refinements) 
+    auto nIterations = pImpl->mOptions.getNumberOfSweeps();
+    // Perform fast sweeping on CPU
+    auto algorithm = pImpl->mOptions.getAlgorithm();
+    constexpr bool initialize = true;
+    constexpr bool noInitialize = false;
+    if (algorithm == SolverAlgorithm::FAST_SWEEPING_METHOD)
+    {
+        if (verbosity == Verbosity::DEBUG)
+        {
+            std::cout << "Initializing fast sweeping method..." << std::endl;
+        }
+        // Initialization sweeps
+        timer.start();
+        auto tTimesPtr = pImpl->mTravelTimeField.data();
+        pImpl->mSolverSweep1.updateFSM(slownessPtr, tTimesPtr, initialize);
+
+return;
+        // Perform the refinements
+        for (int k = 0; k < nIterations; ++k)
+        {
+             pImpl->mSolverSweep1.updateFSM(slownessPtr, tTimesPtr,
+                                            noInitialize);
+        }
+    }
+    else // Perform level set method on device
+    {
+        if (verbosity == Verbosity::DEBUG)
+        {
+            std::cout << "Selecting queue..." << std::endl;
+        }
+        // Initialization sweeps
+        timer.start();
+
+        for (int k = 0; k < nIterations; ++k)
+        {
+        }
+    }
 }
 
 ///--------------------------------------------------------------------------///
 ///                           Template Class Instantiation                   ///
 ///--------------------------------------------------------------------------///
 template class EikonalXX::Solver3D<double>;
-template class EikonalXX::Solver3D<float>;
+//template class EikonalXX::Solver3D<float>;

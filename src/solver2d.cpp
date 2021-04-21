@@ -31,7 +31,6 @@ public:
             std::cout << "Initializing travel times near source" << std::endl;
         }
         int nGridX = mGeometry.getNumberOfGridPointsInX();
-        int nGridZ = mGeometry.getNumberOfGridPointsInZ();
         const auto sPtr = mVelocityModel.getSlownessPointer();
         auto sourceSlowness = static_cast<T> (sPtr[mSourceCell]);
         auto dx = static_cast<T> (mGeometry.getGridSpacingInX());
@@ -405,10 +404,10 @@ void Solver2D<T>::solve()
                   << timer.getDuration() << " (s)" << std::endl;
     }
     // Set source information on solver
-    int iSrcX = pImpl->mSource.getCellInX(); //pImpl->mSourceCellX;
-    int iSrcZ = pImpl->mSource.getCellInZ(); //pImpl->mSourceCellZ;
-    T xSourceOffset = static_cast<T> (pImpl->mSource.getOffsetInX()); //pImpl->mShiftedSource.first;
-    T zSourceOffset = static_cast<T> (pImpl->mSource.getOffsetInZ()); //pImpl->mShiftedSource.second;
+    int iSrcX = pImpl->mSource.getCellInX();
+    int iSrcZ = pImpl->mSource.getCellInZ();
+    T xSourceOffset = static_cast<T> (pImpl->mSource.getOffsetInX());
+    T zSourceOffset = static_cast<T> (pImpl->mSource.getOffsetInZ());
     auto slownessPtr = pImpl->mVelocityModel.getSlownessPointer();
     T sourceSlowness = slownessPtr[pImpl->mSourceCell];
     pImpl->mSolverSweep1.setSourceInformation(iSrcX, iSrcZ,
@@ -434,7 +433,7 @@ void Solver2D<T>::solve()
             std::cout << "Initializing fast sweeping method..." << std::endl;
         }
         // Initialization sweeps
-        timer.start(); 
+        timer.start();
         auto tTimesPtr = pImpl->mTravelTimeField.data();
         pImpl->mSolverSweep1.initializationFSM(slownessPtr, tTimesPtr);
 std::cout << "---------------------------------------------------------------" << std::endl;

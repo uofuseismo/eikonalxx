@@ -8,7 +8,7 @@
 namespace MFLib
 {
 /// @class Version version.hpp "eikonalxx/version.hpp"
-/// @brief Defines the MFLib version information.
+/// @brief Defines the library version information.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 class Version
 {

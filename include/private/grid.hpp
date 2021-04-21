@@ -23,7 +23,7 @@ int gridToIndex(const int nx, const int ix, const int iz)
 /// @param[in] iy   The iy'th grid point.
 /// @param[in] iz   The iz'th grid point
 #pragma omp declare(simd) uniform(nx, ny)
-[[nodiscard]]
+[[nodiscard]] [[maybe_unused]]
 int gridToIndex(const int nx, const int ny,
                 const int ix, const int iy, const int iz)
 {
@@ -39,6 +39,7 @@ int gridToIndex(const int nx, const int ny,
 /// @param[out] iy   The iy'th grid point.
 /// @param[out] iz   The iz'th grid point.
 #pragma omp declare(simd) uniform(nx, ny)
+[[maybe_unused]]
 void indexToGrid(const int igrd,
                  const int nx, const int ny,
                  int *ix, int *iy, int *iz)

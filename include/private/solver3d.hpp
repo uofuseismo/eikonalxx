@@ -1,5 +1,6 @@
 #ifndef EIKONALXX_PRIVATE_SOLVER3D_HPP
 #define EIKONALXX_PRIVATE_SOLVER3D_HPP
+#include <iomanip>
 #include <limits>
 #include "eikonalxx/geometry3d.hpp"
 #include "eikonalxx/graph3d.hpp"
@@ -22,6 +23,10 @@ public:
     void initialize(const EikonalXX::SolverOptions &options,
                     const EikonalXX::Geometry3D &geometry)
     {
+        // Solver options
+        mAlgorithm = options.getAlgorithm();
+        mSphericalSolverRadius = options.getSphericalSolverRadius(); 
+        mConvergenceTolerance = options.getConvergenceTolerance();
         // Uniform grid?
         auto dx = geometry.getGridSpacingInX();
         auto dy = geometry.getGridSpacingInY();
@@ -91,35 +96,84 @@ public:
         mDx = 0;
         mDy = 0;
         mDz = 0;
+        mSourceSlowness = 0;
+        mConvergenceTolerance = 0;
+        mSourceOffsetX = 0;
+        mSourceOffsetY = 0;
+        mSourceOffsetZ = 0;
         mGridX = 0;
         mGridY = 0;
         mGridZ = 0;
         mCellX = 0;
         mCellY = 0;
         mCellZ = 0;
+        mSourceIndexX = 0;
+        mSourceIndexY = 0;
+        mSourceIndexZ = 0;
+        mLevels = 0;
         mSphericalSolverRadius = 0;
         mAlgorithm = EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD;
         mUniformGrid = true;
     }
-    /// Performs the fast sweeping method on a grid
-    void updateFSM(const T *slowness, T *travelTimes)
+    /// Sets the source information
+    /// @param[in] iSrcX  The source cell in x.
+    /// @param[in] iSrcY  The source cell in y.
+    /// @param[in] iSrcZ  The source cell in z.
+    /// @param[in] xSourceOffset   The x source position in meters from the
+    ///                            x origin.
+    /// @param[in] ySourceOffset   The y source position in meters from the
+    ///                            y origin.
+    /// @param[in] zSourceOffset   The z source position in meters from the
+    ///                            z origin.
+    /// @param[in] sourceSlowness  The slowness in s/m in the source cell. 
+    void setSourceInformation(const int iSrcX, const int iSrcY, const int iSrcZ,
+                              const T xSourceOffset,
+                              const T ySourceOffset,
+                              const T zSourceOffset,
+                              const T sourceSlowness)
     {   
+        mSourceIndexX = iSrcX;
+        mSourceIndexY = iSrcY;
+        mSourceIndexZ = iSrcZ;
+        mSourceOffsetX = xSourceOffset;
+        mSourceOffsetY = ySourceOffset;
+        mSourceOffsetZ = zSourceOffset;
+        mSourceSlowness = sourceSlowness;
+    }
+    /// Performs the fast sweeping method update
+    void updateFSM(const T *__restrict__ slowness, T *__restrict__ travelTimes,
+                   const bool initialize)
+    {
+std::cout.precision(16);
+        // Get the loop limits
         int ix0, ix1, ixDir, iy0, iy1, iyDir, iz0, iz1, izDir;
-        getLoopLimits<E>(mGridX, mGridY, mGridZ,
-                         &ix0, &iy0, &iz0,
-                         &ix1, &iy1, &iz1, 
-                         &ixDir, &iyDir, &izDir);
-/*
-        int ixShift, izShift, signX, signZ;
-        getSweepFiniteDifferenceSigns(E,
-                                      &ixShift, &izShift,
-                                      &signX, &signZ);
-*/
+        if (initialize)
+        {
+            getLoopLimits<E>(mGridX, mGridY, mGridZ,
+                             mSourceIndexX, mSourceIndexY, mSourceIndexZ,
+                             &ix0, &iy0, &iz0,
+                             &ix1, &iy1, &iz1, 
+                             &ixDir, &iyDir, &izDir);
+        }
+        else
+        {
+            getLoopLimits<E>(mGridX, mGridY, mGridZ,
+                             &ix0, &iy0, &iz0,
+                             &ix1, &iy1, &iz1, 
+                             &ixDir, &iyDir, &izDir);
+        }
+        // Get finite difference sweep signs
+        int ixShift, iyShift, izShift, signX, signY, signZ;
+        getSweepFiniteDifferenceSigns<E>(&ixShift, &iyShift, &izShift,
+                                         &signX, &signY, &signZ);
+        // Some local variables
+        constexpr T huge = HUGE;
         T t1, t2, t3, t4, t5, t6, t7, tUpd;
         T s0, s1, s2, s3, s4, s5, s7; 
         int iCell0, iCell1, iCell2, iCell3, iCell4, iCell5, iCell7;
         int it0, it1, it2, it3, it4, it5, it6, it7;
-        if (mUniformGrid)
+        // Uniform finite difference stencil 
+        if (mUniformGrid && false)
         {
             auto h = mDx; // dx = dy = dz
             for (int iz = iz0; iz != iz1; iz = iz + izDir)
@@ -141,18 +195,58 @@ public:
                         s4 = slowness[iCell4];
                         s5 = slowness[iCell5];
                         s7 = slowness[iCell7];
+//std::cout << s0 << " " << s1 << " " << s2 << " " << s3 << " " << s4 << " " << s5 << " " << s7 << std::endl;
                         // Get surrounding travel times
                         gridToSurroundingTravelTimeIndices<E>(
                             ix, iy, iz,
                             mGridX, mGridY, mGridZ,
                             &it0, &it1, &it2, &it3,
                             &it4, &it5, &it6, &it7);
+                        t1 = travelTimes[it1];
+                        t2 = travelTimes[it2];
+                        t3 = travelTimes[it3];
+                        t4 = travelTimes[it4];
+                        t5 = travelTimes[it5];
+                        t6 = travelTimes[it6];
+                        t7 = travelTimes[it7];
+//std::cout << t1 << " " << t2 << " " << t3 << " " << t3 << " " << t4 << " " << t5 << " " << t6 << " " << t7 << std::endl;
+                        // Finite difference
+                        tUpd = finiteDifference(mSphericalSolverRadius,
+                                 huge,
+                                 h, 
+                                 mSourceSlowness,
+                                 ix, iy, iz,
+                                 signX, signY, signZ,
+                                 ixShift, iyShift, izShift,
+                                 mSourceIndexX, mSourceIndexY, mSourceIndexZ,
+                                 mSourceOffsetX, mSourceOffsetY, mSourceOffsetZ,
+                                 s0, s1, s2, s3,
+                                 s4, s5, s7,
+                                 t1, t2, t3,
+                                 t4, t5, t6, t7);
+                        // Update node if new travel time is smaller
+                        travelTimes[it0] = sycl::fmin(travelTimes[it0], tUpd); 
                     }
                 }
             }
         }
         else
         {
+            T dxInv = 1/mDx;
+            T dyInv = 1/mDy;
+            T dzInv = 1/mDz;
+            T dx2Inv = 1/(mDx*mDx);
+            T dy2Inv = 1/(mDy*mDy);
+            T dz2Inv = 1/(mDz*mDz);
+            T dx_dz = mDx/mDz;
+            T dz_dx = mDz/mDx;
+            T dy_dz = mDy/mDz;
+            T dz_dy = mDz/mDy;
+            T dx_dy = mDx/mDy;
+            T dy_dx = mDy/mDx;
+            T dx2_p_dz2_inv = 1/(mDx*mDx + mDz*mDz);
+            T dy2_p_dz2_inv = 1/(mDy*mDy + mDz*mDz);
+            T dx2_p_dy2_inv = 1/(mDx*mDx + mDy*mDy);
             for (int iz = iz0; iz != iz1; iz = iz + izDir)
             {
                 for (int iy = iy0; iy  != iy1; iy = iy + iyDir)
@@ -171,6 +265,42 @@ public:
                         s4 = slowness[iCell4];
                         s5 = slowness[iCell5];
                         s7 = slowness[iCell7];
+
+                        gridToSurroundingTravelTimeIndices<E>(
+                            ix, iy, iz,
+                            mGridX, mGridY, mGridZ,
+                            &it0, &it1, &it2, &it3,
+                            &it4, &it5, &it6, &it7);
+                        t1 = travelTimes[it1];
+                        t2 = travelTimes[it2];
+                        t3 = travelTimes[it3];
+                        t4 = travelTimes[it4];
+                        t5 = travelTimes[it5];
+                        t6 = travelTimes[it6];
+                        t7 = travelTimes[it7];
+
+                        tUpd = finiteDifference(
+                                 mSphericalSolverRadius,
+                                 huge,
+                                 mDx, mDy, mDz,
+                                 dxInv, dyInv, dzInv,
+                                 dx2Inv, dy2Inv, dz2Inv,
+                                 dx_dz, dz_dx,
+                                 dy_dz, dz_dy,
+                                 dy_dx, dx_dy,
+                                 dx2_p_dz2_inv, dy2_p_dz2_inv, dx2_p_dy2_inv,
+                                 mSourceSlowness,
+                                 ix, iy, iz,
+                                 signX, signY, signZ,
+                                 ixShift, iyShift, izShift, 
+                                 mSourceIndexX, mSourceIndexY, mSourceIndexZ,
+                                 mSourceOffsetX, mSourceOffsetY, mSourceOffsetZ,
+                                 s0, s1, s2, s3,
+                                 s4, s5, s7,
+                                 t1, t2, t3,
+                                 t4, t5, t6, t7);
+
+                        travelTimes[it0] = sycl::fmin(travelTimes[it0], tUpd);
                     }
                 }
             }
@@ -182,9 +312,17 @@ public:
     /// Defines the level set method elimination graph.
     Graph3D<E> mGraph;
     /// Grid spacing in x, y, and z.
-    float mDx = 0;
-    float mDy = 0;
-    float mDz = 0;
+    T mDx = 0;
+    T mDy = 0;
+    T mDz = 0;
+    /// The source offset in x, y, and z.
+    T mSourceOffsetX = 0;
+    T mSourceOffsetY = 0;
+    T mSourceOffsetZ = 0;
+    /// The slowness at the source in s/m.
+    T mSourceSlowness = 0;
+    /// The convergence tolerance in seconds.
+    T mConvergenceTolerance = 0;
     /// Number of grid points in x, y, and z.
     int mGridX = 0;
     int mGridY = 0;
@@ -193,6 +331,10 @@ public:
     int mCellX = 0;
     int mCellY = 0;
     int mCellZ = 0;
+    /// The source grid indices.
+    int mSourceIndexX = 0;
+    int mSourceIndexY = 0;
+    int mSourceIndexZ = 0;
     /// Number of levels.
     int mLevels = 0;
     /// Spherical to cartesian transition.

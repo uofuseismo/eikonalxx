@@ -2,6 +2,7 @@
 #define PYEIKONALXX_SOLVEROPTIONS_HPP
 #include <memory>
 #include <pybind11/pybind11.h>
+#include <eikonalxx/enums.hpp>
 namespace EikonalXX
 {
 class SolverOptions;

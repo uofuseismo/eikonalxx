@@ -323,7 +323,7 @@ constexpr bool doFteik = true;
             t2d3 = t2 + sycl::sqrt(detXY);
         }
         t2d = sycl::fmin(t2d, t2d3);
-//std::cout << "t2d 3point: " << t2d1 << " " << t2d2 <<  " " << t2d3 << std::endl;
+std::cout << "t2d 3point: " << t2d1 << " " << t2d2 <<  " " << t2d3 << std::endl;
 //std::cout << "compare: " << t1d << " " << t2d << " " << sycl::fmax(sycl::fmax(t1, t4), t3) << std::endl;
         // 8 point operator.  Quick test to see if this is even a candidate
         // by checking if the wavefront is propagating the right way.
@@ -558,7 +558,6 @@ std::cout << "cand tupd: (" << ix << "," << iy << "," << iz << ") " << tUpd << s
 
 
 /// @brief The finite difference for the non-uniform grid.
-/// @param[in] huge  
 template<typename T>
 [[nodiscard]]
 T finiteDifference(const int sphericalRadius,
@@ -572,7 +571,6 @@ T finiteDifference(const int sphericalRadius,
                    const T dx2_p_dz2_inv,
                    const T dy2_p_dz2_inv,
                    const T dx2_p_dy2_inv,
-                   const T cosTheta, const T sinTheta,
                    const T sourceSlowness,
                    const int ix, const int iy, const int iz,
                    const int signX, const int signY, const int signZ,
@@ -605,61 +603,60 @@ constexpr bool doFteik = true;
     {
         // 2D critically refracted operators in XZ, YZ, and XY planes 
         T dtCrossXZ = t1 - t4; // 1/2*(dTdxXZ - dTzXZ
-        auto detXZ = (dx*dx + dz*dz)*(minS0S3*minS0S3)
-                   - 4*(dtCrossXZ*dtCrossXZ);
+        T detXZ = (dx*dx + dz*dz)*(minS0S3*minS0S3) - dtCrossXZ*dtCrossXZ;
         T t2d1 = huge;
         if (detXZ > 0 && t1 < t4 + dz*minS0S3 && t4 < t1 + dx*minS0S3)
         {
             T TxXZ = t1 - t4 + t5;
             T TzXZ = t4 - t1 + t5;
             t2d1 = (TxXZ*dz_dx + TzXZ*dx_dz) + 2*sycl::sqrt(detXZ);
-            t2d1 = (dx*dz)*dx2_p_dz2_inv*t2d1;
+            t2d1 = ((dx*dz)*dx2_p_dz2_inv)*t2d1;
         }
         T t2d = t2d1; //sycl::fmin(t1d, t2d1);
 
         T dtCrossYZ = t3 - t4; // 1/2*(dTdyYZ - dTzYZ)
-        T detYZ = (dy*dy + dz*dz)*(minS0S1*minS0S1)
-                - 4*(dtCrossYZ*dtCrossYZ);
+        T detYZ = (dy*dy + dz*dz)*(minS0S1*minS0S1) - dtCrossYZ*dtCrossYZ;
         T t2d2 = huge;
         if (detYZ > 0 && t3 < t4 + dz*minS0S1 && t4 < t3 + dy*minS0S1)
         {
             T TyYZ = t3 - t4 + t7;
             T TzYZ = t4 - t3 + t7;
             t2d2 = (TyYZ*dz_dy + TzYZ*dy_dz) + 2*sycl::sqrt(detYZ);
-            t2d2 = (dy*dz)*dy2_p_dz2_inv*t2d2;
+            t2d2 = ((dy*dz)*dy2_p_dz2_inv)*t2d2;
         }
         t2d = sycl::fmin(t2d, t2d2);
 
         T dtCrossXY = t1 - t3; // 1/2*(dTdxXY - dTyXY)
-        T detXY = (dx*dx + dy*dy)*(minS0S4*minS0S4)
-                - 4*(dtCrossXY*dtCrossXY);
+        T detXY = (dx*dx + dy*dy)*(minS0S4*minS0S4) - dtCrossXY*dtCrossXY;
         T t2d3 = huge;
         if (detXY > 0 && t3 < t1 + dx*minS0S4 && t1 < t3 + dy*minS0S4)
         {
             T TxXY = t1 - t3 + t2;
             T TyXY = t3 - t1 + t2;
-            t2d3 = (TxXY*dy_dx + TyXY*dy_dx)  + 2*sycl::sqrt(detXY);
-            t2d3 = (dx*dy)*dx2_p_dy2_inv*t2d3;
+            t2d3 = (TxXY*dy_dx + TyXY*dx_dy) + 2*sycl::sqrt(detXY);
+            t2d3 = ((dx*dy)*dx2_p_dy2_inv)*t2d3;
         }
         t2d = sycl::fmin(t2d, t2d3);
+std::cout << t2d1 << " " << t2d2 << " " << t2d3 << std::endl;
         // 8 point operator
         T t3d = huge;
         if (sycl::fmin(t1d, t2d) > sycl::fmax(sycl::fmax(t1, t4), t3))
         {
+std::cout << "8 point" << std::endl;
             if (doFteik)
             {
                 constexpr T half = 0.5;
                 T Tx = t1 + half*(-t4 + t5 - t3 + t2) - t7 + t6;
                 T Ty = t3 + half*(-t4 + t7 - t1 + t2) - t5 + t6;
                 T Tz = t4 + half*(-t1 + t5 - t3 + t7) - t2 + t6;
-                T a = dx2Inv + dy2Inv + dz2Inv;
-                T b = -2*(Tx*dx2Inv + Ty*dy2Inv + Tz*dz2Inv);
-                T c = (Tx*Tx)*dx2Inv + (Ty*Ty)*dy2Inv + (Tz*Tz)*dz2Inv
-                    - 16*s0*s0;
-                T det = b*b - 4*a*c;
+                T det = 9*(s0*s0)*(dx2Inv + dy2Inv + dz2Inv)
+                      - ((Tx - Tz)*(Tx - Tz))*(dx2Inv*dz2Inv)
+                      - ((Ty - Tz)*(Ty - Tz))*(dy2Inv*dz2Inv)
+                      - ((Tx - Ty)*(Tx - Ty))*(dx2Inv*dy2Inv);
                 if (det >= 0)
                 {
-                    t3d = (-b + sycl::sqrt(det))/(2*a);
+                    t3d = (Tx*dx2Inv + Ty*dy2Inv + Tz*dz2Inv + sycl::sqrt(det))
+                         /(dx2Inv + dy2Inv + dz2Inv);
                 }
             }
             else

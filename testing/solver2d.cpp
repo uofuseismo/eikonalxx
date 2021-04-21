@@ -782,7 +782,6 @@ TEST(Solver2D, setVelocityModel)
         int iCell0Z, iCell1Z, iCell2Z, iCell3Z = 0;
         for (int level=0; level<nLevels; ++level)
         {
-            auto offset = levelOffset[level];
             getLevelStartStopIndices(nx, nz, level, &i0, &i1);
             for (int indx=i0; indx<i1; ++indx)
             {
@@ -863,7 +862,7 @@ TEST(Solver2D, setVelocityModel)
 
                 auto iCell0 = gridToIndex(ncx, iCell0X, iCell0Z);
                 auto iCell1 = gridToIndex(ncx, iCell1X, iCell1Z);
-                auto iCell2 = gridToIndex(ncx, iCell2X, iCell2Z);
+                //auto iCell2 = gridToIndex(ncx, iCell2X, iCell2Z);
                 auto iCell3 = gridToIndex(ncx, iCell3X, iCell3Z);
                 //std::cout << slow[iCell1] << " " << slow[iCell2] << " " << slow[iCell3] << " " << slow[iCell4] << std::endl; 
                 int iDst = indx  - i0; 
@@ -1018,7 +1017,6 @@ TEST(Solver2D, solveHomogeneous)
     double z0 = 0;
     double xSrc = x0 + dx*(nx/2) + dx/4;
     double zSrc = z0 + dz*(nz/2);
-    auto nCellZ = nz - 1;
     int nSweeps = 0;
     int nEps = 3;
     auto solverAlgorithm = EikonalXX::SolverAlgorithm::FAST_SWEEPING_METHOD;

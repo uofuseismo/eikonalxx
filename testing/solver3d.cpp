@@ -696,9 +696,10 @@ TEST(Solver3D, isSweepBoundaryNode)
 
 TEST(Solver3D, solve3d)
 {
+std::cout.precision(10);
     int nx = 9;
     int ny = 10;
-    int nz = 11; 
+    int nz = 11;
     double dx = 100;
     double dy = dx;
     double dz = dx;
@@ -710,7 +711,8 @@ TEST(Solver3D, solve3d)
     double zSrc = z0 + dz*(nz/4);
     double vConst = 3000;
     int nSweeps = 1;
-    int nEps = 0;
+    int nEps =-1;
+nEps = 500; //500;
     auto solverAlgorithm = EikonalXX::SolverAlgorithm::FAST_SWEEPING_METHOD;
 
     SolverOptions options;

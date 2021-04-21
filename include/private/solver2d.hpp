@@ -215,6 +215,7 @@ std::cout.precision(10);
         T t1, t2, t3, tUpd;
         T s0, s1, s3; 
         int iCell0, iCell1, iCell3, it0, it1, it2, it3;
+        T huge = HUGE;
         if (mUniformGrid)
         {
             auto h = mDx; // dx = dz
@@ -238,7 +239,7 @@ std::cout.precision(10);
                     t3 = travelTimes[it3];
                     // Finite difference
                     tUpd = finiteDifference(mSphericalSolverRadius,
-                                            mHuge,
+                                            huge,
                                             h, 
                                             mSourceSlowness,
                                             ix, iz,
@@ -278,7 +279,7 @@ std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travel
                     t3 = travelTimes[it3];
 
                     tUpd = finiteDifference(mSphericalSolverRadius,
-                                            mHuge,
+                                            huge,
                                             mDx, mDz,
                                             mDxDividedByDz, mDzDividedByDx,
                                             mCosTheta, mSinTheta,
@@ -317,6 +318,7 @@ std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " 
         T t1, t2, t3, tUpd;
         T s0, s1, s3;
         int iCell0, iCell1, iCell3, it0, it1, it2, it3;
+        T huge = HUGE;
         if (mUniformGrid)
         {
             auto h = mDx; // dx = dz
@@ -345,7 +347,7 @@ std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " 
                                                      t1, t2, t3);
 */
                     tUpd = finiteDifference(mSphericalSolverRadius,
-                                            mHuge,
+                                            huge,
                                             h,
                                             mSourceSlowness,
                                             ix, iz,
@@ -384,7 +386,7 @@ std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " 
                     t3 = travelTimes[it3];
 
 /*
-                    tUpd = cartesianFiniteDifference(mHuge,
+                    tUpd = cartesianFiniteDifference(huge,
                                                      mDx, mDz,
                                                      mDxDividedByDz,
                                                      mDzDividedByDx,
@@ -393,7 +395,7 @@ std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " 
                                                      t1, t2, t3);
 */
                     tUpd = finiteDifference(mSphericalSolverRadius,
-                                            mHuge,
+                                            huge,
                                             mDx, mDz,
                                             mDxDividedByDz, mDzDividedByDx,
                                             mCosTheta, mSinTheta,
@@ -438,8 +440,6 @@ std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " 
     T mSourceOffsetZ = 0;
     /// Source slowness (s/m)
     T mSourceSlowness = 1;
-    /// NaN values
-    const T mHuge = HUGE;
     /// Number of levels in level set method
     int mLevels = 0;
     /// Max number of nodes in a level
