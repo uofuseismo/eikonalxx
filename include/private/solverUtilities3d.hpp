@@ -208,12 +208,58 @@ void computeAnalyticalTravelTime(const int ix, const int iy, const int iz,
 ///--------------------------------------------------------------------------///
 ///                              Finite Differences                          ///
 ///--------------------------------------------------------------------------///
-
+/// @brief The finite difference update for the uniform grid.
+/// @param[in] sphericalRadius The number of grid points in x, y, and z
+///                            the update grid point must be from the source
+///                            grid point to switch from the factored eikonal
+///                            solver to the regular Cartesian solver.
+/// @param[in] huge            The default value for an update should causality
+///                            fail.
+/// @param[in] sourceSlowness  The slowness at the source node in s/m.
+/// @param[in] ix              The update grid point in x.
+/// @param[in] iy              The update grid point in y.
+/// @param[in] iz              The update grid point in z.
+/// @param[in] ixShift         The grid sweeping direction shift in x when
+///                            computing analytic travel times and derivatives.
+/// @param[in] iyShift         The grid sweeping direction shift in y when
+///                            computing analytic travel times and derivatives.
+/// @param[in] izShift         The grid sweeping direction shift in x when
+///                            computing analytic travel times and derivatives.
+/// @param[in] iSrcX           The source's grid node in x.
+/// @param[in] iSrcY           The source's grid node in y.
+/// @param[in] iSrcZ           The source's grid node in z.
+/// @param[in] xSourceOffset   The source's distance in x from the origin in m.
+/// @param[in] ySourceOffset   The source's distance in y from the origin in m.
+/// @param[in] zSourceOffset   The source's distance in z from the origin in m.
+/// @param[in] s0              The slowness (s/m) in the home cell.
+/// @param[in] s1              The slowness (s/m) in the cell to the left
+///                            or right of the home cell.
+/// @param[in] s2              The slowness (s/m) diagonal from and in the 
+///                            same plane as s0.
+/// @param[in] s4              The slowness (s/m) in the cell above or below
+///                            the home cell. 
+/// @param[in] s5              The slowness (s/m) in cell left or right of s4.
+/// @param[in] s7              The slowness (s/m) in the cell in front of or
+///                            in back of s4. 
+/// @param[in] t1              The travel time (s) to the left or right of the
+///                            update node.
+/// @param[in] t2              The travel time (s) in front of or in back of the
+///                            update node.
+/// @param[in] t3              The travel time (s) of the node diagonal from and
+///                            in the same plane as the update node.
+/// @param[in] t4              The travel time (s) to the left or right of t5.
+/// @param[in] t5              The travel time (s) above or below the update
+///                            node.
+/// @param[in] t6              The travel time (s) in front of or in back of t5.
+/// @param[in] t7              The travel time (s) of the node diagonal and in
+///                            the same plane as t5.
+/// @result The candidate travel time at node (ix,iy,iz) in seconds.
 template<typename T>
 [[nodiscard]]
 T finiteDifference(const int sphericalRadius,
                    const T huge,
                    const T h,
+                   const T sourceSlowness,
                    const int ix, const int iy, const int iz,
                    const int signX, const int signY, const int signZ,
                    const int ixShift, const int iyShift, const int izShift,
@@ -226,40 +272,41 @@ T finiteDifference(const int sphericalRadius,
                    const T t1, const T t2, const T t3,
                    const T t4, const T t5, const T t6, const T t7)
 {
+constexpr bool doFteik = true;
     // Default result
     T tUpd = huge;
+//std::cout << ix << " " << iy << " " << iz << std::endl;
+//std::cout << t1 << " " << t2 << " " << t3 << " " << t4 << " " << t5 << " " << t6 << " " << t7 <<std::endl;
     // Some mins I'll need for the refracted plane operators
-    auto minS0S3 = sycl::fmin(s0, s3); 
-    auto minS0S1 = sycl::fmin(s0, s1);
-    auto minS0S4 = sycl::fmin(s0, s4);
+    T minS0S3 = sycl::fmin(s0, s3); 
+    T minS0S1 = sycl::fmin(s0, s1);
+    T minS0S4 = sycl::fmin(s0, s4);
     // 1D operators critically refracted operators
-    auto t1d1 = t1 + h*sycl::fmin(minS0S3, sycl::fmin(s4, s7)); 
-    auto t1d2 = t3 + h*sycl::fmin(minS0S4, sycl::fmin(s1, s5));
-    auto t1d3 = t4 + h*sycl::fmin(minS0S1, sycl::fmin(s2, s3));
-    auto t1d = sycl::min(sycl::fmin(t1d1, t1d2), t1d3);
+    T t1d1 = t1 + h*sycl::fmin(minS0S3, sycl::fmin(s4, s7)); 
+    T t1d2 = t3 + h*sycl::fmin(minS0S4, sycl::fmin(s1, s5));
+    T t1d3 = t4 + h*sycl::fmin(minS0S1, sycl::fmin(s2, s3));
+    T t1d = sycl::fmin(sycl::fmin(t1d1, t1d2), t1d3);
+//std::cout << "t1d: " << t1d1 << " " << t1d2 << " " << t1d3 << std::endl;
+    // Some geometric terms
+    T hs03 = h*minS0S3;
+    T hs01 = h*minS0S1;
+    T hs04 = h*minS0S4; 
     // Cartesian
-    T t2d = 0;
-    if (sycl::abs(iSrcX - ix) > sphericalRadius ||
-        sycl::abs(iSrcY - iy) > sphericalRadius ||
-        sycl::abs(iSrcZ - iz) > sphericalRadius)
+    if (std::abs(iSrcX - ix) > sphericalRadius ||
+        std::abs(iSrcY - iy) > sphericalRadius ||
+        std::abs(iSrcZ - iz) > sphericalRadius)
     {
-        // 2D critically refracted operators
-        T dTxXZ =-t1 + t4 - t5;
-        T dTzXZ =-t4 + t1 - t5;
-        T dtCrossXZ = t1 - t4;
-        T hs03 = h*minS0S3;
+        // 2D critically refracted operators in XZ, YZ, and XY planes 
+        T dtCrossXZ = t1 - t4; // 1/2*(dTdxXZ - dTzXZ)
         T detXZ = 2*(hs03*hs03) - dtCrossXZ*dtCrossXZ;
         T t2d1 = huge;
         if (detXZ > 0 && t4 <= t1 + hs03 && t1 <= t4 + hs03)
         {
             t2d1 = t5 + sycl::sqrt(detXZ);
         }
-        t2d = sycl::fmin(t1d, t2d1);
+        T t2d = t2d1; //sycl::fmin(t1d, t2d1);
 
-        T dTyYZ =-t3 + t4 - t7;
-        T dTzYZ =-t4 + t3 - t7;
-        T dtCrossYZ = t3 - t4;
-        T hs01 = h*minS0S1;
+        T dtCrossYZ = t3 - t4; // 1/2*(dTdyYZ - dTzYZ)
         T detYZ = 2*(hs01*hs01) - dtCrossYZ*dtCrossYZ;
         T t2d2 = huge;
         if (detYZ > 0 && t3 <= t4 + hs01 && t4 <= t3 + hs01)
@@ -268,10 +315,7 @@ T finiteDifference(const int sphericalRadius,
         }
         t2d = sycl::fmin(t2d, t2d2);
 
-        T dTxXY =-t1 + t3 - t2;
-        T dTyXY =-t3 + t1 - t2;
-        T dtCrossXY = t1 - t3;
-        T hs04 = h*minS0S4;
+        T dtCrossXY = t1 - t3; // 1/2*(dTdxXY - dTyXY)
         T detXY = 2*(hs04*hs04) - dtCrossXY*dtCrossXY;
         T t2d3 = huge;
         if (detXY > 0 && t3 <= t1 + hs04 && t1 <= t3 + hs04)
@@ -279,19 +323,59 @@ T finiteDifference(const int sphericalRadius,
             t2d3 = t2 + sycl::sqrt(detXY);
         }
         t2d = sycl::fmin(t2d, t2d3);
-
-        // 3D operator
+//std::cout << "t2d 3point: " << t2d1 << " " << t2d2 <<  " " << t2d3 << std::endl;
+//std::cout << "compare: " << t1d << " " << t2d << " " << sycl::fmax(sycl::fmax(t1, t4), t3) << std::endl;
+        // 8 point operator.  Quick test to see if this is even a candidate
+        // by checking if the wavefront is propagating the right way.
         T t3d = huge;
-
+        if (sycl::fmin(t1d, t2d) > sycl::fmax(sycl::fmax(t1, t4), t3))
+        {
+            // This is simplified from Noble's fteik code.
+            constexpr T third = 0.33333333333333333333333;
+            if (doFteik)
+            {
+                constexpr T half = 0.5;
+                T Tx = t1 + half*(-t4 + t5 - t3 + t2) - t7 + t6;
+                T Ty = t3 + half*(-t4 + t7 - t1 + t2) - t5 + t6;
+                T Tz = t4 + half*(-t1 + t5 - t3 + t7) - t2 + t6;
+//std::cout << "ta,tb,tc: " << Tx << " " << Ty << " " << Tz << std::endl;
+                T det = 27*(h*s0)*(h*s0)
+                      - (Tx - Ty)*(Tx - Ty)
+                      - (Tx - Tz)*(Tx - Tz)
+                      - (Ty - Tz)*(Ty - Tz);
+                if (det >= 0)
+                {
+                    t3d = third*((Tx + Ty + Tz) + sycl::sqrt(det));
+                }
+            }
+            else
+            {
+                // This is the expression I could derive.  note, the
+                // 48 intead of the 27 in the determinant.
+                T Tx = t1 - t4 + t5 - t3 + t2 - t7 + t6;
+                T Ty = t3 - t4 + t7 - t1 + t2 - t5 + t6;
+                T Tz = t4 - t1 + t5 - t3 + t7 - t2 + t6;
+                T det = 48*(h*s0)*(h*s0)
+                      - (Tx - Ty)*(Tx - Ty)
+                      - (Tx - Tz)*(Tx - Tz)
+                      - (Ty - Tz)*(Ty - Tz); 
+                if (det >= 0)
+                {    
+                    t3d = third*((Tx + Ty + Tz) + sycl::sqrt(det));
+                }
+            }
+//std::cout << "t3d: " << t3d << std::endl;
+        } 
+        tUpd = sycl::fmin(t1d, sycl::fmin(t2d, t3d));
     }
-    else
+    else // Spherical
     {
-        T t0, dtdx, dtdy, dtdz;
+        T t0, dt0dx, dt0dy, dt0dz;
         computeAnalyticalTravelTime(ix, iy, iz,
                                     h, h, h,
                                     xSourceOffset, ySourceOffset, zSourceOffset,
                                     s0,
-                                    &t0, &dtdx, &dtdy, &dtdz);
+                                    &t0, &dt0dx, &dt0dy, &dt0dz);
         T tau1 = t1 - computeAnalyticalTravelTime(ix + ixShift,
                                                   iy,
                                                   iz, 
@@ -348,10 +432,398 @@ T finiteDifference(const int sphericalRadius,
                                                   ySourceOffset,
                                                   zSourceOffset,
                                                   s0);
+ //std::cout << "tana: " << tau1 << " " << tau2 << " " << tau3 << " " << tau4 << " " << tau5 << " " << tau6 << " " << tau7 << std::endl;
+        // Travel time derivative signs should be consistent with sweep
+        // direction since the sweep direction is presuming the direction
+        // that the wave is traveling.
+        dt0dx = signX*dt0dx;
+        dt0dy = signY*dt0dy; 
+        dt0dz = signZ*dt0dz;
+        // Analog of four point operators but for factored eikonal equation.
+        T dTauTxXZ = tau1 - tau4 + tau5;
+        T dTauTzXZ = tau4 - tau1 + tau5;
+        //constexpr T one = 1; 
+        //constexpr T two = 2; 
+        //constexpr T four = 4;
+        constexpr T half = 0.5;
+        T hi = 1/h;
+        T h2inv = 1/(h*h);
+        T a = h2inv;
+        T b = (2*hi)*(dt0dx + dt0dz)
+            - (2*h2inv)*tau5;
+        T c = (half*h2inv)*(dTauTxXZ*dTauTxXZ + dTauTzXZ*dTauTzXZ)
+            - (2*hi)*(dt0dx*dTauTxXZ + dt0dz*dTauTzXZ)
+            + 2*(sourceSlowness*sourceSlowness - s0*s0 + dt0dy*dt0dy);
+        T detXZ = b*b - 4*a*c;
+        // Critically refracted waves in XZ plane, YZ, and XY planes.
+        T tau = 0;
+        T t2d1 = huge;
+        if (detXZ > 0 && t4 <= t1 + hs03 && t1 <= t4 + hs03)
+        {
+            tau = (-b + sycl::sqrt(detXZ))/(2*a);
+            t2d1 = t0 + tau;
+//std::cout << "potential t1: " << t2d1 << std::endl;
+            // Ensure travel time is increasing 
+            if (t2d1 < t1 || t2d1 < t4){t2d1 = huge;} 
+        }
+        T t2d = t2d1; //sycl::fmin(t1d, t2d1);
+
+        T dTauTyYZ = tau3 - tau4 + tau7;
+        T dTauTzYZ = tau4 - tau3 + tau7;
+        b = (2*hi)*(dt0dy + dt0dz)
+          - (2*h2inv)*tau7;
+        c = (half*h2inv)*(dTauTyYZ*dTauTyYZ + dTauTzYZ*dTauTzYZ)
+          - (2*hi)*(dt0dy*dTauTyYZ + dt0dz*dTauTzYZ)
+          + 2*(sourceSlowness*sourceSlowness - s0*s0 + dt0dx*dt0dx);
+        T detYZ = b*b - 4*a*c;
+        T t2d2 = huge;
+        if (detYZ >= 0 && t3 <= t4 + hs01 && t4 <= t3 + hs01)
+        {
+            tau = (-b + sycl::sqrt(detYZ))/(2*a);
+            t2d2 = t0 + tau;
+//std::cout << "potential t2: " << t2d2 << std::endl;
+            if (t2d2 < t3 || t2d2 < t4){t2d2 = huge;}
+        }
+        t2d = sycl::fmin(t2d, t2d2);
+
+        T dTauTxXY = tau1 - tau3 + tau2;
+        T dTauTyXY = tau3 - tau1 + tau2;
+        b = (2*hi)*(dt0dx + dt0dy)
+          - (2*h2inv)*tau2;
+        c = (half*h2inv)*(dTauTxXY*dTauTxXY + dTauTyXY*dTauTyXY)
+          - (2*hi)*(dt0dx*dTauTxXY + dt0dy*dTauTyXY)
+          + 2*(sourceSlowness*sourceSlowness - s0*s0 + dt0dz*dt0dz);
+        T detXY = b*b - 4*a*c;
+        T t2d3 = huge;
+        if (detXY >= 0 && t3 <= t1 + hs04 && t1 <= t3 + hs04)
+        {
+            tau = (-b + sycl::sqrt(detXY))/(2*a);
+            t2d3 = t0 + tau;
+//std::cout << "potential t3: " << t2d3 << std::endl;
+            if (t2d3 < t1 || t2d3 < t3){t2d3 = huge;}
+        }
+        t2d = sycl::fmin(t2d, t2d3);
+//std::cout << "sph 3 point: " << t2d1 << " " << t2d2 <<  " " << t2d3 << std::endl;
+
+        // 8 point operator
+        T t3d = huge;
+        if (sycl::fmin(t1d, t2d) > sycl::fmax(sycl::fmax(t1, t4), t3)) 
+        {
+            // This is simplified from Noble's fteik code.
+            if (doFteik)
+            {
+                T taux = tau1 + half*(-tau4 + tau5 - tau3 + tau2) - tau7 + tau6;
+                T tauy = tau3 + half*(-tau4 + tau7 - tau1 + tau2) - tau5 + tau6;
+                T tauz = tau4 + half*(-tau1 + tau5 - tau3 + tau7) - tau2 + tau6;
+                a = 3*h2inv;
+                b =-2*h2inv*(taux + tauy + tauz)
+                  + (6*hi)*(dt0dx + dt0dy + dt0dz);
+                c = h2inv*(taux*taux + tauy*tauy + tauz*tauz)
+                  - (6*hi)*(dt0dx*taux + dt0dy*tauy + dt0dz*tauz)
+                  + 9*(sourceSlowness*sourceSlowness - s0*s0);
+                T det = b*b - 4*a*c;
+                if (det >= 0)
+                {
+                    t3d = t0 + (-b + sycl::sqrt(det))/(2*a);
+                }
+            }
+            else
+            {
+                // This is the expression I derived.  Some of the coefficients
+                // are slightly different.
+                T taux = tau1 - tau4 + tau5 - tau3 + tau2 - tau7 + tau6;
+                T tauy = tau3 - tau4 + tau7 - tau1 + tau2 - tau5 + tau6;
+                T tauz = tau4 - tau1 + tau5 - tau3 + tau7 - tau2 + tau6;
+                a = 3*h2inv;
+                b =-2*h2inv*(taux + tauy + tauz)
+                  + (8*hi)*(dt0dx + dt0dy + dt0dz);
+                c = h2inv*(taux*taux + tauy*tauy + tauz*tauz)
+                  - (8*hi)*(dt0dx*taux + dt0dy*tauy + dt0dz*tauz)
+                  + 16*(sourceSlowness*sourceSlowness - s0*s0);
+                T det = b*b - 4*a*c;
+                if (det >= 0)
+                {
+                    t3d = t0 + (-b + sycl::sqrt(det))/(2*a);
+                }
+            }
+            if (t3d < t1 || t3d < t3 || t3d < t4){t3d = huge;}
+        }
+        tUpd = sycl::fmin(t1d, sycl::fmin(t2d, t3d));
     }
+std::cout << "cand tupd: (" << ix << "," << iy << "," << iz << ") " << tUpd << std::endl;
+//getchar();
+//if (ix == 5 && iy == 5 && iz == 3){getchar();}
     return tUpd;
 }
 
+
+/// @brief The finite difference for the non-uniform grid.
+/// @param[in] huge  
+template<typename T>
+[[nodiscard]]
+T finiteDifference(const int sphericalRadius,
+                   const T huge,
+                   const T dx, const T dy, const T dz,
+                   const T dxInv, const T dyInv, const T dzInv,
+                   const T dx2Inv, const T dy2Inv, const T dz2Inv,
+                   const T dx_dz, const T dz_dx,
+                   const T dy_dz, const T dz_dy,
+                   const T dy_dx, const T dx_dy,
+                   const T dx2_p_dz2_inv,
+                   const T dy2_p_dz2_inv,
+                   const T dx2_p_dy2_inv,
+                   const T cosTheta, const T sinTheta,
+                   const T sourceSlowness,
+                   const int ix, const int iy, const int iz,
+                   const int signX, const int signY, const int signZ,
+                   const int ixShift, const int iyShift, const int izShift, 
+                   const int iSrcX, const int iSrcY, const int iSrcZ,
+                   const T xSourceOffset,
+                   const T ySourceOffset,
+                   const T zSourceOffset,
+                   const T s0, const T s1, const T s2, const T s3,
+                   const T s4, const T s5, const T s7,
+                   const T t1, const T t2, const T t3,
+                   const T t4, const T t5, const T t6, const T t7)
+{
+constexpr bool doFteik = true;
+    // Default result
+    T tUpd = huge;
+    // Some mins I'll need for the refracted plane operators
+    T minS0S3 = sycl::fmin(s0, s3);
+    T minS0S1 = sycl::fmin(s0, s1);
+    T minS0S4 = sycl::fmin(s0, s4);
+    // 1D operators critically refracted operators
+    T t1d1 = t1 + dx*sycl::fmin(minS0S3, sycl::fmin(s4, s7));
+    T t1d2 = t3 + dy*sycl::fmin(minS0S4, sycl::fmin(s1, s5));
+    T t1d3 = t4 + dz*sycl::fmin(minS0S1, sycl::fmin(s2, s3));
+    T t1d = sycl::fmin(sycl::fmin(t1d1, t1d2), t1d3);
+    // Cartesian
+    if (std::abs(iSrcX - ix) > sphericalRadius ||
+        std::abs(iSrcY - iy) > sphericalRadius ||
+        std::abs(iSrcZ - iz) > sphericalRadius)
+    {
+        // 2D critically refracted operators in XZ, YZ, and XY planes 
+        T dtCrossXZ = t1 - t4; // 1/2*(dTdxXZ - dTzXZ
+        auto detXZ = (dx*dx + dz*dz)*(minS0S3*minS0S3)
+                   - 4*(dtCrossXZ*dtCrossXZ);
+        T t2d1 = huge;
+        if (detXZ > 0 && t1 < t4 + dz*minS0S3 && t4 < t1 + dx*minS0S3)
+        {
+            T TxXZ = t1 - t4 + t5;
+            T TzXZ = t4 - t1 + t5;
+            t2d1 = (TxXZ*dz_dx + TzXZ*dx_dz) + 2*sycl::sqrt(detXZ);
+            t2d1 = (dx*dz)*dx2_p_dz2_inv*t2d1;
+        }
+        T t2d = t2d1; //sycl::fmin(t1d, t2d1);
+
+        T dtCrossYZ = t3 - t4; // 1/2*(dTdyYZ - dTzYZ)
+        T detYZ = (dy*dy + dz*dz)*(minS0S1*minS0S1)
+                - 4*(dtCrossYZ*dtCrossYZ);
+        T t2d2 = huge;
+        if (detYZ > 0 && t3 < t4 + dz*minS0S1 && t4 < t3 + dy*minS0S1)
+        {
+            T TyYZ = t3 - t4 + t7;
+            T TzYZ = t4 - t3 + t7;
+            t2d2 = (TyYZ*dz_dy + TzYZ*dy_dz) + 2*sycl::sqrt(detYZ);
+            t2d2 = (dy*dz)*dy2_p_dz2_inv*t2d2;
+        }
+        t2d = sycl::fmin(t2d, t2d2);
+
+        T dtCrossXY = t1 - t3; // 1/2*(dTdxXY - dTyXY)
+        T detXY = (dx*dx + dy*dy)*(minS0S4*minS0S4)
+                - 4*(dtCrossXY*dtCrossXY);
+        T t2d3 = huge;
+        if (detXY > 0 && t3 < t1 + dx*minS0S4 && t1 < t3 + dy*minS0S4)
+        {
+            T TxXY = t1 - t3 + t2;
+            T TyXY = t3 - t1 + t2;
+            t2d3 = (TxXY*dy_dx + TyXY*dy_dx)  + 2*sycl::sqrt(detXY);
+            t2d3 = (dx*dy)*dx2_p_dy2_inv*t2d3;
+        }
+        t2d = sycl::fmin(t2d, t2d3);
+        // 8 point operator
+        T t3d = huge;
+        if (sycl::fmin(t1d, t2d) > sycl::fmax(sycl::fmax(t1, t4), t3))
+        {
+            if (doFteik)
+            {
+                constexpr T half = 0.5;
+                T Tx = t1 + half*(-t4 + t5 - t3 + t2) - t7 + t6;
+                T Ty = t3 + half*(-t4 + t7 - t1 + t2) - t5 + t6;
+                T Tz = t4 + half*(-t1 + t5 - t3 + t7) - t2 + t6;
+                T a = dx2Inv + dy2Inv + dz2Inv;
+                T b = -2*(Tx*dx2Inv + Ty*dy2Inv + Tz*dz2Inv);
+                T c = (Tx*Tx)*dx2Inv + (Ty*Ty)*dy2Inv + (Tz*Tz)*dz2Inv
+                    - 16*s0*s0;
+                T det = b*b - 4*a*c;
+                if (det >= 0)
+                {
+                    t3d = (-b + sycl::sqrt(det))/(2*a);
+                }
+            }
+            else
+            {
+                T Tx = t1 - t4 + t5 - t3 + t2 - t7 + t6;
+                T Ty = t3 - t4 + t7 - t1 + t2 - t5 + t6;
+                T Tz = t4 - t1 + t5 - t3 + t7 - t2 + t6;
+                T a = dx2Inv + dy2Inv + dz2Inv;
+                T b = -2*(Tx*dx2Inv + Ty*dy2Inv + Tz*dz2Inv);
+                T c = (Tx*Tx)*dx2Inv + (Ty*Ty)*dy2Inv + (Tz*Tz)*dz2Inv
+                    - 16*s0*s0;
+                T det = b*b - 4*a*c;
+                if (det >= 0)
+                {
+                    t3d = (-b + sycl::sqrt(det))/(2*a);
+                }
+            }
+        }
+        tUpd = sycl::fmin(t1d, sycl::fmin(t2d, t3d));
+    }
+    else // Spherical
+    {
+        T t0, dt0dx, dt0dy, dt0dz;
+        computeAnalyticalTravelTime(ix, iy, iz,
+                                    dx, dy, dz,
+                                    xSourceOffset, ySourceOffset, zSourceOffset,
+                                    s0,
+                                    &t0, &dt0dx, &dt0dy, &dt0dz);
+        T tau1 = t1 - computeAnalyticalTravelTime(
+                          ix + ixShift, iy, iz,
+                          dx, dy, dz,
+                          xSourceOffset, ySourceOffset, zSourceOffset,
+                          s0);
+        T tau2 = t2 - computeAnalyticalTravelTime(
+                          ix + ixShift, iy + iyShift, iz,
+                          dx, dy, dz,
+                          xSourceOffset, ySourceOffset, zSourceOffset,
+                          s0);
+        T tau3 = t3 - computeAnalyticalTravelTime(
+                          ix, iy + iyShift, iz,
+                          dx, dy, dz,
+                          xSourceOffset, ySourceOffset, zSourceOffset,
+                          s0);
+        T tau4 = t4 - computeAnalyticalTravelTime(
+                          ix, iy, iz + izShift,
+                          dx, dy, dz,
+                          xSourceOffset, ySourceOffset, zSourceOffset,
+                          s0);
+        T tau5 = t5 - computeAnalyticalTravelTime(
+                          ix + ixShift, iy, iz + izShift,
+                          dx, dy, dz,
+                          xSourceOffset, ySourceOffset, zSourceOffset,
+                          s0);
+        T tau6 = t6 - computeAnalyticalTravelTime(
+                          ix + ixShift, iy + iyShift, iz + izShift,
+                          dx, dy, dz,
+                          xSourceOffset, ySourceOffset, zSourceOffset,
+                          s0);
+        T tau7 = t7 - computeAnalyticalTravelTime(
+                          ix, iy + iyShift, iz + izShift,
+                          dx, dy, dz,
+                          xSourceOffset, ySourceOffset, zSourceOffset,
+                          s0);
+        dt0dx = signX*dt0dx;
+        dt0dy = signY*dt0dy;
+        dt0dz = signZ*dt0dz;
+
+        // 4 Point Operator -> XZ
+        T dTauTxXZ = tau1 - tau4 + tau5;
+        T dTauTzXZ = tau4 - tau1 + tau5;
+        T a = dx2Inv + dz2Inv;
+        T b = 4*(dxInv*dt0dx + dzInv*dt0dz)
+            - 2*(dTauTxXZ*dx2Inv + dTauTzXZ*dz2Inv);
+        T c = (dTauTxXZ*dTauTxXZ)*dx2Inv + (dTauTzXZ*dTauTzXZ)*dz2Inv
+            - 4*((dt0dx*dTauTxXZ)*dxInv + (dt0dz*dTauTzXZ)*dzInv)
+            + 4*(sourceSlowness*sourceSlowness - s0*s0 + dt0dy*dt0dy); 
+        T detXZ = b*b - 4*a*c;
+        T t2d1 = huge;
+        if (detXZ > 0 && t1 < t4 + dz*minS0S3 && t4 < t1 + dx*minS0S3)
+        {
+            t2d1 = t0 + (-b + sycl::sqrt(detXZ))/(2*a);
+            if (t2d1 < t1 || t2d1 < t4){t2d1 = huge;}
+        }
+        T t2d = t2d1;
+        // YZ
+        T dTauTyYZ = tau3 - tau4 + tau7;
+        T dTauTzYZ = tau4 - tau3 + tau7;
+        a = dy2Inv + dz2Inv;
+        b = 4*(dyInv*dt0dy + dzInv*dt0dz)
+          - 2*(dTauTyYZ*dy2Inv + dTauTzYZ*dz2Inv);
+        c = (dTauTyYZ*dTauTyYZ)*dy2Inv + (dTauTzYZ*dTauTzYZ)*dz2Inv
+          - 4*((dt0dy*dTauTyYZ)*dyInv + (dt0dz*dTauTzYZ)*dzInv)
+          + 4*(sourceSlowness*sourceSlowness - s0*s0 + dt0dx*dt0dx);
+        T detYZ = b*b - 4*a*c;
+        T t2d2 = huge;
+        if (detYZ > 0 && t3 < t4 + dz*minS0S1 && t4 < t3 + dy*minS0S1)
+        {
+            t2d2 = t0 + (-b + sycl::sqrt(detYZ))/(2*a);
+            if (t2d2 < t3 || t2d2 < t4){t2d2 = huge;}
+        }
+        t2d = sycl::fmin(t2d, t2d2);
+        // XY
+        T dTauTxXY = tau1 - tau3 + tau2;
+        T dTauTyXY = tau3 - tau1 + tau2;
+        a = dx2Inv + dy2Inv;
+        b = 4*(dxInv*dt0dx + dyInv*dt0dy)
+          - 2*(dTauTxXY*dx2Inv + dTauTyXY*dy2Inv);
+        c = (dTauTxXY*dTauTxXY)*dx2Inv + (dTauTyXY*dTauTyXY)*dy2Inv
+          - 4*((dt0dx*dTauTxXY)*dxInv + (dt0dy*dTauTyXY)*dyInv)
+          + 4*(sourceSlowness*sourceSlowness - s0*s0 + dt0dz*dt0dz); 
+        T detXY = b*b - 4*a*c;
+        T t2d3 = huge;
+        if (detXY > 0 && t3 < t1 + dx*minS0S4 && t1 < t3 + dy*minS0S4)
+        {
+            t2d3 = t0 + (-b + sycl::sqrt(detXY))/(2*a);
+            if (t2d3 < t1 || t2d3 < t3){t2d3 = huge;}
+        }
+        t2d = sycl::fmin(t2d, t2d3);
+        // 8 point operator
+        T t3d = huge;
+        if (sycl::fmin(t1d, t2d) > sycl::fmax(sycl::fmax(t1, t4), t3))
+        {
+            if (doFteik)
+            {
+                constexpr T half = 0.5;
+                T taux = tau1 + half*(-tau4 + tau5 - tau3 + tau2) - tau7 + tau6;
+                T tauy = tau3 + half*(-tau4 + tau7 - tau1 + tau2) - tau5 + tau6;
+                T tauz = tau4 + half*(-tau1 + tau5 - tau3 + tau7) - tau2 + tau6;
+                a = dx2Inv + dy2Inv + dz2Inv;
+                b =-2*(taux*dx2Inv + tauy*dy2Inv + tauz*dz2Inv)
+                  + 6*(dxInv*dt0dx + dyInv*dt0dy + dzInv*dt0dz);
+                c = (taux*taux)*dx2Inv + (tauy*tauy)*dy2Inv + (tauz*tauz)*dz2Inv
+                  - 6*(dt0dx*taux*dxInv + dt0dy*tauy*dyInv + dt0dz*tauz*dzInv)
+                  + 9*(sourceSlowness*sourceSlowness - s0*s0);
+                T det = b*b - 4*a*c;
+                if (det >= 0)
+                {
+                    t3d = t0 + (-b + sycl::sqrt(det))/(2*a);
+                }
+            }
+            else
+            {
+                T taux = tau1 - tau4 + tau5 - tau3 + tau2 - tau7 + tau6;
+                T tauy = tau3 - tau4 + tau7 - tau1 + tau2 - tau5 + tau6;
+                T tauz = tau4 - tau1 + tau5 - tau3 + tau7 - tau2 + tau6;
+                a = dx2Inv + dy2Inv + dz2Inv;
+                b =-2*(taux*dx2Inv + tauy*dy2Inv + tauz*dz2Inv)
+                  + 8*(dxInv*dt0dx + dyInv*dt0dy + dzInv*dt0dz);
+                c = (taux*taux)*dx2Inv + (tauy*tauy)*dy2Inv + (tauz*tauz)*dz2Inv
+                  - 8*(dt0dx*taux*dxInv + dt0dy*tauy*dyInv + dt0dz*tauz*dzInv)
+                  + 16*(sourceSlowness*sourceSlowness - s0*s0);
+                T det = b*b - 4*a*c;
+                if (det >= 0)
+                {
+                    t3d = t0 + (-b + sycl::sqrt(det))/(2*a);
+                }
+            }
+            if (t3d < t1 || t3d < t3 || t3d < t4){t3d = huge;}
+        }
+        tUpd = sycl::fmin(t1d, sycl::fmin(t2d, t3d));
+    }
+std::cout << "anisotropic cand tupd: (" << ix << "," << iy << "," << iz << ") " << tUpd << std::endl;
+    return tUpd;
+}
 
 ///--------------------------------------------------------------------------///
 ///                              Grid Calculations                           ///
@@ -568,6 +1040,138 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iy0 = nGridY - 2;
         *iy1 =-1;
         *iz0 = nGridZ - 2;
+        *iz1 =-1;
+        *ixDir =-1;
+        *iyDir =-1;
+        *izDir =-1;
+    }
+#ifndef NDEBUG
+    else
+    {
+        assert(false);
+    }
+#endif
+}
+
+/// @brief Gets the loop limits for the initialization sweep of the
+///        fast sweeping method i.e.,:
+///        for (int iz = iz0; iz != iz1; iz = iz + izDir)
+///            for (int iy = iy0; iy != iy1; iy = iy + iyDir)
+///                for (int ix = ix0; ix != ix1; ix = ix + ixDir)
+/// @param[in] sweep   The sweep number.
+/// @param[in] nGridX  The number of grid points in x.
+/// @param[in] nGridY  The number of grid points in y.
+/// @param[in] nGridZ  The number of grid points in z.
+/// @param[in] iSrcX   The source grid point in x.
+/// @param[in] iSrcY   The source grid point in y.
+/// @param[in] iSrcZ   The source grid point in z.
+/// @param[out] ix0    The first x grid index in the loop.
+/// @param[out] ix1    The stopping x grid index (exclusive).
+/// @param[out] iy0    The first y grid index in the loop.
+/// @param[out] iy1    The stopping y grid index (exclusive).
+/// @param[out] iz0    The first z grid index in the loop.
+/// @param[out] iz1    The stopping z grid index (exclusive).
+/// @param[out] ixDir  The x loop variable update increment (+1 or -1).
+/// @param[out] iyDir  The y loop variable update increment (+1 or -1).
+/// @param[out] izDir  The z loop variable update increment (+1 or -1).
+template<EikonalXX::SweepNumber3D E>
+void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
+                   const int iSrcX, const int iSrcY, const int iSrcZ, 
+                   int *ix0, int *iy0, int *iz0,
+                   int *ix1, int *iy1, int *iz1,
+                   int *ixDir, int *iyDir, int *izDir)
+{
+    if constexpr (E == SweepNumber3D::SWEEP1)
+    {
+        *ix0 = std::max(1, iSrcX);
+        *ix1 = nGridX;
+        *iy0 = std::max(1, iSrcY);
+        *iy1 = nGridY;
+        *iz0 = std::max(1, iSrcZ);
+        *iz1 = nGridZ;
+        *ixDir = 1;
+        *iyDir = 1;
+        *izDir = 1;
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP2)
+    {
+        *ix0 = std::min(iSrcX + 1, nGridX - 2);
+        *ix1 =-1;
+        *iy0 = std::max(1, iSrcY);
+        *iy1 = nGridY;
+        *iz0 = std::max(1, iSrcZ);
+        *iz1 = nGridZ;
+        *ixDir =-1;
+        *iyDir = 1;
+        *izDir = 1;
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP3)
+    {
+        *ix0 = std::max(1, iSrcX);
+        *ix1 = nGridX;
+        *iy0 = std::min(iSrcY + 1, nGridY - 2);
+        *iy1 =-1;
+        *iz0 = std::max(1, iSrcZ);
+        *iz1 = nGridZ;
+        *ixDir = 1;
+        *iyDir =-1;
+        *izDir = 1;
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP4)
+    {
+        *ix0 = std::min(iSrcX + 1, nGridX - 2);
+        *ix1 =-1;
+        *iy0 = std::min(iSrcY + 1, nGridY - 2);
+        *iy1 =-1;
+        *iz0 = std::max(1, iSrcZ);
+        *iz1 = nGridZ;
+        *ixDir =-1;
+        *iyDir =-1;
+        *izDir = 1;
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP5)
+    {
+        *ix0 = std::max(1, iSrcX);
+        *ix1 = nGridX;
+        *iy0 = std::max(1, iSrcY);
+        *iy1 = nGridY;
+        *iz0 = std::min(iSrcZ + 1, nGridZ - 2);
+        *iz1 =-1;
+        *ixDir = 1;
+        *iyDir = 1;
+        *izDir =-1;
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP6)
+    {
+        *ix0 = std::min(iSrcX + 1, nGridX - 2);
+        *ix1 =-1;
+        *iy0 = std::max(1, iSrcY);
+        *iy1 = nGridY;
+        *iz0 = std::min(iSrcZ + 1, nGridZ - 2);
+        *iz1 =-1;
+        *ixDir =-1;
+        *iyDir = 1;
+        *izDir =-1;
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP7)
+    {
+        *ix0 = std::max(1, iSrcX);
+        *ix1 = nGridX;
+        *iy0 = std::min(iSrcY + 1, nGridY - 2);
+        *iy1 =-1;
+        *iz0 = std::min(iSrcZ + 1, nGridZ - 2);
+        *iz1 =-1;
+        *ixDir = 1;
+        *iyDir =-1;
+        *izDir =-1;
+    }
+    else if constexpr (E == SweepNumber3D::SWEEP8)
+    {
+        *ix0 = std::min(iSrcX + 1, nGridX - 2);
+        *ix1 =-1;
+        *iy0 = std::min(iSrcY + 1, nGridY - 2);
+        *iy1 =-1;
+        *iz0 = std::min(iSrcZ + 1, nGridZ - 2);
         *iz1 =-1;
         *ixDir =-1;
         *iyDir =-1;
@@ -993,7 +1597,7 @@ void gridToSurroundingTravelTimeIndices(
 /// @param[in] nGridZ  The number of grid points in z.
 /// @result True indicates that the (ix,iy,iz) grid points is on the
 ///         sweep's boundary.
-#pragma declare simd uniform(nGridX, nGridY, nGridZ)
+#pragma omp declare simd uniform(nGridX, nGridY, nGridZ)
 template<EikonalXX::SweepNumber3D E>
 bool isSweepBoundaryNode(const int ix, const int iy, const int iz,
                          const int nGridX, const int nGridY, const int nGridZ)
@@ -1068,8 +1672,8 @@ void slownessToSweepSlowness(const int nCellX,
         int iCell0, iCell1, iCell2, iCell3, iCell4, iCell5, iCell7 = 0;
         for (int level=localLevel.begin(); level != localLevel.end(); ++level)
         {
-            auto i0 = levelStartPtr[level];
-            auto i1 = levelStartPtr[level + 1];
+            i0 = levelStartPtr[level];
+            i1 = levelStartPtr[level + 1];
             if (sweepSlowness[level].s0.size() < static_cast<size_t> (i1 - i0))
             {
                 sweepSlowness[level].allocate(i1 - i0);
