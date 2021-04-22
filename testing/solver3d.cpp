@@ -712,13 +712,13 @@ std::cout.precision(10);
     double vConst = 3000;
     int nSweeps = 1;
     int nEps =-1;
-nEps = 500; //500;
+nEps = 2;//500; //500;
     auto solverAlgorithm = EikonalXX::SolverAlgorithm::FAST_SWEEPING_METHOD;
 
     SolverOptions options;
     options.setVerbosity(Verbosity::DEBUG);
     options.setNumberOfSweeps(nSweeps);
-    options.setSphericalSolverRadius(nEps);
+    options.setFactoredEikonalEquationSolverRadius(nEps);
     options.setAlgorithm(solverAlgorithm);
 
     // Set the geometry

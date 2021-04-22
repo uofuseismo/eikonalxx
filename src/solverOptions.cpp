@@ -3,7 +3,7 @@
 using namespace EikonalXX;
 
 #define DEFFAULT_CONVERGENCE_TOLERANCE 1.e-5
-#define DEFAULT_SPHERICAL_RADIUS 3
+#define DEFAULT_FACTORED_EIKONAL_RADIUS 3
 #define DEFAULT_NUMBER_OF_SWEEPS 5
 
 class SolverOptions::SolverOptionsImpl
@@ -12,7 +12,7 @@ public:
     /// Convergence tolerance in seconds.
     double mConvergenceTolerance = DEFFAULT_CONVERGENCE_TOLERANCE;
     /// Spherical solver radius in grid points.
-    int mSphericalRadius = DEFAULT_SPHERICAL_RADIUS;
+    int mFactoredEikonalRadius = DEFAULT_FACTORED_EIKONAL_RADIUS;
     /// Solver algorithm
     SolverAlgorithm mAlgorithm = SolverAlgorithm::LEVEL_SET_METHOD;
     /// Verbosity
@@ -82,16 +82,17 @@ double SolverOptions::getConvergenceTolerance() const noexcept
     return pImpl->mConvergenceTolerance;
 }
 
-/// Sets the spherical solver radius in grid points
-void SolverOptions::setSphericalSolverRadius(int radius) noexcept
+/// Sets the factored eikonal solver radius in grid points
+void SolverOptions::setFactoredEikonalEquationSolverRadius(
+    const int radius) noexcept
 {
-    pImpl->mSphericalRadius = radius;
+    pImpl->mFactoredEikonalRadius = radius;
 }
 
-/// Gets the spherical solver radius in grid points.
-int SolverOptions::getSphericalSolverRadius() const noexcept
+/// Gets the factored eikonal solver radius in grid points.
+int SolverOptions::getFactoredEikonalEquationSolverRadius() const noexcept
 {
-    return pImpl->mSphericalRadius;
+    return pImpl->mFactoredEikonalRadius;
 }
 
 /// Sets the verbosity
@@ -122,7 +123,7 @@ SolverAlgorithm SolverOptions::getAlgorithm() const noexcept
 void SolverOptions::clear() noexcept
 {
     pImpl->mConvergenceTolerance = DEFFAULT_CONVERGENCE_TOLERANCE;
-    pImpl->mSphericalRadius = DEFAULT_SPHERICAL_RADIUS;
+    pImpl->mFactoredEikonalRadius = DEFAULT_FACTORED_EIKONAL_RADIUS;
     pImpl->mAlgorithm = SolverAlgorithm::LEVEL_SET_METHOD;
     pImpl->mVerbosity = Verbosity::ERROR;
     pImpl->mSweeps = DEFAULT_NUMBER_OF_SWEEPS;

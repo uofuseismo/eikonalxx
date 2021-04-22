@@ -66,19 +66,19 @@ public:
 
     /// @brief Near the source the wavefront has high curvature and the 
     ///        Cartesian finite-difference operator is inaccurate.  
-    ///        To mitigate this a spherical-solver is used during
-    ///        the initialization phase when within this many grid
-    ///        points of the source.
-    /// @param[in] epsilon   The radius in number of grid points around the
-    ///                      source where the spherical finite-difference
-    ///                      stencils are employed.  Setting this to zero
-    ///                      effectively requires the entire initialization
-    ///                      be performed with a Cartesian finite-difference
-    ///                      operator.
-    void setSphericalSolverRadius(int epsilon) noexcept;
-    /// @result The radius in grid points from the source where the
-    ///         spherical finite-difference stencils are employed.
-    [[nodiscard]] int getSphericalSolverRadius() const noexcept;
+    ///        To mitigate this a solver using the factored eikonal
+    ///        eikonal equation is used to update the traveltimes
+    ///        near the source.
+    /// @param[in] epsilon  The number of grid points the update grid point
+    ///                     must be from the source grid point.  This 
+    ///                     effectively draws a box around the source grid
+    ///                     point.  Setting this to less than 0 means that
+    ///                     the Cartesian solver will be used for all updates.
+    void setFactoredEikonalEquationSolverRadius(int epsilon) noexcept;
+    /// @result The number of grid points in x and z in 2D,
+    ///         or x, y, and z in 3D that the update grid point
+    ///         must be from the source grid point to use the Cartesian solver.
+    [[nodiscard]] int getFactoredEikonalEquationSolverRadius() const noexcept;
 
     /// @brief Sets the solver verbosity.
     /// @param[in] verbosity  The solver verbosity level.

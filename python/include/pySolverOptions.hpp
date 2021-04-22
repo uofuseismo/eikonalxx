@@ -38,11 +38,12 @@ public:
     /// @result The convergence tolerance in seconds.
     [[nodiscard]] double getConvergenceTolerance() const noexcept;
 
-    /// @brief Sets the spherical to cartesian solver transition distance.
-    void setSphericalSolverRadius(int epsilon) noexcept;
+    /// @brief Sets the factored eikonal to cartesian solver transition
+    ///        distance.
+    void setFactoredEikonalEquationSolverRadius(int epsilon) noexcept;
     /// @result The radius in grid points from the source where the
-    ///         spherical finite-difference stencils are employed.
-    [[nodiscard]] int getSphericalSolverRadius() const noexcept;
+    ///         factored eikonal finite-difference stencils are employed.
+    [[nodiscard]] int getFactoredEikonalEquationSolverRadius() const noexcept;
 
     /// @brief Sets the solver verbosity.
     /// @param[in] verbosity  The solver verbosity level.

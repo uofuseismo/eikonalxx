@@ -1046,7 +1046,7 @@ TEST(Solver2D, solveHomogeneous)
     // Set the solver options
     SolverOptions options;
     options.setNumberOfSweeps(nSweeps);
-    options.setSphericalSolverRadius(nEps);
+    options.setFactoredEikonalEquationSolverRadius(nEps);
     options.setVerbosity(Verbosity::DEBUG);
     options.setAlgorithm(solverAlgorithm);
     // Initialize 

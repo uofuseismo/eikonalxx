@@ -82,14 +82,15 @@ double SolverOptions::getConvergenceTolerance() const noexcept
 }
 
 /// Spherical solver radius
-void SolverOptions::setSphericalSolverRadius(const int epsilon) noexcept
+void SolverOptions::setFactoredEikonalEquationSolverRadius(
+    const int epsilon) noexcept
 {
-    pImpl->setSphericalSolverRadius(epsilon);
+    pImpl->setFactoredEikonalEquationSolverRadius(epsilon);
 }
 
-int SolverOptions::getSphericalSolverRadius() const noexcept
+int SolverOptions::getFactoredEikonalEquationSolverRadius() const noexcept
 {
-    return pImpl->getSphericalSolverRadius();
+    return pImpl->getFactoredEikonalEquationSolverRadius();
 }
 
 /// Verbosity
@@ -119,16 +120,16 @@ void PEikonalXX::initializeSolverOptions(pybind11::module &m)
 {
     pybind11::class_<PEikonalXX::SolverOptions> o(m, "SolverOptions");
     o.def(pybind11::init<> ());
-    o.doc() = "This defines the solver options which are as follows:\n\nnumber_of_sweeps : The number of Gauss-Seidel iterations used in the fast-sweeping method.  Convergence can be terminated early if the change in the travel time solution is less than the tolerance.\n\ntolerance : If the maximum change in the travel time solution (measured in seconds) is less than this value then the Gauss-Seidel iterations will be terminated early.  This can be disabled by setting the value to zero or a negative number.\n\nspherical_solver_radius : When the update node's grid index in a principle direction exceeds this value then the solver will use a Cartesian finite difference stencil as opposed to a factored-eikonal equation finite-difference stencil designed to well-approximate the solution in the presence of high-wavefront curvature.\n\nalgorithm : The solver algorithm.\n\nverbosity : The solver's verbosity.";
+    o.doc() = "This defines the solver options which are as follows:\n\nnumber_of_sweeps : The number of Gauss-Seidel iterations used in the fast-sweeping method.  Convergence can be terminated early if the change in the travel time solution is less than the tolerance.\n\ntolerance : If the maximum change in the travel time solution (measured in seconds) is less than this value then the Gauss-Seidel iterations will be terminated early.  This can be disabled by setting the value to zero or a negative number.\n\nfactored_eikonal_equation_solver_radius : When the update node's grid index in a principle direction exceeds this value then the solver will use a Cartesian finite difference stencil as opposed to a factored-eikonal equation finite-difference stencil.  The factored eikonal equation stencil is designed to well-approximate the traveltime solution in the presence of high-wavefront curvature.\n\nalgorithm : The solver algorithm.\n\nverbosity : The solver's verbosity.";
     o.def_property("number_of_sweeps",
                    &SolverOptions::getNumberOfSweeps,
                    &SolverOptions::setNumberOfSweeps);
     o.def_property("tolerance",
                    &SolverOptions::getConvergenceTolerance,
                    &SolverOptions::setConvergenceTolerance);
-    o.def_property("spherical_solver_radius",
-                   &SolverOptions::getSphericalSolverRadius,
-                   &SolverOptions::setSphericalSolverRadius);
+    o.def_property("factored_eikonal_equation_solver_radius",
+                   &SolverOptions::getFactoredEikonalEquationSolverRadius,
+                   &SolverOptions::setFactoredEikonalEquationSolverRadius);
     o.def_property("algorithm",
                    &SolverOptions::getAlgorithm,
                    &SolverOptions::setAlgorithm);
@@ -143,7 +144,7 @@ void PEikonalXX::initializeSolverOptions(pybind11::module &m)
     o.def(pybind11::pickle(
         [](const SolverOptions &o) { //__getstate__
             auto nSweeps = static_cast<int> (o.getNumberOfSweeps());
-            auto nEps = o.getSphericalSolverRadius();
+            auto nEps = o.getFactoredEikonalEquationSolverRadius();
             auto tol = o.getConvergenceTolerance();
             auto algorithm = static_cast<int> (o.getAlgorithm());
             auto verbosity = static_cast<int> (o.getVerbosity());
@@ -165,7 +166,7 @@ void PEikonalXX::initializeSolverOptions(pybind11::module &m)
             SolverOptions p;
             p.setConvergenceTolerance(tol);
             p.setNumberOfSweeps(nSweeps);
-            p.setSphericalSolverRadius(nEps);
+            p.setFactoredEikonalEquationSolverRadius(nEps);
             p.setAlgorithm(algorithm);
             p.setVerbosity(verbosity);
             return p;

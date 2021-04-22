@@ -343,7 +343,7 @@ T cartesianFiniteDifference(const T huge,
 
 template<typename T>
 [[nodiscard]]
-T finiteDifference(const int sphericalRadius,
+T finiteDifference(const int factoredEikonalRadius,
                    const T huge,
                    const T h,
                    const T sourceSlowness,
@@ -368,8 +368,8 @@ T finiteDifference(const int sphericalRadius,
     T sx = M_SQRT1_2*s0;
     T sz = M_SQRT1_2*s0;
     // Cartesian
-    if (std::abs(iSrcX - ix) > sphericalRadius ||
-        std::abs(iSrcZ - iz) > sphericalRadius)
+    if (std::abs(iSrcX - ix) > factoredEikonalRadius ||
+        std::abs(iSrcZ - iz) > factoredEikonalRadius)
     {
         // Two-point operators (Podvin and Lecomte, 1991)
         T t0a = huge;
@@ -472,7 +472,7 @@ T finiteDifference(const int sphericalRadius,
 
 template<typename T>
 [[nodiscard]]
-T finiteDifference(const int sphericalRadius,
+T finiteDifference(const int factoredEikonalRadius,
                    const T huge,
                    const T dx, const T dz,
                    const T dx_dz, const T dz_dx,
@@ -499,8 +499,8 @@ T finiteDifference(const int sphericalRadius,
     T hxs0 = dx*s0;
     T hzs0 = dz*s0;
     // Cartesian
-    if (std::abs(iSrcX - ix) > sphericalRadius ||
-        std::abs(iSrcZ - iz) > sphericalRadius)
+    if (std::abs(iSrcX - ix) > factoredEikonalRadius ||
+        std::abs(iSrcZ - iz) > factoredEikonalRadius)
     {
         // Two three-point operators (Podvin and Lecomte, 1991)
         T t0a = huge;

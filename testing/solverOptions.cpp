@@ -18,13 +18,13 @@ TEST(SolverOptions, solverOptions)
 
     options.setConvergenceTolerance(tol);
     options.setNumberOfSweeps(nSweeps);
-    options.setSphericalSolverRadius(epsilon);
+    options.setFactoredEikonalEquationSolverRadius(epsilon);
     options.setAlgorithm(algorithm);
     options.setVerbosity(verbosity);
     // Use copy c'tor and check equality
     SolverOptions optionsCopy(options);
     EXPECT_EQ(options.getNumberOfSweeps(), nSweeps);
-    EXPECT_EQ(options.getSphericalSolverRadius(), epsilon);
+    EXPECT_EQ(options.getFactoredEikonalEquationSolverRadius(), epsilon);
     EXPECT_NEAR(optionsCopy.getConvergenceTolerance(), tol, 1.e-10);
     EXPECT_EQ(options.getAlgorithm(), algorithm);
     EXPECT_EQ(options.getVerbosity(), verbosity);

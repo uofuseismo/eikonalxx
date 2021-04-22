@@ -209,7 +209,7 @@ void computeAnalyticalTravelTime(const int ix, const int iy, const int iz,
 ///                              Finite Differences                          ///
 ///--------------------------------------------------------------------------///
 /// @brief The finite difference update for the uniform grid.
-/// @param[in] sphericalRadius The number of grid points in x, y, and z
+/// @param[in] factoredEikonalRadius The number of grid points in x, y, and z
 ///                            the update grid point must be from the source
 ///                            grid point to switch from the factored eikonal
 ///                            solver to the regular Cartesian solver.
@@ -256,7 +256,7 @@ void computeAnalyticalTravelTime(const int ix, const int iy, const int iz,
 /// @result The candidate travel time at node (ix,iy,iz) in seconds.
 template<typename T>
 [[nodiscard]]
-T finiteDifference(const int sphericalRadius,
+T finiteDifference(const int factoredEikonalRadius,
                    const T huge,
                    const T h,
                    const T sourceSlowness,
@@ -292,9 +292,9 @@ constexpr bool doFteik = true;
     T hs01 = h*minS0S1;
     T hs04 = h*minS0S4; 
     // Cartesian
-    if (std::abs(iSrcX - ix) > sphericalRadius ||
-        std::abs(iSrcY - iy) > sphericalRadius ||
-        std::abs(iSrcZ - iz) > sphericalRadius)
+    if (std::abs(iSrcX - ix) > factoredEikonalRadius ||
+        std::abs(iSrcY - iy) > factoredEikonalRadius ||
+        std::abs(iSrcZ - iz) > factoredEikonalRadius)
     {
         // 2D critically refracted operators in XZ, YZ, and XY planes 
         T dtCrossXZ = t1 - t4; // 1/2*(dTdxXZ - dTzXZ)
@@ -560,7 +560,7 @@ std::cout << "cand tupd: (" << ix << "," << iy << "," << iz << ") " << tUpd << s
 /// @brief The finite difference for the non-uniform grid.
 template<typename T>
 [[nodiscard]]
-T finiteDifference(const int sphericalRadius,
+T finiteDifference(const int factoredEikonalRadius,
                    const T huge,
                    const T dx, const T dy, const T dz,
                    const T dxInv, const T dyInv, const T dzInv,
@@ -597,9 +597,9 @@ constexpr bool doFteik = true;
     T t1d3 = t4 + dz*sycl::fmin(minS0S1, sycl::fmin(s2, s3));
     T t1d = sycl::fmin(sycl::fmin(t1d1, t1d2), t1d3);
     // Cartesian
-    if (std::abs(iSrcX - ix) > sphericalRadius ||
-        std::abs(iSrcY - iy) > sphericalRadius ||
-        std::abs(iSrcZ - iz) > sphericalRadius)
+    if (std::abs(iSrcX - ix) > factoredEikonalRadius ||
+        std::abs(iSrcY - iy) > factoredEikonalRadius ||
+        std::abs(iSrcZ - iz) > factoredEikonalRadius)
     {
         // 2D critically refracted operators in XZ, YZ, and XY planes 
         T dtCrossXZ = t1 - t4; // 1/2*(dTdxXZ - dTzXZ
@@ -637,12 +637,12 @@ constexpr bool doFteik = true;
             t2d3 = ((dx*dy)*dx2_p_dy2_inv)*t2d3;
         }
         t2d = sycl::fmin(t2d, t2d3);
-std::cout << t2d1 << " " << t2d2 << " " << t2d3 << std::endl;
+//std::cout << t2d1 << " " << t2d2 << " " << t2d3 << std::endl;
         // 8 point operator
         T t3d = huge;
         if (sycl::fmin(t1d, t2d) > sycl::fmax(sycl::fmax(t1, t4), t3))
         {
-std::cout << "8 point" << std::endl;
+//std::cout << "8 point" << std::endl;
             if (doFteik)
             {
                 constexpr T half = 0.5;

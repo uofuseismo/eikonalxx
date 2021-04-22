@@ -25,7 +25,8 @@ public:
     {
         // Solver options
         mAlgorithm = options.getAlgorithm();
-        mSphericalSolverRadius = options.getSphericalSolverRadius(); 
+        mFactoredEikonalSolverRadius
+            = options.getFactoredEikonalEquationSolverRadius(); 
         mConvergenceTolerance = options.getConvergenceTolerance();
         // Uniform grid?
         auto dx = geometry.getGridSpacingInX();
@@ -111,7 +112,7 @@ public:
         mSourceIndexY = 0;
         mSourceIndexZ = 0;
         mLevels = 0;
-        mSphericalSolverRadius = 0;
+        mFactoredEikonalSolverRadius = 0;
         mAlgorithm = EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD;
         mUniformGrid = true;
     }
@@ -211,7 +212,7 @@ std::cout.precision(16);
                         t7 = travelTimes[it7];
 //std::cout << t1 << " " << t2 << " " << t3 << " " << t3 << " " << t4 << " " << t5 << " " << t6 << " " << t7 << std::endl;
                         // Finite difference
-                        tUpd = finiteDifference(mSphericalSolverRadius,
+                        tUpd = finiteDifference(mFactoredEikonalSolverRadius,
                                  huge,
                                  h, 
                                  mSourceSlowness,
@@ -280,7 +281,7 @@ std::cout.precision(16);
                         t7 = travelTimes[it7];
 
                         tUpd = finiteDifference(
-                                 mSphericalSolverRadius,
+                                 mFactoredEikonalSolverRadius,
                                  huge,
                                  mDx, mDy, mDz,
                                  dxInv, dyInv, dzInv,
@@ -338,7 +339,7 @@ std::cout.precision(16);
     /// Number of levels.
     int mLevels = 0;
     /// Spherical to cartesian transition.
-    int mSphericalSolverRadius = 0;
+    int mFactoredEikonalSolverRadius = 0;
     /// Algorithm type.
     EikonalXX::SolverAlgorithm mAlgorithm
         = EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD;

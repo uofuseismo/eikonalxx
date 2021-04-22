@@ -73,13 +73,13 @@ def test_solverOptions():
  
     options.tolerance = tol
     options.number_of_sweeps = n_gauss_sweeps
-    options.spherical_solver_radius = eps
+    options.factored_eikonal_equation_solver_radius = eps
     options.algorithm = algorithm
     options.verbosity = verbosity
 
     assert abs(options.tolerance - tol) < 1.e-14, 'tolerance failed'
     assert options.number_of_sweeps == n_gauss_sweeps, 'n sweeps failed'
-    assert options.spherical_solver_radius == eps, 'spherical solver radius failed' 
+    assert options.factored_eikonal_equation_solver_radius == eps, 'factored eikonal solver radius failed' 
     assert options.algorithm == algorithm, 'algorithm failed'
     assert options.verbosity == verbosity, 'verbosity failed'
     print("Passed solverOptions")

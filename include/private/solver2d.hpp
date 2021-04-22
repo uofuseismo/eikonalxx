@@ -35,7 +35,8 @@ public:
         }
         // Solver parameters
         mAlgorithm = options.getAlgorithm();
-        mSphericalSolverRadius = options.getSphericalSolverRadius(); 
+        mFactoredEikonalSolverRadius
+            = options.getFactoredEikonalEquationSolverRadius();
         // Geometric information
         mDx = static_cast<T> (dx);
         mDz = static_cast<T> (dz);
@@ -150,7 +151,7 @@ public:
         mCell = 0;
         mSourceIndexX = 0;
         mSourceIndexZ = 0;
-        mSphericalSolverRadius = 0;
+        mFactoredEikonalSolverRadius = 0;
         mAlgorithm = EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD;
         mUniformGrid = false;
     }
@@ -238,7 +239,7 @@ std::cout.precision(10);
                     t2 = travelTimes[it2];
                     t3 = travelTimes[it3];
                     // Finite difference
-                    tUpd = finiteDifference(mSphericalSolverRadius,
+                    tUpd = finiteDifference(mFactoredEikonalSolverRadius,
                                             huge,
                                             h, 
                                             mSourceSlowness,
@@ -278,7 +279,7 @@ std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travel
                     t2 = travelTimes[it2];
                     t3 = travelTimes[it3];
 
-                    tUpd = finiteDifference(mSphericalSolverRadius,
+                    tUpd = finiteDifference(mFactoredEikonalSolverRadius,
                                             huge,
                                             mDx, mDz,
                                             mDxDividedByDz, mDzDividedByDx,
@@ -346,7 +347,7 @@ std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " 
                                                      s0, s1, s3,
                                                      t1, t2, t3);
 */
-                    tUpd = finiteDifference(mSphericalSolverRadius,
+                    tUpd = finiteDifference(mFactoredEikonalSolverRadius,
                                             huge,
                                             h,
                                             mSourceSlowness,
@@ -394,7 +395,7 @@ std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " 
                                                      s0, s1, s3,
                                                      t1, t2, t3);
 */
-                    tUpd = finiteDifference(mSphericalSolverRadius,
+                    tUpd = finiteDifference(mFactoredEikonalSolverRadius,
                                             huge,
                                             mDx, mDz,
                                             mDxDividedByDz, mDzDividedByDx,
@@ -455,8 +456,8 @@ std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " 
     /// Source indices in x and z
     int mSourceIndexX = 0;
     int mSourceIndexZ = 0;
-    /// Spherical to cartesian transition
-    int mSphericalSolverRadius = 0;
+    /// Factored eikonal to cartesian transition
+    int mFactoredEikonalSolverRadius = 0;
     /// Algorithm type
     EikonalXX::SolverAlgorithm mAlgorithm
         = EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD;
