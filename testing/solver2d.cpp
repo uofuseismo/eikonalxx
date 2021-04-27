@@ -26,33 +26,29 @@ TEST(Solver2D, numberOfLevels)
 TEST(Solver2D, sweepSigns)
 {
     int ixShift, izShift, signX, signZ;
-    getSweepFiniteDifferenceSigns(SweepNumber2D::SWEEP1,
-                                  &ixShift, &izShift,
-                                  &signX, &signZ);
+    getSweepFiniteDifferenceSigns<SweepNumber2D::SWEEP1>(&ixShift, &izShift,
+                                                         &signX, &signZ);
     EXPECT_EQ(ixShift,-1);
     EXPECT_EQ(izShift,-1);
     EXPECT_EQ(signX, 1);
     EXPECT_EQ(signZ, 1);
 
-    getSweepFiniteDifferenceSigns(SweepNumber2D::SWEEP2,
-                                  &ixShift, &izShift,
-                                  &signX, &signZ);
+    getSweepFiniteDifferenceSigns<SweepNumber2D::SWEEP2>(&ixShift, &izShift,
+                                                         &signX, &signZ);
     EXPECT_EQ(ixShift, 1);
     EXPECT_EQ(izShift,-1);
     EXPECT_EQ(signX,-1);
     EXPECT_EQ(signZ, 1);
 
-    getSweepFiniteDifferenceSigns(SweepNumber2D::SWEEP3,
-                                  &ixShift, &izShift,
-                                  &signX, &signZ);
+    getSweepFiniteDifferenceSigns<SweepNumber2D::SWEEP3>(&ixShift, &izShift,
+                                                         &signX, &signZ);
     EXPECT_EQ(ixShift,-1);
     EXPECT_EQ(izShift, 1);
     EXPECT_EQ(signX, 1);
     EXPECT_EQ(signZ,-1);
 
-    getSweepFiniteDifferenceSigns(SweepNumber2D::SWEEP4,
-                                  &ixShift, &izShift,
-                                  &signX, &signZ);
+    getSweepFiniteDifferenceSigns<SweepNumber2D::SWEEP4>(&ixShift, &izShift,
+                                                         &signX, &signZ);
     EXPECT_EQ(ixShift, 1);
     EXPECT_EQ(izShift, 1);
     EXPECT_EQ(signX,-1);
@@ -926,13 +922,35 @@ TEST(Solver2D, loopLimits)
     int ix0, ix1, iz0, iz1, ixDir, izDir;
     for (int is = 0; is < 4; ++is)
     {
-        auto sweep = static_cast<SweepNumber2D> (is);
         offset = is*nx*nz;
-        getLoopLimits(sweep,
-                      nx, nz,
-                      &ix0, &iz0,
-                      &ix1, &iz1,
-                      &ixDir, &izDir);
+        if (is == 0)
+        {
+            getLoopLimits<SweepNumber2D::SWEEP1>(nx, nz,
+                                                 &ix0, &iz0,
+                                                 &ix1, &iz1,
+                                                 &ixDir, &izDir);
+        }
+        else if (is == 1)
+        {
+            getLoopLimits<SweepNumber2D::SWEEP2>(nx, nz,
+                                                 &ix0, &iz0,
+                                                 &ix1, &iz1,
+                                                 &ixDir, &izDir);
+        }
+        else if (is == 2)
+        {
+            getLoopLimits<SweepNumber2D::SWEEP3>(nx, nz,
+                                                 &ix0, &iz0,
+                                                 &ix1, &iz1,
+                                                 &ixDir, &izDir);
+        }
+        else // if (is == 3)
+        {
+            getLoopLimits<SweepNumber2D::SWEEP4>(nx, nz,
+                                                 &ix0, &iz0,
+                                                 &ix1, &iz1,
+                                                 &ixDir, &izDir);
+        }
         for (int iz = iz0; iz != iz1; iz = iz + izDir)
         {
             for (int ix = ix0; ix != ix1; ix = ix + ixDir)

@@ -97,6 +97,7 @@ public:
         mDx = 0;
         mDy = 0;
         mDz = 0;
+        mMaxTravelTimeChange = HUGE;
         mSourceSlowness = 0;
         mConvergenceTolerance = 0;
         mSourceOffsetX = 0;
@@ -141,7 +142,11 @@ public:
         mSourceOffsetZ = zSourceOffset;
         mSourceSlowness = sourceSlowness;
     }
-    /// Performs the fast sweeping method update
+    /// Performs the fast sweeping method update.
+    /// @param[in] slowness         The cell-based slowness model in s/m.
+    /// @param[in,out] travelTimes  The traveltimes at all grid points in s.
+    /// @param[in] initialize       True indicates that this is an
+    ///                             initialization sweep.
     void updateFSM(const T *__restrict__ slowness, T *__restrict__ travelTimes,
                    const bool initialize)
     {
@@ -169,12 +174,13 @@ std::cout.precision(16);
                                          &signX, &signY, &signZ);
         // Some local variables
         constexpr T huge = HUGE;
-        T t1, t2, t3, t4, t5, t6, t7, tUpd;
+        T t0, t1, t2, t3, t4, t5, t6, t7, tUpd;
         T s0, s1, s2, s3, s4, s5, s7; 
         int iCell0, iCell1, iCell2, iCell3, iCell4, iCell5, iCell7;
         int it0, it1, it2, it3, it4, it5, it6, it7;
+        T diffMax = HUGE;
         // Uniform finite difference stencil 
-        if (mUniformGrid && false)
+        if (mUniformGrid)
         {
             auto h = mDx; // dx = dy = dz
             for (int iz = iz0; iz != iz1; iz = iz + izDir)
@@ -203,6 +209,7 @@ std::cout.precision(16);
                             mGridX, mGridY, mGridZ,
                             &it0, &it1, &it2, &it3,
                             &it4, &it5, &it6, &it7);
+                        t0 = travelTimes[it0];
                         t1 = travelTimes[it1];
                         t2 = travelTimes[it2];
                         t3 = travelTimes[it3];
@@ -226,7 +233,11 @@ std::cout.precision(16);
                                  t1, t2, t3,
                                  t4, t5, t6, t7);
                         // Update node if new travel time is smaller
-                        travelTimes[it0] = sycl::fmin(travelTimes[it0], tUpd); 
+                        if (tUpd < t0)
+                        {
+                            travelTimes[it0] = tUpd;
+                            diffMax = sycl::fmax(t0 - tUpd, diffMax);
+                        }
                     }
                 }
             }
@@ -272,6 +283,7 @@ std::cout.precision(16);
                             mGridX, mGridY, mGridZ,
                             &it0, &it1, &it2, &it3,
                             &it4, &it5, &it6, &it7);
+                        t0 = travelTimes[it0];
                         t1 = travelTimes[it1];
                         t2 = travelTimes[it2];
                         t3 = travelTimes[it3];
@@ -301,11 +313,16 @@ std::cout.precision(16);
                                  t1, t2, t3,
                                  t4, t5, t6, t7);
 
-                        travelTimes[it0] = sycl::fmin(travelTimes[it0], tUpd);
+                        if (tUpd < t0)
+                        {
+                            travelTimes[it0] = tUpd;
+                            diffMax = sycl::fmax(t0 - tUpd, diffMax);
+                        }
                     }
                 }
             }
         }
+        mMaxTravelTimeChange = diffMax;
     }
 //private:
     /// Holds the slowness in the sweep.
@@ -322,6 +339,8 @@ std::cout.precision(16);
     T mSourceOffsetZ = 0;
     /// The slowness at the source in s/m.
     T mSourceSlowness = 0;
+    /// The largest change in the travel time in s for this sweep.
+    T mMaxTravelTimeChange = HUGE;
     /// The convergence tolerance in seconds.
     T mConvergenceTolerance = 0;
     /// Number of grid points in x, y, and z.

@@ -29,6 +29,8 @@ public:
     /// @brief Resets the class
     void clear() noexcept;
 
+    /// @result Pointer to the native class.
+    const EikonalXX::Geometry2D *getNativeClassPointer() const;
     /// Grid points in (x,z)
     void setNumberOfGridPointsInX(int nx);
     [[nodiscard]] int getNumberOfGridPointsInX() const;

@@ -57,6 +57,13 @@ void Geometry3D::clear() noexcept
     pImpl->clear();
 }
 
+/// Get pointer to the native class
+const EikonalXX::Geometry3D* Geometry3D::getNativeClassPointer() const
+{
+    return pImpl.get();
+}
+
+
 /// Grid spacing
 void Geometry3D::setGridSpacingInX(const double dx)
 {

@@ -57,19 +57,19 @@ public:
     ///         and grid spacing.
     void initialize(const Geometry2D &geometry);
     /// @result True indicates that the class is initialized.
-    bool isInitialized() const noexcept;
+    [[nodiscard]] bool isInitialized() const noexcept;
 
     /// @name Grid Geometry Information
     /// @{
     /// @result The number of grid points.
     /// @throws std::runtime_error if \c isInitialized() is false.
-    int getNumberOfGridPoints() const; 
+    [[nodiscard]] int getNumberOfGridPoints() const; 
     /// @result The number of grid points.
     /// @throws std::runtime_error if \c isInitialized() is false.
-    int getNumberOfCells() const;
+    [[nodiscard]] int getNumberOfCells() const;
     /// @result The model geometry.
     /// @throws std::runtime_error if \c isInitialized() is false.
-    Geometry2D getGeometry() const;
+    [[nodiscard]] Geometry2D getGeometry() const;
     /// @}
 
     /// @name Velocity and Slowness Models
@@ -115,7 +115,7 @@ public:
     ///         in natural ordering.
     /// @throws std::runtime_error if the velocity model was not set.
     /// @sa \c haveVelocities()
-    const T* getSlownessPointer() const;
+    [[nodiscard]] const T* getSlownessPointer() const;
   
     /// @result The cell-based velocity model in meters/second in natural
     ///         ordering.

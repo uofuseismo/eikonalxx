@@ -57,6 +57,12 @@ void Geometry2D::clear() noexcept
     pImpl->clear();
 }
 
+/// Get pointer to the native class
+const EikonalXX::Geometry2D* Geometry2D::getNativeClassPointer() const
+{
+    return pImpl.get();
+}
+
 /// Grid spacing
 void Geometry2D::setGridSpacingInX(const double dx)
 {

@@ -59,7 +59,8 @@ if (WRAP_PYTHON)
    add_library(pyEikonalXX MODULE
                python/pyEikonalXX.cpp
                python/pySolverOptions.cpp
-               python/pyGeometry2d.cpp python/pyGeometry3d.cpp)
+               python/pyGeometry2d.cpp python/pyGeometry3d.cpp
+               python/pyModel2d.cpp)
    target_link_libraries(pyEikonalXX PRIVATE
                          pybind11::module eikonalxx)
    set_target_properties(pyEikonalXX PROPERTIES

@@ -82,7 +82,6 @@ public:
         }
     }
     Solver3DSweep<T, SweepNumber3D::SWEEP1> mSolverSweep1;
-/*
     Solver3DSweep<T, SweepNumber3D::SWEEP2> mSolverSweep2;
     Solver3DSweep<T, SweepNumber3D::SWEEP3> mSolverSweep3;
     Solver3DSweep<T, SweepNumber3D::SWEEP4> mSolverSweep4;
@@ -90,7 +89,6 @@ public:
     Solver3DSweep<T, SweepNumber3D::SWEEP6> mSolverSweep6;
     Solver3DSweep<T, SweepNumber3D::SWEEP7> mSolverSweep7;
     Solver3DSweep<T, SweepNumber3D::SWEEP8> mSolverSweep8;
-*/
     Model3D<T> mVelocityModel;
     Geometry3D mGeometry;
     Source3D mSource;
@@ -119,8 +117,8 @@ template<class T>
 void Solver3D<T>::clear() noexcept
 {
     pImpl->mSolverSweep1.clear();
-/*
     pImpl->mSolverSweep2.clear();
+/*
     pImpl->mSolverSweep3.clear();
     pImpl->mSolverSweep4.clear();
     pImpl->mSolverSweep5.clear();
@@ -173,8 +171,8 @@ void Solver3D<T>::initialize(const SolverOptions &options,
     pImpl->mOptions = options;
     // Initialize each solver sweep
     pImpl->mSolverSweep1.initialize(options, geometry);
-/*
     pImpl->mSolverSweep2.initialize(options, geometry);
+/*
     pImpl->mSolverSweep3.initialize(options, geometry);
     pImpl->mSolverSweep4.initialize(options, geometry);
     pImpl->mSolverSweep5.initialize(options, geometry);
@@ -222,8 +220,8 @@ void Solver3D<T>::setVelocityModel(const Model3D<T> &velocityModel)
     pImpl->mVelocityModel = velocityModel;
     // Set the velocity models for each sweep
     pImpl->mSolverSweep1.setVelocityModel(velocityModel);
-/*
     pImpl->mSolverSweep2.setVelocityModel(velocityModel);
+/*
     pImpl->mSolverSweep3.setVelocityModel(velocityModel);
     pImpl->mSolverSweep4.setVelocityModel(velocityModel);
     pImpl->mSolverSweep5.setVelocityModel(velocityModel);
@@ -395,9 +393,9 @@ void Solver3D<T>::solve()
     T sourceSlowness = slownessPtr[pImpl->mSourceCell];
     pImpl->mSolverSweep1.setSourceInformation(iSrcX, iSrcY, iSrcZ,
         xSourceOffset, ySourceOffset, zSourceOffset, sourceSlowness);
-/*
     pImpl->mSolverSweep2.setSourceInformation(iSrcX, iSrcY, iSrcZ,
         xSourceOffset, ySourceOffset, zSourceOffset, sourceSlowness);
+/*
     pImpl->mSolverSweep3.setSourceInformation(iSrcX, iSrcY, iSrcZ,
         xSourceOffset, ySourceOffset, zSourceOffset, sourceSlowness);
     pImpl->mSolverSweep4.setSourceInformation(iSrcX, iSrcY, iSrcZ,
@@ -427,13 +425,30 @@ void Solver3D<T>::solve()
         timer.start();
         auto tTimesPtr = pImpl->mTravelTimeField.data();
         pImpl->mSolverSweep1.updateFSM(slownessPtr, tTimesPtr, initialize);
-
+std::cout << " " << std::endl;
+        pImpl->mSolverSweep2.updateFSM(slownessPtr, tTimesPtr, initialize);
 return;
         // Perform the refinements
         for (int k = 0; k < nIterations; ++k)
         {
              pImpl->mSolverSweep1.updateFSM(slownessPtr, tTimesPtr,
                                             noInitialize);
+             pImpl->mSolverSweep2.updateFSM(slownessPtr, tTimesPtr,
+                                            noInitialize);
+/*
+             pImpl->mSolverSweep3.updateFSM(slownessPtr, tTimesPtr,
+                                            noInitialize);
+             pImpl->mSolverSweep4.updateFSM(slownessPtr, tTimesPtr,
+                                            noInitialize);
+             pImpl->mSolverSweep5.updateFSM(slownessPtr, tTimesPtr,
+                                            noInitialize);
+             pImpl->mSolverSweep6.updateFSM(slownessPtr, tTimesPtr,
+                                            noInitialize);
+             pImpl->mSolverSweep7.updateFSM(slownessPtr, tTimesPtr,
+                                            noInitialize);
+             pImpl->mSolverSweep8.updateFSM(slownessPtr, tTimesPtr,
+                                            noInitialize);
+*/
         }
     }
     else // Perform level set method on device

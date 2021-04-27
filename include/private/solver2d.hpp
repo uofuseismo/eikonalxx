@@ -198,25 +198,40 @@ public:
         mSourceOffsetZ = zSourceOffset;
         mSourceSlowness = sourceSlowness;
     }
-    /// Performs the initialization sweep on a grid
-    void initializationFSM(const T *slowness, T *travelTimes)
+    /// @brief Performs the initialization sweep on a grid
+    /// @param[in] slowness         The cell-based slowness field in s/m.
+    /// @param[in,out] travelTimes  The travel times in at each node in seconds.
+    /// @param[in] initialize       True indicates that this is an
+    ///                             initialization sweep.
+    void updateFSM(const T *__restrict__ slowness,
+                   T *__restrict__ travelTimes,
+                   const bool initialize)
     {
 std::cout.precision(10);
         int ix0, ix1, ixDir, iz0, iz1, izDir;
-        getLoopLimits(E,
-                      mSourceIndexX, mSourceIndexZ,
-                      mGridX, mGridZ,
-                      &ix0, &iz0,
-                      &ix1, &iz1, 
-                      &ixDir, &izDir);
+        if (initialize)
+        {
+            getLoopLimits<E>(mSourceIndexX, mSourceIndexZ,
+                             mGridX, mGridZ,
+                             &ix0, &iz0,
+                             &ix1, &iz1, 
+                             &ixDir, &izDir);
+        }
+        else
+        {
+            getLoopLimits<E>(mGridX, mGridZ,
+                             &ix0, &iz0,
+                             &ix1, &iz1,
+                             &ixDir, &izDir);
+        }
         int ixShift, izShift, signX, signZ;
-        getSweepFiniteDifferenceSigns(E,
-                                      &ixShift, &izShift,
-                                      &signX, &signZ);
-        T t1, t2, t3, tUpd;
+        getSweepFiniteDifferenceSigns<E>(&ixShift, &izShift,
+                                         &signX, &signZ);
+        T t0, t1, t2, t3, tUpd;
         T s0, s1, s3; 
         int iCell0, iCell1, iCell3, it0, it1, it2, it3;
         T huge = HUGE;
+        T diffMax = HUGE;
         if (mUniformGrid)
         {
             auto h = mDx; // dx = dz
@@ -235,6 +250,7 @@ std::cout.precision(10);
                     // Get surrounding travel times
                     gridToSurroundingTravelTimes(E, ix, iz, mGridX,
                                                  &it0, &it1, &it2, &it3);
+                    t0 = travelTimes[it0];
                     t1 = travelTimes[it1];
                     t2 = travelTimes[it2];
                     t3 = travelTimes[it3];
@@ -253,8 +269,10 @@ std::cout.precision(10);
 std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl << std::endl;
                     // Update?
                     //if (mUpdateNode[it0] == UPDATE_NODE)
+                    if (tUpd < t0)
                     {
-                        travelTimes[it0] = std::min(travelTimes[it0], tUpd);
+                        travelTimes[it0] = tUpd;
+                        diffMax = sycl::fmax(t0 - tUpd, diffMax);
                     }
                 }
             }
@@ -275,6 +293,7 @@ std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travel
 
                     gridToSurroundingTravelTimes(E, ix, iz, mGridX,
                                                  &it0, &it1, &it2, &it3);
+                    t0 = travelTimes[it0];
                     t1 = travelTimes[it1];
                     t2 = travelTimes[it2];
                     t3 = travelTimes[it3];
@@ -295,14 +314,17 @@ std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travel
 std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl << std::endl;
                     // Update?
                     //if (mUpdateNode[it0] == UPDATE_NODE)
+                    if (tUpd < t0)
                     {
-                        travelTimes[it0] = std::min(travelTimes[it0], tUpd);
+                        travelTimes[it0] = tUpd;
+                        diffMax = sycl::fmax(t0 - tUpd, diffMax);
                     }
                 }
             }
         } // End check on uniform grid
     }
 
+/*
     /// Performs the fast sweeping method on a grid
     void updateFSM(const T *slowness, T *travelTimes)
     {
@@ -342,11 +364,9 @@ std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " 
                     t2 = travelTimes[it2];
                     t3 = travelTimes[it3];
                     // Finite difference
-/*
-                    tUpd = cartesianFiniteDifference(mHuge, h,
-                                                     s0, s1, s3,
-                                                     t1, t2, t3);
-*/
+                    ///tUpd = cartesianFiniteDifference(mHuge, h,
+                    ///                                 s0, s1, s3,
+                    ///                                 t1, t2, t3);
                     tUpd = finiteDifference(mFactoredEikonalSolverRadius,
                                             huge,
                                             h,
@@ -386,15 +406,14 @@ std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " 
                     t2 = travelTimes[it2];
                     t3 = travelTimes[it3];
 
-/*
-                    tUpd = cartesianFiniteDifference(huge,
-                                                     mDx, mDz,
-                                                     mDxDividedByDz,
-                                                     mDzDividedByDx,
-                                                     mCosTheta, mSinTheta,
-                                                     s0, s1, s3,
-                                                     t1, t2, t3);
-*/
+                    ///tUpd = cartesianFiniteDifference(huge,
+                    ///                                 mDx, mDz,
+                    ///                                 mDxDividedByDz,
+                    ///                                 mDzDividedByDx,
+                    ///                                 mCosTheta, mSinTheta,
+                    ///                                 s0, s1, s3,
+                    ///                                 t1, t2, t3);
+
                     tUpd = finiteDifference(mFactoredEikonalSolverRadius,
                                             huge,
                                             mDx, mDz,
@@ -417,6 +436,7 @@ std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " 
             }
         } // End check on uniform grid
     } 
+*/
 //private:
     /// Holds the slowness in the sweep
     std::vector<SweepSlowness2D<T>> mSweepSlowness;

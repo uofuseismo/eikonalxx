@@ -1,6 +1,7 @@
 #include "eikonalxx/version.hpp"
 #include "include/pyGeometry2d.hpp"
 #include "include/pyGeometry3d.hpp"
+#include "include/pyModel2d.hpp"
 #include "include/pySolverOptions.hpp"
 #include "eikonalxx/enums.hpp"
 #include <pybind11/pybind11.h>
@@ -13,6 +14,7 @@ PYBIND11_MODULE(pyEikonalXX, m)
     PEikonalXX::initializeGeometry2D(m);
     PEikonalXX::initializeGeometry3D(m);
     PEikonalXX::initializeSolverOptions(m);
+    PEikonalXX::initializeModel2D(m);
 
     pybind11::enum_<EikonalXX::Ordering2D> (m, "Ordering2D")
         .value("natural", EikonalXX::Ordering2D::NATURAL,

@@ -426,6 +426,8 @@ void Solver2D<T>::solve()
     auto nIterations = pImpl->mOptions.getNumberOfSweeps();
     // Perform fast sweeping on CPU
     auto algorithm = pImpl->mOptions.getAlgorithm();
+    constexpr bool initialize = true;
+    constexpr bool noInitialize = false;
     if (algorithm == SolverAlgorithm::FAST_SWEEPING_METHOD)
     {
         if (verbosity == Verbosity::DEBUG)
@@ -435,13 +437,13 @@ void Solver2D<T>::solve()
         // Initialization sweeps
         timer.start();
         auto tTimesPtr = pImpl->mTravelTimeField.data();
-        pImpl->mSolverSweep1.initializationFSM(slownessPtr, tTimesPtr);
+        pImpl->mSolverSweep1.updateFSM(slownessPtr, tTimesPtr, initialize);
 std::cout << "---------------------------------------------------------------" << std::endl;
-        pImpl->mSolverSweep2.initializationFSM(slownessPtr, tTimesPtr);
+        pImpl->mSolverSweep2.updateFSM(slownessPtr, tTimesPtr, initialize);
 std::cout << "---------------------------------------------------------------" << std::endl;
-        pImpl->mSolverSweep3.initializationFSM(slownessPtr, tTimesPtr);
+        pImpl->mSolverSweep3.updateFSM(slownessPtr, tTimesPtr, initialize);
 std::cout << "---------------------------------------------------------------" << std::endl;
-        pImpl->mSolverSweep4.initializationFSM(slownessPtr, tTimesPtr);
+        pImpl->mSolverSweep4.updateFSM(slownessPtr, tTimesPtr, initialize);
         if (verbosity == Verbosity::DEBUG)
         {
             std::cout << "Initialization time: "
@@ -451,6 +453,10 @@ std::cout << "---------------------------------------------------------------" <
         // Refinement sweeps
         for (int k=0; k<nIterations; ++k)
         {
+            pImpl->mSolverSweep1.updateFSM(slownessPtr, tTimesPtr, noInitialize);
+            pImpl->mSolverSweep2.updateFSM(slownessPtr, tTimesPtr, noInitialize);
+            pImpl->mSolverSweep3.updateFSM(slownessPtr, tTimesPtr, noInitialize);
+            pImpl->mSolverSweep4.updateFSM(slownessPtr, tTimesPtr, noInitialize);
         }
     }
     else // Perform level set method on device

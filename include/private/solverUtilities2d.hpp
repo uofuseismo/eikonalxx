@@ -875,7 +875,6 @@ int gridToIndex(const int nx, const int ix, const int iz)
 */
 
 /// @brief Gets the sweep finite difference signs and shifts.
-/// @param[in] sweep     The sweep number.
 /// @param[out] ixShift  The shift in the x grid point when computing the
 ///                      analytic travel times and derivatives.
 /// @param[out] izShift  The shift in the z grid point when computing the
@@ -884,25 +883,25 @@ int gridToIndex(const int nx, const int ix, const int iz)
 ///                      derivative sign consistent with the sweep direction.
 /// @param[out] signZ    The sign on the derivative in z.  This makes the
 ///                      derivative sign consistent with the sweep direction.
-void getSweepFiniteDifferenceSigns(const SweepNumber2D sweep,
-                                   int *ixShift, int *izShift,
+template<EikonalXX::SweepNumber2D E>
+void getSweepFiniteDifferenceSigns(int *ixShift, int *izShift,
                                    int *signX, int *signZ)
 {
     *ixShift =-1; 
     *izShift =-1; 
     *signX = 1; 
     *signZ = 1; 
-    if (sweep == SweepNumber2D::SWEEP2)
+    if constexpr (E == SweepNumber2D::SWEEP2)
     {
         *signX =-1; 
         *ixShift = 1; 
     }
-    else if (sweep == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::SWEEP3)
     {
         *signZ =-1; 
         *izShift = 1; 
     }
-    else if (sweep == SweepNumber2D::SWEEP4)
+    else if constexpr (E == SweepNumber2D::SWEEP4)
     {
         *signX =-1; 
         *signZ =-1; 
@@ -914,7 +913,6 @@ void getSweepFiniteDifferenceSigns(const SweepNumber2D sweep,
 /// @brief Gets the loop limits for the fast sweeping method i.e.,:
 ///        for (int iz = iz0; iz != iz1; iz = iz + izDir)
 ///            for (int ix = ix0; ix != ix1; ix = ix + ixDir)
-/// @param[in] sweep   The sweep number.
 /// @param[in] nGridX  The number of grid points in x.
 /// @param[in] nGridZ  The number of grid points in z.
 /// @param[out] ix0    The first x grid index in the loop.
@@ -923,13 +921,13 @@ void getSweepFiniteDifferenceSigns(const SweepNumber2D sweep,
 /// @param[out] iz1    The stopping z grid index (exclusive).
 /// @param[out] ixDir  The x loop variable update increment (+1 or -1).
 /// @param[out] izDir  The z loop variable update increment (+1 or -1).
-void getLoopLimits(const SweepNumber2D sweep,
-                   const int nGridX, const int nGridZ,
+template<EikonalXX::SweepNumber2D E>
+void getLoopLimits(const int nGridX, const int nGridZ,
                    int *ix0, int *iz0,
                    int *ix1, int *iz1,
                    int *ixDir, int *izDir)
 {
-    if (sweep == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::SWEEP1)
     {
         *ix0 = 1;
         *ix1 = nGridX;
@@ -938,7 +936,7 @@ void getLoopLimits(const SweepNumber2D sweep,
         *ixDir = 1;
         *izDir = 1;
     }
-    else if (sweep == SweepNumber2D::SWEEP2)
+    else if constexpr (E == SweepNumber2D::SWEEP2)
     {
         *ix0 = nGridX - 2;
         *ix1 =-1;
@@ -947,7 +945,7 @@ void getLoopLimits(const SweepNumber2D sweep,
         *ixDir =-1;
         *izDir = 1;
     }
-    else if (sweep == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::SWEEP3)
     {
         *ix0 = 1;
         *ix1 = nGridX;
@@ -972,7 +970,6 @@ void getLoopLimits(const SweepNumber2D sweep,
 ///        we only care about propagating energy from the surface
 ///        and leave it to the refinement loops to clean up the
 ///        solution 
-/// @param[in] sweep   The sweep number.
 /// @param[in] iSrcX   The source grid point in x.
 /// @param[in] iSrcZ   The source grid point in z.
 /// @param[in] nGridX  The number of grid points in x.
@@ -983,14 +980,14 @@ void getLoopLimits(const SweepNumber2D sweep,
 /// @param[out] iz1    The stopping z grid index (exclusive).
 /// @param[out] ixDir  The loop variable update increment (+1 or -1).
 /// @param[out] izDir  The loop variable update increment (+1 or -1).
-void getLoopLimits(const SweepNumber2D sweep,
-                   const int iSrcX, const int iSrcZ,
+template<EikonalXX::SweepNumber2D E>
+void getLoopLimits(const int iSrcX, const int iSrcZ,
                    const int nGridX, const int nGridZ,
                    int *ix0, int *iz0,
                    int *ix1, int *iz1,
                    int *ixDir, int *izDir)
 {
-    if (sweep == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::SWEEP1)
     {
         *ix0 = std::max(iSrcX, 1);
         *ix1 = nGridX;
@@ -999,7 +996,7 @@ void getLoopLimits(const SweepNumber2D sweep,
         *ixDir = 1;
         *izDir = 1;
     }
-    else if (sweep == SweepNumber2D::SWEEP2)
+    else if constexpr (E == SweepNumber2D::SWEEP2)
     {
         *ix0 = std::min(iSrcX + 1, nGridX - 2);
         *ix1 =-1;
@@ -1008,7 +1005,7 @@ void getLoopLimits(const SweepNumber2D sweep,
         *ixDir =-1;
         *izDir = 1;
     }
-    else if (sweep == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::SWEEP3)
     {
         *ix0 = std::max(iSrcX, 1);
         *ix1 = nGridX;
@@ -1016,7 +1013,7 @@ void getLoopLimits(const SweepNumber2D sweep,
         *iz1 =-1;
         *ixDir = 1;
         *izDir =-1;
-    } 
+    }
     else //if (sweep == SweepNumber2D::SWEEP4)
     {
         *ix0 = std::min(iSrcX + 1, nGridX - 2);
