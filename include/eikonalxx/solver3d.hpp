@@ -94,6 +94,24 @@ public:
     void solve(); 
     /// @}
 
+    /// @name Step 5: Results
+    /// @{
+    /// @result The travel times from the source to all nodes in the model in
+    ///         in seconds.  This uses the natural ordering.
+    /// @note This has dimension getGeometry.getNumberOfGridPoints().
+    /// @sa \c Ordering3D, \c haveTravelTimeField(), \c getGeometry()
+    [[nodiscard]] std::vector<T> getTravelTimeField() const;
+    /// @result A pointer to the travel time field at all nodes in the model
+    ///         in seconds.   This uses the natural ordering and
+    ///         has dimension [getGeometry.getNumberOfGridPoints()].
+    /// @throws std::runtime_error if \c haveTravelTimeField() is false.
+    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering3D
+    [[nodiscard]] const T* getTravelTimeFieldPointer() const;
+    /// @result True indicates that \c solve() has been called and the travel
+    ///         time field is available.
+    [[nodiscard]] bool haveTravelTimeField() const noexcept;
+    /// @}
+
     /// @brief Destructor.
     ~Solver3D();
     /// @brief Resets the class and restores defaults.

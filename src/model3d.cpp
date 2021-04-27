@@ -62,7 +62,7 @@ std::vector<T> interpolate3d(const size_t nGridX,
     auto velDevice = sycl::malloc_device<T> (nGrid, q);
     auto slowDevice =  sycl::malloc_device<T> (nCell, q);
     // Copy input velocities to device
-    q.submit([&](sycl::handler &h)
+    auto eCopyVelocity = q.submit([&](sycl::handler &h)
     {
         h.memcpy(velDevice, velIn, nGrid*sizeof(T)); 
     });
@@ -75,9 +75,10 @@ std::vector<T> interpolate3d(const size_t nGridX,
     sycl::range local{nTileX, nTileY, nTileZ};
     const T eight = 8;
     // Do interpolation
-    if (ordering == EikonalXX::Ordering3D::NATURAL)
+    auto eInterpolate = q.submit([&](sycl::handler &h)
     {
-        q.submit([&](sycl::handler &h)
+        h.depends_on(eCopyVelocity);
+        if (ordering == EikonalXX::Ordering3D::NATURAL)
         {
             h.parallel_for(sycl::nd_range{global, local},
                            [=](sycl::nd_item<3> it)
@@ -104,12 +105,10 @@ std::vector<T> interpolate3d(const size_t nGridX,
                 //                   = 8/(sum1 + sum2 + sum3 + sum4)
                 slowDevice[idst] = eight/(sum1 + sum2 + sum3 + sum4);
             });
-        });
-    }
-    else
-    {
-        q.submit([&](sycl::handler &h)
+        }
+        else
         {
+            h.depends_on(eCopyVelocity);
             h.parallel_for(sycl::nd_range{global, local},
                            [=](sycl::nd_item<3> it)
             {
@@ -133,13 +132,14 @@ std::vector<T> interpolate3d(const size_t nGridX,
                 auto sum4 = velDevice[idx7] + velDevice[idx8];
                 slowDevice[idst] = eight/(sum1 + sum2 + sum3 + sum4);
             });
-        }); 
-    }
+        }
+    });
     // Return slowness field to host
     slow.resize(nCell, -1);
     auto slowPtr = slow.data();
     q.submit([&](sycl::handler &h)
     {
+        h.depends_on(eInterpolate);
         h.memcpy(slowPtr, slowDevice, nCell*sizeof(T));
     });
     q.wait();

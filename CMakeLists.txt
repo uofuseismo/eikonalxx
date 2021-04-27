@@ -39,7 +39,8 @@ set(LIBSRC
     src/source3d.cpp
     src/solver2d.cpp
     src/solver3d.cpp
-    src/station3d.cpp)
+    src/station3d.cpp
+    src/analytic/homogeneous2d.cpp)
 
 set(BUILD_SHARED_LIBS YES)
 add_library(eikonalxx ${LIBSRC})
