@@ -908,6 +908,12 @@ void getSweepFiniteDifferenceSigns(int *ixShift, int *izShift,
         *ixShift = 1; 
         *izShift = 1; 
     }
+#ifndef NDEBUG
+    else
+    {
+        if (E != SweepNumber2D::SWEEP1){assert(false);}
+    }
+#endif
 }
 
 /// @brief Gets the loop limits for the fast sweeping method i.e.,:
@@ -954,7 +960,7 @@ void getLoopLimits(const int nGridX, const int nGridZ,
         *ixDir = 1;
         *izDir =-1;
     }
-    else //if (sweep == SweepNumber2D::SWEEP4)
+    else if constexpr (E == SweepNumber2D::SWEEP4)
     {
         *ix0 = nGridX - 2;
         *ix1 =-1;
@@ -963,6 +969,12 @@ void getLoopLimits(const int nGridX, const int nGridZ,
         *ixDir =-1;
         *izDir =-1;
     }
+#ifndef NDEBUG
+    else
+    {
+        assert(false);
+    }
+#endif
 }
 
 /// @brief Gets the loop limits for the initialization of the
@@ -1014,7 +1026,7 @@ void getLoopLimits(const int iSrcX, const int iSrcZ,
         *ixDir = 1;
         *izDir =-1;
     }
-    else //if (sweep == SweepNumber2D::SWEEP4)
+    else if constexpr (E == SweepNumber2D::SWEEP4)
     {
         *ix0 = std::min(iSrcX + 1, nGridX - 2);
         *ix1 =-1;
@@ -1023,11 +1035,16 @@ void getLoopLimits(const int iSrcX, const int iSrcZ,
         *ixDir =-1;
         *izDir =-1;
     }
+#ifndef NDEBUG
+    else 
+    {    
+        assert(false);
+    }    
+#endif
 }
 
 
 /// @brief Converts a (sweep, level, index) to a grid point (ix, iz).
-/// @param[in] sweep  The sweep number.
 /// @param[in] level  The level in the level set method.
 /// @param[in] indx   The index in the level.
 /// @param[in] nx     The number of grid points in x.
@@ -1035,8 +1052,8 @@ void getLoopLimits(const int iSrcX, const int iSrcZ,
 /// @param[out] ix    The corresponding grid index in x.
 /// @param[out] iz    The corresponding grid index in z.
 #pragma omp declare simd uniform(sweep, level, nx, nz)
-void sweepLevelIndexToGrid(const SweepNumber2D sweep, //const int sweep,
-                           const int level,
+template<EikonalXX::SweepNumber2D E>
+void sweepLevelIndexToGrid(const int level,
                            const int indx,
                            const int nx,
                            const int nz,
@@ -1046,24 +1063,29 @@ void sweepLevelIndexToGrid(const SweepNumber2D sweep, //const int sweep,
     *iz = indx;
     *ix = level - *iz;
     // -x and +z
-    if (sweep == SweepNumber2D::SWEEP2)
+    if constexpr (E == SweepNumber2D::SWEEP2)
     {
         *ix = nx - 1 - *ix;
     }
-    else if (sweep == SweepNumber2D::SWEEP3) // +x and -z
+    else if constexpr (E == SweepNumber2D::SWEEP3) // +x and -z
     {
         *iz = nz - 1 - *iz;
     }
-    else if (sweep == SweepNumber2D::SWEEP4) // -x and -z
+    else if constexpr (E == SweepNumber2D::SWEEP4) // -x and -z
     {
         *iz = nz - 1 - *iz;
         *ix = nx - 1 - *ix;
     }
+#ifndef NDEBUG
+    else 
+    {    
+        if (E != SweepNumber2D::SWEEP1){assert(false);}
+    }    
+#endif
 }
 
 /// @brief Converts a grid point (ix, iz) in a sweep to the corresponding
 ///        level and index.
-/// @param[in] sweep   The sweep number.
 /// @param[in] ix      The grid index in x.
 /// @param[in] iz      The grid index in z.
 /// @param[in] nx      The number of grid points in x.
@@ -1074,34 +1096,33 @@ void sweepLevelIndexToGrid(const SweepNumber2D sweep, //const int sweep,
 ///                    use \c getLevelStartStopIndices() and subtract by i0.
 /// @note This is the inverse operation of \c sweepLevelIndexToGrid().
 #pragma omp declare simd uniform(sweep, nx ,nz)
-void gridSweepToLevelIndex(const SweepNumber2D sweep, //const int sweep,
-                           const int ix,
+template<EikonalXX::SweepNumber2D E>
+void gridSweepToLevelIndex(const int ix,
                            const int iz,
                            const int nx,
                            const int nz,
                            int *level, int *indx)
 {
-    auto jx = ix;
-    auto jz = iz;
-    if (sweep == SweepNumber2D::SWEEP2)
+    int jx = ix;
+    int jz = iz;
+    if constexpr (E == SweepNumber2D::SWEEP2)
     {
         jx = nx - 1 - ix;
     }
-    else if (sweep == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::SWEEP3)
     {
         jz = nz - 1 - iz;
     }
-    else if (sweep == SweepNumber2D::SWEEP4)
+    else if constexpr (E == SweepNumber2D::SWEEP4)
     {
         jz = nz - 1 - iz;
         jx = nx - 1 - ix;
-    } 
+    }
     *indx = jz;
     *level = jx + jz;
 }
 
 /// @brief Converts a (sweep, level, index) to a travel time field index.
-/// @param[in] sweep  The sweep number.
 /// @param[in] level  The level in the level set method.
 /// @param[in] indx   The index in the level.
 /// @param[in] nx     The number of grid points in x.
@@ -1109,21 +1130,20 @@ void gridSweepToLevelIndex(const SweepNumber2D sweep, //const int sweep,
 /// @result The index in the travel time field corresponding to the sweep, level,
 ///                   and index in the level.
 #pragma omp declare simd uniform(sweep, level, nx, nz)
+template<EikonalXX::SweepNumber2D E>
 [[maybe_unused]]
-int sweepLevelIndexToIndex(const SweepNumber2D sweep, //const int sweep,
-                           const int level,
+int sweepLevelIndexToIndex(const int level,
                            const int indx,
                            const int nx,
                            const int nz)
 {
     int ix, iz;
-    sweepLevelIndexToGrid(sweep, level, indx, nx, nz, &ix, &iz);
+    sweepLevelIndexToGrid<E>(level, indx, nx, nz, &ix, &iz);
     return gridToIndex(nx, ix, iz);
 }
 
 /// @brief Converts a (sweep, level, index) to the grid points for finite
 ///        differencing a travel time.
-/// @param[in] sweep  The sweep number.
 /// @param[in] level  The level in the level set method.
 /// @param[in] indx   The index in the level.
 /// @param[in] nx     The number of grid points in x.
@@ -1135,39 +1155,45 @@ int sweepLevelIndexToIndex(const SweepNumber2D sweep, //const int sweep,
 ///                   update node. 
 /// @param[out] it3   The corresponding grid index above/below the update node.
 #pragma omp declare simd uniform(sweep, level, nx, nz)
-[[maybe_unused]]
+template<EikonalXX::SweepNumber2D E>
 void sweepLevelIndexToTravelTimeIndices(
-    const SweepNumber2D sweep, const int level, const int indx,
+    const int level, const int indx,
     const int nx, const int nz,
     int *it0, int *it1, int *it2, int *it3)
 {
     int ix, iz;
-    sweepLevelIndexToGrid(sweep, level, indx, nx, nz, &ix, &iz);
+    sweepLevelIndexToGrid<E>(level, indx, nx, nz, &ix, &iz);
     *it0 = gridToIndex(nx, ix, iz);
-    if (sweep == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::SWEEP1)
     {
         *it1 = gridToIndex(nx, std::max(0, ix-1), iz); 
         *it2 = gridToIndex(nx, std::max(0, ix-1), std::max(0, iz-1));
         *it3 = gridToIndex(nx, ix,                std::max(0, iz-1)); 
     }
-    else if (sweep == SweepNumber2D::SWEEP2)
+    else if constexpr (E == SweepNumber2D::SWEEP2)
     {
         *it1 = gridToIndex(nx, std::min(nx-1, ix+1), iz);
         *it2 = gridToIndex(nx, std::min(nx-1, ix+1), std::max(0, iz-1));
         *it3 = gridToIndex(nx, ix,                   std::max(0, iz-1));
     } 
-    else if (sweep == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::SWEEP3)
     {
         *it1 = gridToIndex(nx, std::max(0, ix-1), iz);
         *it2 = gridToIndex(nx, std::max(0, ix-1), std::min(nz-1, iz+1));
         *it3 = gridToIndex(nx, ix,                std::min(nz-1, iz+1));
     }
-    else // sweep == SweepNumber2D::SWEEP4 
+    else if constexpr (E == SweepNumber2D::SWEEP4)
     {
         *it1 = gridToIndex(nx, std::min(nx-1, ix+1), iz);
         *it2 = gridToIndex(nx, std::min(nx-1, ix+1), std::min(nz-1, iz+1));
         *it3 = gridToIndex(nx, ix,                   std::min(nz-1, iz+1));
     }
+#ifndef NDEBUG
+    else
+    {
+        assert(false);
+    }
+#endif
 }
 
 /// @brief For each level this returns the start/stop indices in the foor loop
@@ -1216,7 +1242,6 @@ std::vector<int> makeLevelOffset(const int nx, const int nz)
 }
 
 /// @brief Converts the grid point to the surrounding slowness cells.
-/// @param[in] sweep    The sweep number.
 /// @param[in] ix       The ix'th grid point.
 /// @param[in] iz       The iz'th grid point.
 /// @param[in] nCellX   The number of cells in x.
@@ -1227,14 +1252,14 @@ std::vector<int> makeLevelOffset(const int nx, const int nz)
 ///                     the slowness to the left or right of the home cell.
 /// @param[out] iCell3  The index of the slowness field corresponding to 
 ///                     the slowness above or below the home cell. 
-void gridToSurroundingSlowness(const SweepNumber2D sweep, //int sweep,
-                               const int ix, const int iz,
+template<EikonalXX::SweepNumber2D E>
+void gridToSurroundingSlowness(const int ix, const int iz,
                                const int nCellX, const int nCellZ,
                                int *iCell0, int *iCell1, int *iCell3)
 {
     int iCell0X, iCell0Z, iCell1X, iCell1Z,
         iCell2X, iCell2Z, iCell3X, iCell3Z = 0;
-    if (sweep == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::SWEEP1)
     {
         iCell0X = sycl::max(0, ix - 1);
         iCell1X = sycl::min(nCellX - 1, iCell0X + 1);
@@ -1248,7 +1273,7 @@ void gridToSurroundingSlowness(const SweepNumber2D sweep, //int sweep,
         iCell1Z = iCell0Z;
         iCell3Z = iCell2Z;
     }
-    else if (sweep == SweepNumber2D::SWEEP2)
+    else if constexpr (E == SweepNumber2D::SWEEP2)
     {
         iCell0X = ix;
         iCell1X = sycl::max(0, iCell0X - 1);
@@ -1266,7 +1291,7 @@ void gridToSurroundingSlowness(const SweepNumber2D sweep, //int sweep,
         iCell1Z = iCell0Z;
         iCell3Z = iCell2Z;
     }
-    else if (sweep == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::SWEEP3)
     {
         iCell0X = sycl::max(0, ix - 1);
         iCell1X = sycl::min(nCellX - 1, iCell0X + 1);
@@ -1284,7 +1309,7 @@ void gridToSurroundingSlowness(const SweepNumber2D sweep, //int sweep,
         iCell1Z = iCell0Z;
         iCell3Z = iCell2Z;
     }
-    else //if (sweep == SweepNumber2D::SWEEP4)
+    else if constexpr (E == SweepNumber2D::SWEEP4)
     {
         iCell0X = ix;
         iCell1X = sycl::max(0, iCell0X - 1);
@@ -1306,6 +1331,12 @@ void gridToSurroundingSlowness(const SweepNumber2D sweep, //int sweep,
         iCell1Z = iCell0Z;
         iCell3Z = iCell2Z;
     } 
+#ifndef NDEBUG
+    else
+    {
+        assert(false);
+    }
+#endif
     *iCell0 = gridToIndex(nCellX, iCell0X, iCell0Z);
     *iCell1 = gridToIndex(nCellX, iCell1X, iCell1Z);
     //*iCell2 = gridToIndex(nCellX, iCell2X, iCell2Z);
@@ -1323,44 +1354,49 @@ void gridToSurroundingSlowness(const SweepNumber2D sweep, //int sweep,
 ///                    update node.
 /// @param[in] it3     The travel time field index above or below the
 ///                    update node.
-void gridToSurroundingTravelTimes(const SweepNumber2D sweep, //int sweep,
-                                  const int ix, const int iz,
+template<EikonalXX::SweepNumber2D E>
+void gridToSurroundingTravelTimes(const int ix, const int iz,
                                   const int nGridX,
                                   int *it0, int *it1, int *it2, int *it3)
 {
-    if (sweep == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::SWEEP1)
     {
         *it0 = gridToIndex(nGridX, ix,     iz);
         *it1 = gridToIndex(nGridX, ix - 1, iz);
         *it2 = gridToIndex(nGridX, ix - 1, iz - 1);
         *it3 = gridToIndex(nGridX, ix,     iz - 1);
     }
-    else if (sweep == SweepNumber2D::SWEEP2)
+    else if constexpr (E == SweepNumber2D::SWEEP2)
     {
         *it0 = gridToIndex(nGridX, ix,     iz);
         *it1 = gridToIndex(nGridX, ix + 1, iz);
         *it2 = gridToIndex(nGridX, ix + 1, iz - 1);
         *it3 = gridToIndex(nGridX, ix,     iz - 1);
     }
-    else if (sweep == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::SWEEP3)
     {
         *it0 = gridToIndex(nGridX, ix,     iz);
         *it1 = gridToIndex(nGridX, ix - 1, iz);
         *it2 = gridToIndex(nGridX, ix - 1, iz + 1);
         *it3 = gridToIndex(nGridX, ix,     iz + 1);
     }
-    else // (sweep == SweepNumber2D::SWEEP4) 
+    else if constexpr (E == SweepNumber2D::SWEEP4) 
     {
         *it0 = gridToIndex(nGridX, ix,     iz);
         *it1 = gridToIndex(nGridX, ix + 1, iz);
         *it2 = gridToIndex(nGridX, ix + 1, iz + 1);
         *it3 = gridToIndex(nGridX, ix,     iz + 1);
     }
+#ifndef NDEBUG
+    else
+    {
+        assert(false);
+    }
+#endif
 }
  
 
 /// @brief Converts the slowness model to a slowness model for the sweep.
-/// @param[in] sweep        The current sweep number.
 /// @param[in] nLevels      The number of levels in the solver.
 /// @param[in] nGridX       The number of x grid points.
 /// @param[in] nGridZ       The number of z grid points.
@@ -1370,9 +1406,8 @@ void gridToSurroundingTravelTimes(const SweepNumber2D sweep, //int sweep,
 ///                         matrix in row major format.
 /// @param[out] sweepSlowness  The slownesses surrounding each grid point in
 ///                            the level-set solver. 
-template<class T>
-void slownessToSweepSlowness(const SweepNumber2D sweep, //const int sweep,
-                             const size_t nLevels,
+template<class T, EikonalXX::SweepNumber2D E>
+void slownessToSweepSlowness(const size_t nLevels,
                              const int nGridX, const int nGridZ,
                              const int nCellX, const int nCellZ,
                              const T *slow,
@@ -1396,13 +1431,12 @@ void slownessToSweepSlowness(const SweepNumber2D sweep, //const int sweep,
             for (int indx=i0; indx<i1; ++indx)
             {
                 // Get (ix, iz) grid node
-                sweepLevelIndexToGrid(sweep, level, indx, nGridX, nGridZ,
-                                      &ix, &iz);
+                sweepLevelIndexToGrid<E>(level, indx, nGridX, nGridZ,
+                                         &ix, &iz);
                 // Get the slowness neighbors
-                gridToSurroundingSlowness(sweep,
-                                          ix, iz,
-                                          nCellX, nCellZ,
-                                          &iCell0, &iCell1, &iCell3);
+                gridToSurroundingSlowness<E>(ix, iz,
+                                             nCellX, nCellZ,
+                                             &iCell0, &iCell1, &iCell3);
                 iDst = indx - i0;
                 s0[iDst] = slow[iCell0];
                 s1[iDst] = slow[iCell1];
@@ -1413,7 +1447,6 @@ void slownessToSweepSlowness(const SweepNumber2D sweep, //const int sweep,
 }
 
 /// @brief Sets the preliminary nodes available for updating based on a sweep.
-/// @param[in] sweep         The sweep number.
 /// @param[in] nLevels       The number of levels in the solver.
 /// @param[in] nGridX        The number of x grid points.
 /// @param[in] nGridZ        The number of z grid points.
@@ -1424,8 +1457,8 @@ void slownessToSweepSlowness(const SweepNumber2D sweep, //const int sweep,
 ///                          can update the travel time field.
 ///                          BOUNDARY_NODE indicates that this node cannot
 ///                          be updated.
-void setPreliminaryUpdateNodes(const SweepNumber2D sweep, //const int sweep,
-                               const size_t nLevels,
+template<EikonalXX::SweepNumber2D E>
+void setPreliminaryUpdateNodes(const size_t nLevels,
                                const int nGridX, const int nGridZ,
                                const int *levelOffset,
                                int8_t *lUpdateNode)
@@ -1441,22 +1474,22 @@ void setPreliminaryUpdateNodes(const SweepNumber2D sweep, //const int sweep,
             for (int indx=i0; indx<i1; ++indx)
             {
                 // Get (ix, iz) grid node
-                sweepLevelIndexToGrid(sweep, level, indx, nGridX, nGridZ,
-                                      &ix, &iz);                
+                sweepLevelIndexToGrid<E>(level, indx, nGridX, nGridZ,
+                                         &ix, &iz);                
                 int8_t lUpdate = UPDATE_NODE;
-                if (sweep == SweepNumber2D::SWEEP1)
+                if constexpr (E == SweepNumber2D::SWEEP1)
                 {
                     if (ix == 0 || iz == 0){lUpdate = BOUNDARY_NODE;}
                 }
-                else if (sweep == SweepNumber2D::SWEEP2)
+                else if constexpr (E == SweepNumber2D::SWEEP2)
                 {
                     if (ix == nGridX - 1 || iz == 0){lUpdate = BOUNDARY_NODE;}
                 }
-                else if (sweep == SweepNumber2D::SWEEP3)
+                else if constexpr (E == SweepNumber2D::SWEEP3)
                 {
                     if (ix == 0 || iz == nGridZ - 1){lUpdate = BOUNDARY_NODE;}
                 } 
-                else //if (sweep == SweepNumber2D::SWEEP4)
+                else if constexpr (E == SweepNumber2D::SWEEP4)
                 {
                     if (ix == nGridX - 1 || iz == nGridZ - 1)
                     {
@@ -1479,14 +1512,14 @@ void setPreliminaryUpdateNodes(const SweepNumber2D sweep, //const int sweep,
 ///                          updated.
 ///                          BOUNDARY_NODE indicates this grid point cannot
 ///                          be updated.
-void setPreliminaryUpdateNodes(const SweepNumber2D sweep,
-                               const int nGridX, const int nGridZ,
+template<EikonalXX::SweepNumber2D E>
+void setPreliminaryUpdateNodes(const int nGridX, const int nGridZ,
                                int8_t *lUpdateNode)
 {
     auto nGrid = nGridX*nGridZ;
     std::fill(lUpdateNode, lUpdateNode + nGrid, UPDATE_NODE);
     int ix, iz;
-    if (sweep == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::SWEEP1)
     {
         iz = 0;
         #pragma omp simd
@@ -1501,7 +1534,7 @@ void setPreliminaryUpdateNodes(const SweepNumber2D sweep,
             lUpdateNode[gridToIndex(nGridX, ix, iz)] = BOUNDARY_NODE;
         }
     }
-    else if (sweep == SweepNumber2D::SWEEP2)
+    else if constexpr (E == SweepNumber2D::SWEEP2)
     {
         iz = 0;
         #pragma omp simd
@@ -1516,7 +1549,7 @@ void setPreliminaryUpdateNodes(const SweepNumber2D sweep,
             lUpdateNode[gridToIndex(nGridX, ix, iz)] = BOUNDARY_NODE;
         }
     }
-    else if (sweep == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::SWEEP3)
     {
         iz = nGridZ - 2;
         #pragma omp simd
@@ -1531,7 +1564,7 @@ void setPreliminaryUpdateNodes(const SweepNumber2D sweep,
             lUpdateNode[gridToIndex(nGridX, ix, iz)] = BOUNDARY_NODE;
         }
     }
-    else //if (sweep == SweepNumber2D::SWEEP4)
+    else if constexpr (E == SweepNumber2D::SWEEP4)
     {
         iz = nGridZ - 2;
         #pragma omp simd
@@ -1546,6 +1579,12 @@ void setPreliminaryUpdateNodes(const SweepNumber2D sweep,
             lUpdateNode[gridToIndex(nGridX, ix, iz)] = BOUNDARY_NODE;
         }
     }
+#ifndef NDEBUG
+    else 
+    {    
+        assert(false);
+    }    
+#endif
 }
 /*
     sycl::queue q{sycl::cpu_selector{}};

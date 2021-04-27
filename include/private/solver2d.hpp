@@ -76,19 +76,18 @@ public:
         if (mAlgorithm == EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD)
         {
             auto updateNodePtr = mUpdateNode.data();
-            setPreliminaryUpdateNodes(E, mLevels,
-                                      mGridX, mGridZ,
-                                      mLevelOffset.data(),
-                                      updateNodePtr);
+            setPreliminaryUpdateNodes<E>(mLevels,
+                                         mGridX, mGridZ,
+                                         mLevelOffset.data(),
+                                         updateNodePtr);
             //auto updatePointer = getUpdateNodePointer(sweep);
             int i0, i1, indx, level, offset;
             for (const auto &sourceNode : sourceNodes)
             {
-                gridSweepToLevelIndex(E,
-                                      sourceNode.first,
-                                      sourceNode.second,
-                                      mGridX, mGridZ,
-                                      &level, &indx);
+                gridSweepToLevelIndex<E>(sourceNode.first,
+                                         sourceNode.second,
+                                         mGridX, mGridZ,
+                                         &level, &indx);
                 getLevelStartStopIndices(mGridX, mGridZ, level, &i0, &i1);
                 offset = mLevelOffset[level];
                 if (ldebug)
@@ -107,9 +106,8 @@ public:
         }
         else
         {
-            setPreliminaryUpdateNodes(E,
-                                      mGridX, mGridZ,
-                                      mUpdateNode.data());
+            setPreliminaryUpdateNodes<E>(mGridX, mGridZ,
+                                         mUpdateNode.data());
             for (const auto &sourceNode : sourceNodes)
             {
                 auto indx = gridToIndex(mGridX,
@@ -167,11 +165,10 @@ public:
             }
 #endif
             // Fill slownesses in each sweep
-            slownessToSweepSlowness(E,
-                                    static_cast<size_t> (mLevels),
-                                    mGridX, mGridZ, mCellX, mCellZ,
-                                    velocityModel.getSlownessPointer(), 
-                                    mSweepSlowness.data());
+            slownessToSweepSlowness<T, E>(static_cast<size_t> (mLevels),
+                                          mGridX, mGridZ, mCellX, mCellZ,
+                                          velocityModel.getSlownessPointer(), 
+                                          mSweepSlowness.data());
 #ifndef NDEBUG
             for (int level=0; level<mLevels; ++level)
             {
@@ -240,16 +237,15 @@ std::cout.precision(10);
                 for (int ix = ix0; ix != ix1; ix = ix + ixDir)
                 {
                     // Get surrounding slownesses
-                    gridToSurroundingSlowness(E,
-                                              ix, iz,
-                                              mCellX, mCellZ,
-                                              &iCell0, &iCell1, &iCell3);
+                    gridToSurroundingSlowness<E>(ix, iz,
+                                                 mCellX, mCellZ,
+                                                 &iCell0, &iCell1, &iCell3);
                     s0 = slowness[iCell0];
                     s1 = slowness[iCell1];
                     s3 = slowness[iCell3];
                     // Get surrounding travel times
-                    gridToSurroundingTravelTimes(E, ix, iz, mGridX,
-                                                 &it0, &it1, &it2, &it3);
+                    gridToSurroundingTravelTimes<E>(ix, iz, mGridX,
+                                                    &it0, &it1, &it2, &it3);
                     t0 = travelTimes[it0];
                     t1 = travelTimes[it1];
                     t2 = travelTimes[it2];
@@ -283,16 +279,15 @@ std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travel
             {
                 for (int ix = ix0; ix != ix1; ix = ix + ixDir)
                 {
-                    gridToSurroundingSlowness(E,
-                                              ix, iz, 
-                                              mCellX, mCellZ,
+                    gridToSurroundingSlowness<E>(ix, iz, 
+                                                 mCellX, mCellZ,
                                               &iCell0, &iCell1, &iCell3);
                     s0 = slowness[iCell0];
                     s1 = slowness[iCell1];
                     s3 = slowness[iCell3];
 
-                    gridToSurroundingTravelTimes(E, ix, iz, mGridX,
-                                                 &it0, &it1, &it2, &it3);
+                    gridToSurroundingTravelTimes<E>(ix, iz, mGridX,
+                                                    &it0, &it1, &it2, &it3);
                     t0 = travelTimes[it0];
                     t1 = travelTimes[it1];
                     t2 = travelTimes[it2];
