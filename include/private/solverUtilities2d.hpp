@@ -887,18 +887,25 @@ template<EikonalXX::SweepNumber2D E>
 void getSweepFiniteDifferenceSigns(int *ixShift, int *izShift,
                                    int *signX, int *signZ)
 {
-    *ixShift =-1; 
-    *izShift =-1; 
-    *signX = 1; 
-    *signZ = 1; 
-    if constexpr (E == SweepNumber2D::SWEEP2)
+    if constexpr (E == SweepNumber2D::SWEEP1)
     {
-        *signX =-1; 
-        *ixShift = 1; 
+        *signX = 1;
+        *signZ = 1;
+        *ixShift =-1;
+        *izShift =-1; 
+    }
+    else if constexpr (E == SweepNumber2D::SWEEP2)
+    {
+        *signX =-1;
+        *signZ = 1;
+        *ixShift = 1;
+        *izShift =-1;
     }
     else if constexpr (E == SweepNumber2D::SWEEP3)
     {
+        *signX = 1;
         *signZ =-1; 
+        *ixShift =-1;
         *izShift = 1; 
     }
     else if constexpr (E == SweepNumber2D::SWEEP4)
@@ -911,7 +918,7 @@ void getSweepFiniteDifferenceSigns(int *ixShift, int *izShift,
 #ifndef NDEBUG
     else
     {
-        if (E != SweepNumber2D::SWEEP1){assert(false);}
+        assert(false);
     }
 #endif
 }
@@ -1060,26 +1067,32 @@ void sweepLevelIndexToGrid(const int level,
                            int *ix, int *iz)
 {
     // +x and +z 
-    *iz = indx;
-    *ix = level - *iz;
-    // -x and +z
-    if constexpr (E == SweepNumber2D::SWEEP2)
+    int jz = indx;
+    int jx = level - jz;
+    if constexpr (E == SweepNumber2D::SWEEP1)
     {
-        *ix = nx - 1 - *ix;
+        *iz = jz;
+        *ix = jx;
+    }
+    else if constexpr (E == SweepNumber2D::SWEEP2) // -x and +z
+    {
+        *iz = jz;
+        *ix = nx - 1 - jx;
     }
     else if constexpr (E == SweepNumber2D::SWEEP3) // +x and -z
     {
-        *iz = nz - 1 - *iz;
+        *iz = nz - 1 - jz;
+        *ix = jx;
     }
     else if constexpr (E == SweepNumber2D::SWEEP4) // -x and -z
     {
-        *iz = nz - 1 - *iz;
-        *ix = nx - 1 - *ix;
+        *iz = nz - 1 - jz;
+        *ix = nx - 1 - jx;
     }
 #ifndef NDEBUG
     else 
     {    
-        if (E != SweepNumber2D::SWEEP1){assert(false);}
+        assert(false);
     }    
 #endif
 }
@@ -1103,23 +1116,32 @@ void gridSweepToLevelIndex(const int ix,
                            const int nz,
                            int *level, int *indx)
 {
-    int jx = ix;
-    int jz = iz;
-    if constexpr (E == SweepNumber2D::SWEEP2)
+    if constexpr (E == SweepNumber2D::SWEEP1) // +x, +z
     {
-        jx = nx - 1 - ix;
+        *indx = iz;
+        *level = ix + iz;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::SWEEP2) // -x, +z
     {
-        jz = nz - 1 - iz;
+        *indx = iz;
+        *level = (nx - 1 - ix) + iz;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP4)
+    else if constexpr (E == SweepNumber2D::SWEEP3) // +x, -z
     {
-        jz = nz - 1 - iz;
-        jx = nx - 1 - ix;
+        *indx = nz - 1 - iz;
+        *level = ix + (nz - 1 - iz);
     }
-    *indx = jz;
-    *level = jx + jz;
+    else if constexpr (E == SweepNumber2D::SWEEP4) // -x, -z
+    {
+        *indx = nz - 1 - iz;
+        *level = (nx - ix) + (nz - iz) - 2; // Simplified -1 + -1 = -2
+    }
+#ifndef NDEBUG
+    else
+    {
+        assert(false);
+    }
+#endif
 }
 
 /// @brief Converts a (sweep, level, index) to a travel time field index.
