@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_ANALYTIC_HOMOGENEOUS2D_HPP
-#define EIKONALXX_ANALYTIC_HOMOGENEOUS2D_HPP
+#ifndef EIKONALXX_ANALYTIC_LINEARGRADIENT2D_HPP
+#define EIKONALXX_ANALYTIC_LINEARGRADIENT2D_HPP
 #include <memory>
 #include <vector>
 namespace EikonalXX
@@ -9,35 +9,39 @@ class Geometry2D;
 class Source2D;
 namespace Analytic
 {
-/// @class Homogeneous2D "homogeneous2d.hpp" "eikonalxx/analytic/homogeneous2d.hpp"
-/// @brief Solves the eikonal equation in a constant velocity model.
+/// @class LinearGradient2D "linearGradient2d.hpp" "eikonalxx/analytic/linearGradient2d.hpp"
+/// @brief Solves the eikonal equation in a velocity model with a
+///        linear gradient.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
+/// @note Further details can be found in Fomel's : Fast sweeping method for
+///       the factored eikonal equation.
 template<class T>
-class Homogeneous2D
+class LinearGradient2D
 {
 public:
     /// @name Constructor
     /// @{
     /// @brief Constructor.
-    Homogeneous2D(); 
+    LinearGradient2D(); 
     /// @brief Copy constructor.
-    Homogeneous2D(const Homogeneous2D &solver);
+    LinearGradient2D(const LinearGradient2D &solver);
     /// @brief Move constructor.
-    Homogeneous2D(Homogeneous2D &&solver) noexcept;
+    LinearGradient2D(LinearGradient2D &&solver) noexcept;
     /// @}
 
     /// @name Operators
     /// @{
     /// @brief Copy assignment.
-    /// @param[in] solver  The 2D homogeneous analytic solver to copy to this.
+    /// @param[in] solver  The 2D linear graident analytic solver to copy
+    ///                    to this.
     /// @result A deep copy of the input solver.
-    Homogeneous2D& operator=(const Homogeneous2D &solver);
+    LinearGradient2D& operator=(const LinearGradient2D &solver);
     /// @brief Move assignment.
-    /// @param[in,out] solver  The 2D homogeneous analytic solver whose memory
-    ///                        will be moved to this.  On exit, solver's
+    /// @param[in,out] solver  The 2D linear gradient analytic solver whose
+    ///                        memory will be moved to this.  On exit, solver's
     ///                        behavior is undefined.
     /// @result The memory from the input solver moved to this.
-    Homogeneous2D& operator=(Homogeneous2D &&solver) noexcept;
+    LinearGradient2D& operator=(LinearGradient2D &&solver) noexcept;
     /// @}
 
     /// @}
@@ -54,10 +58,12 @@ public:
     
     /// @name Step 2: Velocity Model
     /// @{
-    /// @brief Sets the constant velocity model.
-    /// @param[in] velocity   The velocity in m/s.
+    /// @brief Sets the linear gradient velocity model.
+    /// @param[in] velocity   velocity.first is the velocity in m/s at the
+    ///                       top of the model and velocity.second is the
+    ///                       velocity in m/s at the bottom of the model.
     /// @throws std::invalid_argument if velocity is not positive.
-    void setVelocityModel(double velocity);
+    void setVelocityModel(const std::pair<double, double> &velocity);
     /// @result True indicates that the velocity model was set.
     [[nodiscard]] bool haveVelocityModel() const noexcept;
     /// @}
@@ -117,11 +123,11 @@ public:
     /// @brief Releases all memory and resets the class.
     void clear() noexcept;
     /// @brief Destructor.
-    ~Homogeneous2D();
+    ~LinearGradient2D();
     /// @}
 private:
-    class Homogeneous2DImpl;
-    std::unique_ptr<Homogeneous2DImpl> pImpl;
+    class LinearGradient2DImpl;
+    std::unique_ptr<LinearGradient2DImpl> pImpl;
 };
 }
 }

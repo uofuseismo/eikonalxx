@@ -1,55 +1,55 @@
-#ifndef EIKONALXX_ANALYTIC_HOMOGENEOUS2D_HPP
-#define EIKONALXX_ANALYTIC_HOMOGENEOUS2D_HPP
+#ifndef EIKONALXX_ANALYTIC_HOMOGENEOUS3D_HPP
+#define EIKONALXX_ANALYTIC_HOMOGENEOUS3D_HPP
 #include <memory>
 #include <vector>
 namespace EikonalXX
 {
 /// Forward declarations
-class Geometry2D;
-class Source2D;
+class Geometry3D;
+class Source3D;
 namespace Analytic
 {
-/// @class Homogeneous2D "homogeneous2d.hpp" "eikonalxx/analytic/homogeneous2d.hpp"
+/// @class Homogeneous3D "homogeneous3d.hpp" "eikonalxx/analytic/homogeneous3d.hpp"
 /// @brief Solves the eikonal equation in a constant velocity model.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 template<class T>
-class Homogeneous2D
+class Homogeneous3D
 {
 public:
     /// @name Constructor
     /// @{
     /// @brief Constructor.
-    Homogeneous2D(); 
+    Homogeneous3D(); 
     /// @brief Copy constructor.
-    Homogeneous2D(const Homogeneous2D &solver);
+    Homogeneous3D(const Homogeneous3D &solver);
     /// @brief Move constructor.
-    Homogeneous2D(Homogeneous2D &&solver) noexcept;
+    Homogeneous3D(Homogeneous3D &&solver) noexcept;
     /// @}
 
     /// @name Operators
     /// @{
     /// @brief Copy assignment.
-    /// @param[in] solver  The 2D homogeneous analytic solver to copy to this.
+    /// @param[in] solver  The 3D homogeneous analytic solver to copy to this.
     /// @result A deep copy of the input solver.
-    Homogeneous2D& operator=(const Homogeneous2D &solver);
+    Homogeneous3D& operator=(const Homogeneous3D &solver);
     /// @brief Move assignment.
-    /// @param[in,out] solver  The 2D homogeneous analytic solver whose memory
+    /// @param[in,out] solver  The 3D homogeneous analytic solver whose memory
     ///                        will be moved to this.  On exit, solver's
     ///                        behavior is undefined.
     /// @result The memory from the input solver moved to this.
-    Homogeneous2D& operator=(Homogeneous2D &&solver) noexcept;
+    Homogeneous3D& operator=(Homogeneous3D &&solver) noexcept;
     /// @}
 
     /// @}
     /// @name Step 1: Initialization
     /// @{
     /// @brief Initializes the class.
-    void initialize(const EikonalXX::Geometry2D &geometry);
+    void initialize(const EikonalXX::Geometry3D &geometry);
     /// @result True indicates that the class is initialized.
     [[nodiscard]] bool isInitialized() const noexcept;
     /// @result The model geometry. 
     /// @throws std::runtime_error if \c isInitialized() is false. 
-    [[nodiscard]] Geometry2D getGeometry() const;
+    [[nodiscard]] Geometry3D getGeometry() const;
     /// @}
     
     /// @name Step 2: Velocity Model
@@ -69,19 +69,21 @@ public:
     /// @throws std::invalid_argument if the source location in x and z
     ///         is not set.
     /// @throws std::runtime_error if the class is not initialized.
-    void setSource(const Source2D &source);
+    void setSource(const Source3D &source);
     /// @brief Sets the source location.
-    /// @param[in] location   The source location.  location.first is the x
-    ///                       position in the model and location.second is
-    ///                       the z location in the model.
+    /// @param[in] location   The source location.  std::get<0> (location)
+    ///                       is the x position in the model,
+    ///                       std::get<1> (location) is the y position in the
+    ///                       model, and std::get<2> (location) is the z
+    ///                       location in the model.
     /// @throws std::runtime_error if the class is not initialized.
     /// @throws std::invalid_argument if the source location is not in the
     ///         model.
     /// @sa \c isInitialized()
-    void setSource(const std::pair<double, double> &location);
+    void setSource(const std::tuple<double, double, double> &location);
     /// @result The source information.
     /// @throws std::runtime_error if \c haveSource() is false.
-    [[nodiscard]] Source2D getSource() const;
+    [[nodiscard]] Source3D getSource() const;
     /// @result True indicates that the source was set.
     [[nodiscard]] bool haveSource() const noexcept;
     /// @}
@@ -99,13 +101,13 @@ public:
     /// @result The travel times from the source to all nodes in the model in
     ///         in seconds.  This uses the natural ordering.
     /// @note This has dimension getGeometry.getNumberOfGridPoints().
-    /// @sa \c Ordering2D, \c haveTravelTimeField(), \c getGeometry()
+    /// @sa \c Ordering3D, \c haveTravelTimeField(), \c getGeometry()
     [[nodiscard]] std::vector<T> getTravelTimeField() const;
     /// @result A pointer to the travel time field at all nodes in the model
     ///         in seconds.   This uses the natural ordering and
     ///         has dimension [getGeometry.getNumberOfGridPoints()].
     /// @throws std::runtime_error if \c haveTravelTimeField() is false.
-    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
+    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering3D
     [[nodiscard]] const T* getTravelTimeFieldPointer() const;
     /// @result True indicates that \c solve() has been called and the travel
     ///         time field is available.
@@ -117,11 +119,11 @@ public:
     /// @brief Releases all memory and resets the class.
     void clear() noexcept;
     /// @brief Destructor.
-    ~Homogeneous2D();
+    ~Homogeneous3D();
     /// @}
 private:
-    class Homogeneous2DImpl;
-    std::unique_ptr<Homogeneous2DImpl> pImpl;
+    class Homogeneous3DImpl;
+    std::unique_ptr<Homogeneous3DImpl> pImpl;
 };
 }
 }
