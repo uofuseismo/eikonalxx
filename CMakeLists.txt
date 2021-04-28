@@ -83,6 +83,7 @@ add_executable(unitTests
                testing/model.cpp
                testing/solverOptions.cpp
                testing/graph.cpp
+               testing/analytic.cpp
                testing/solver2d.cpp
                testing/solver3d.cpp
                )

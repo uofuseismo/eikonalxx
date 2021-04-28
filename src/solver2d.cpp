@@ -234,10 +234,6 @@ void Solver2D<T>::setSource(const Source2D &source)
     {
         throw std::invalid_argument("Source location in z not set");
     }
-    //pImpl->mShiftedSource = std::make_pair<T, T> (source.getOffsetInX(),
-    //                                              source.getOffsetInZ());
-    //pImpl->mSourceCellX = source.getSourceCellInX();
-    //pImpl->mSourceCellZ = source.getSourceCellInZ(); 
     pImpl->mSourceCell = source.getCell();
     pImpl->mSource = source;
     pImpl->mHaveSource = true;
@@ -287,26 +283,6 @@ void Solver2D<T>::setSource(const std::pair<double, double> &sourceLocation)
     source.setLocationInX(sourceLocation.first);
     source.setLocationInZ(sourceLocation.second);
     setSource(source);
-/*
-    pImpl->mShiftedSource = std::make_pair<T, T> (sourceLocation.first  - xmin,
-                                                  sourceLocation.second - zmin);
-    pImpl->mSourceCellX = static_cast<int> (pImpl->mShiftedSource.first/dx);
-    pImpl->mSourceCellZ = static_cast<int> (pImpl->mShiftedSource.second/dz);
-    pImpl->mSourceCell = gridToIndex(pImpl->mGeometry.getNumberOfCellsInX(),
-                                     pImpl->mSourceCellX, pImpl->mSourceCellZ);
-    pImpl->mSourceLocation = sourceLocation;
-    pImpl->mHaveSource = true;
-    // Some fine-grained debug
-    if (pImpl->mOptions.getVerbosity() == Verbosity::DEBUG)
-    {
-        std::cout << "Shifted source location (x,z)=("
-                  << pImpl->mShiftedSource.first << "," 
-                  << pImpl->mShiftedSource.second << ")" << std::endl;
-        std::cout << "Source cell (iCellX,iCellZ)=(" 
-                  << pImpl->mSourceCellX << "," << pImpl->mSourceCellZ
-                  << ")" << std::endl;
-    }
-*/
 }
 
 /// Get source
