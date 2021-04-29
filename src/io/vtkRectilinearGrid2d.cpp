@@ -203,7 +203,7 @@ void VTKRectilinearGrid2D::close() noexcept
     pImpl->mWriteBinary = true;
 }
 
-/// Write float dataset
+/// Write float nodal dataset
 template<>
 void VTKRectilinearGrid2D::writeNodalDataset(
     const std::string &name,
@@ -250,11 +250,6 @@ void VTKRectilinearGrid2D::writeNodalDataset(
             }
         }
         pImpl->mFile.write(cData.data(), cData.size());
-/*
-        auto cData = reinterpret_cast<const char *> (data);
-        pImpl->mFile.write(cData.data(), nBytes);
-        pImpl->mFile << std::endl;
-*/
     }
     else
     {
@@ -265,6 +260,64 @@ void VTKRectilinearGrid2D::writeNodalDataset(
     }
 }
 
+/// Write float nodal dataset
+template<>
+void VTKRectilinearGrid2D::writeCellularDataset(
+    const std::string &name,
+    const float *data,
+    const Ordering2D ordering) const
+{
+    if (!isOpen())
+    {
+        std::cerr << "File not open for writing" << std::endl;
+    }
+    if (data == nullptr){throw std::invalid_argument("data is NULL");}
+    auto nCell = static_cast<size_t> (pImpl->mGeometry.getNumberOfCells());
+    pImpl->mFile << "CELL_DATA " << nCell << std::endl;
+    constexpr int nComp = 1;
+    if (name.empty())
+    {
+        pImpl->mFile << "SCALARS dataset float " << nComp << std::endl;
+    }
+    else
+    {
+        pImpl->mFile << "SCALARS " << fillBlanksWithUnderscores(name)
+                     << " float " << nComp << std::endl;
+    }
+    pImpl->mFile << "LOOKUP_TABLE default" << std::endl;
+    if (pImpl->mWriteBinary)
+    { 
+        std::vector<char> cData(nCell*4);
+        if (ordering == EikonalXX::Ordering2D::NATURAL)
+        {
+            pack(nCell, data, cData.data());
+        }
+        else
+        {
+            auto nCellX = pImpl->mGeometry.getNumberOfCellsInX();
+            auto nCellZ = pImpl->mGeometry.getNumberOfCellsInZ();
+            for (int ix = 0; ix < nCellX; ++ix)
+            {
+                for (int iz = 0; iz < nCellZ; ++iz)
+                {
+                    auto isrc = gridToIndex(nCellX, ix, iz);
+                    auto idst = 4*gridToIndex(nCellZ, iz, ix);
+                    pack(data[isrc], &cData[idst]);
+                }
+            }
+        }
+        pImpl->mFile.write(cData.data(), cData.size());
+    }
+    else
+    {
+        for (size_t i = 0; i < nCell; ++i)
+        {
+            pImpl->mFile << data[i] << std::endl;
+        }
+    }
+}
+
+/// Double nodal dataset
 template<>
 void VTKRectilinearGrid2D::writeNodalDataset(
     const std::string &name,
@@ -282,3 +335,20 @@ void VTKRectilinearGrid2D::writeNodalDataset(
     writeNodalDataset(name, data4Ptr, ordering);
 }
 
+/// Double cell data
+template<>
+void VTKRectilinearGrid2D::writeCellularDataset(
+    const std::string &name,
+    const double *__restrict__ data,
+    const Ordering2D ordering) const
+{
+    if (!isOpen())
+    {
+        std::cerr << "File not open for writing" << std::endl;
+    }
+    auto nCell = pImpl->mGeometry.getNumberOfCells();
+    std::vector<float> data4(nCell);
+    float *__restrict__ data4Ptr = data4.data();
+    std::copy(data, data + nCell, data4Ptr);
+    writeCellularDataset(name, data4Ptr, ordering);
+}

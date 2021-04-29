@@ -35,7 +35,7 @@ TEST(Analytic, Homogeneous2D)
     EXPECT_TRUE(solver.haveVelocityModel());
     EXPECT_NO_THROW(solver.solve());
     auto travelTimes = solver.getTravelTimeField();
-solver.writeVTK("test.vtk");
+    //solver.writeVTK("test.vtk");
     // Verify
     double dtMax = 0;
     for (int iz = 0; iz < nz; ++iz)
