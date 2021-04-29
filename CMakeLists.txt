@@ -39,7 +39,7 @@ set(LIBSRC
     src/source3d.cpp
     src/solver2d.cpp
     src/solver3d.cpp
-    src/station3d.cpp
+    src/station2d.cpp src/station3d.cpp
     src/analytic/homogeneous2d.cpp
     src/io/vtkRectilinearGrid2d.cpp)
 
@@ -62,7 +62,8 @@ if (WRAP_PYTHON)
                python/pyEikonalXX.cpp
                python/pySolverOptions.cpp
                python/pyGeometry2d.cpp python/pyGeometry3d.cpp
-               python/pyModel2d.cpp)
+               python/pyModel2d.cpp
+               python/pySource2d.cpp)
    target_link_libraries(pyEikonalXX PRIVATE
                          pybind11::module eikonalxx)
    set_target_properties(pyEikonalXX PROPERTIES

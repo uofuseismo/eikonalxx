@@ -339,7 +339,7 @@ bool Station3D::haveLocationInZ() const noexcept
     return pImpl->mHaveZLocation;
 }
 
-/// sdt::cout << station << std::endl;
+/// std::cout << station << std::endl;
 std::ostream&
 EikonalXX::operator<<(std::ostream &os, const Station3D &station)
 {
