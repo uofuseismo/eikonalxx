@@ -110,6 +110,15 @@ public:
     /// @result True indicates that \c solve() has been called and the travel
     ///         time field is available.
     [[nodiscard]] bool haveTravelTimeField() const noexcept;
+
+    /// @brief Writes the travel time field to VTK.
+    /// @param[in] fileName  The name of the VTK file.
+    /// @param[in] title     The dataset's title.
+    /// @throws std::runtime_error if \c haveTravelTimeField() is false.
+    /// @throws std::invalid_argument if there is an error while opening the
+    ///         output file.
+    void writeVTK(const std::string &fileName,
+                  const std::string &title = "homogeneous_analytic_traveltime_field");
     /// @}
 
     /// @name Destructors

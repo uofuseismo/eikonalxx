@@ -2,6 +2,7 @@
 #define EIKONALXX_IO_VTKRECTILINEARGRID2D_HPP
 #include <string>
 #include <memory>
+#include "eikonalxx/enums.hpp"
 namespace EikonalXX
 {
 class Geometry2D;
@@ -16,31 +17,108 @@ public:
     VTKRectilinearGrid2D();
     /// @}
 
+    /// @name Destructors
+    /// @{
+    ~VTKRectilinearGrid2D();
+    /// @}
+    
+    /// @name Step 1: Open the VTK file 
+    /// @{
+    /// @brief Opens a VTK file for writing.
+    /// @param[in] fileName     The name of the VTK file to write to.
+    /// @param[in] geometry     The 2D geometry.
+    /// @param[in] title        Specifies the title.  If this exceeds 256
+    ///                         characters then it will be truncated.  
+    ///                         Additionally, blank spaces will be filled by
+    ///                         underscores. 
+    /// @param[in] writeBinary  If true then the output will be binary instead
+    ///                         of plain text.  
+    /// @throws std::invalid_argument if the number of grid points or grid
+    ///         spacing is not fully specified on the geometry or if the file
+    ///         path cannot be created. 
+    void open(const std::string &fileName,
+              const Geometry2D &geometry,
+              const std::string &title = "traveltimes",
+              const bool writeBinary = true);
+    /// @result True indicates that the the file is open for writing.
+    [[nodiscard]] bool isOpen() const noexcept;
+    /// @}
+
+    /// @name Step 2: Write datasets
+    /// @{
+    /// @brief Writes a nodal dataset.
+    /// @param[in] name      The name of the nodal dataset.  Note, all blank
+    ///                      spaces will be replaced with underscores.
+    /// @param[in] data      The nodal dataset to write.  This has dimension
+    ///                      geometry.getNumberOfGridPoints().
+    /// @param[in] ordering  The dataset's ordering.
+    /// @throws std::runtime_error if \c isOpen() is false.
+    /// @throws std::invalid_argument if the dataset's name is empty or the
+    ///         data pointer is NULL.
+    template<typename T>
+    void writeNodalDataset(const std::string &name,
+                           const T *data,
+                           Ordering2D ordering = Ordering2D::NATURAL) const;
+    /// @brief Writes a cell-based dataset.
+    /// @brief Writes a nodal dataset.
+    /// @param[in] name      The name of the cellular dataset.  Note, all blank
+    ///                      spaces will be replaced with underscores.
+    /// @param[in] data      The cellular dataset to write.  This has dimension
+    ///                      geometry.getNumberOfCells().
+    /// @param[in] ordering  The dataset's ordering.
+    /// @throws std::runtime_error if \c isOpen() is false.
+    /// @throws std::invalid_argument if the dataset's name is empty or the
+    ///         data pointer is NULL.
+    template<typename T>
+    void writeCellularDataset(const std::string &fname,
+                              const T *data,
+                              Ordering2D ordering = Ordering2D::NATURAL) const;
+    /// @}
+
+    /// @name Step 3: Close the file
+    /// @{
+    /// @brief Closes the file.
+    void close() noexcept;
+    /// @}
+
+/*
     /// @brief Sets the 2D geometry.
     void setGeometry(const Geometry2D &geometry);
+    /// @result True indicates that the geometry is set.
+    [[nodiscard]] bool haveGeometry() const noexcept;
 
     /// @brief Adds a nodal dataset.
     /// @param[in] name     The name of the dataset.
     /// @param[in] dataSet  The node-based dataset.  This is stored in
     ///                     EikonalXX's natural ordering.
-    void addNodalDataset(const std::string &name, const double *dataSet);
+    void addNodalDataset(const std::string &name, std::shared_ptr<const double *> dataSet);
     /// @copydoc addNodalDataset 
-    void addNodalDataset(const std::string &name, const float *dataSet);
+    void addNodalDataset(const std::string &name, std::shared_ptr<const float *> dataSet);
 
-    /// @brief Adds a cell-based dataset.
-    /// @param[in] name     The name of the dataset.
-    /// @param[in] dataSet  The node-based dataset.  This is stored in
-    ///                     EikonalXX's natural ordering.
+    /// @brief Writes the datasets to the given VTK file.
+    /// @param[in] fileName  The name of the output VTK file.
+    /// @throws std::invalid_argument if \c haveGeometry() is false or no
+    ///         datasets exist.
+    void write(const std::string &fileName, const bool writeBinary = true) const;
 
     /// @brief Releases references to all datasets.
-    void clearDatasets();
+    void clearDatasets() noexcept;
     /// @name Destructors
     /// @{
+    /// @brief Destructor.
     ~VTKRectilinearGrid2D();
+    /// @brief Clears all variables in the class.
+    void clear() noexcept;
     /// @}
+*/
+    // Remove some functionality
+    VTKRectilinearGrid2D(const VTKRectilinearGrid2D &vtk) = delete;
+    VTKRectilinearGrid2D(VTKRectilinearGrid2D &&vtk) noexcept = delete;
+    VTKRectilinearGrid2D& operator=(const VTKRectilinearGrid2D &vtk) = delete;
+    VTKRectilinearGrid2D& operator=(VTKRectilinearGrid2D &&vtk) noexcept = delete;
 private:
-    class VTKRectlinearGridImpl;
-    std::unique_ptr<VTKRectlinearGridImpl> pImpl;
+    class VTKRectilinearGrid2DImpl;
+    std::unique_ptr<VTKRectilinearGrid2DImpl> pImpl;
 };
 }
 }

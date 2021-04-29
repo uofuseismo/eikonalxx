@@ -3,6 +3,7 @@
 #include "eikonalxx/analytic/homogeneous2d.hpp"
 #include "eikonalxx/source2d.hpp"
 #include "eikonalxx/geometry2d.hpp"
+#include "eikonalxx/io/vtkRectilinearGrid2d.hpp"
 
 namespace
 {
@@ -314,6 +315,19 @@ const T* Homogeneous2D<T>::getTravelTimeFieldPointer() const
         throw std::runtime_error("Travel time field not yet computed");
     }
     return pImpl->mTravelTimeField.data();
+}
+
+/// Write the travel time field
+template<class T>
+void Homogeneous2D<T>::writeVTK(const std::string &fileName,
+                                const std::string &title)
+{
+    auto tPtr = getTravelTimeFieldPointer(); // Throws
+    IO::VTKRectilinearGrid2D vtkWriter;
+    constexpr bool writeBinary = true;
+    vtkWriter.open(fileName, pImpl->mGeometry, title, writeBinary); 
+    vtkWriter.writeNodalDataset(title, tPtr, EikonalXX::Ordering2D::NATURAL);
+    vtkWriter.close();
 }
 
 ///--------------------------------------------------------------------------///

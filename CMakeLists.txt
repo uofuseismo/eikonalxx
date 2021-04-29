@@ -45,13 +45,13 @@ set(LIBSRC
 
 set(BUILD_SHARED_LIBS YES)
 add_library(eikonalxx ${LIBSRC})
-target_link_libraries(eikonalxx PRIVATE sycl ${TBB_LIBRARY})
+target_link_libraries(eikonalxx PRIVATE sycl ${TBB_LIBRARY} stdc++fs)
 if (${Boost_FOUND})
    target_compile_definitions(eikonalxx PRIVATE USE_BOOST)
    target_include_directories(eikonalxx PRIVATE ${Boost_INCLUDE_DIRS})
 endif()
 set_target_properties(eikonalxx PROPERTIES
-                      CXX_STANDARD 17
+                      CXX_STANDARD 20
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENSIONS NO)
 
@@ -67,7 +67,7 @@ if (WRAP_PYTHON)
                          pybind11::module eikonalxx)
    set_target_properties(pyEikonalXX PROPERTIES
                          PREFIX ""
-                         CXX_STANDARD 17
+                         CXX_STANDARD 20
                          CXX_STANDARD_REQUIRED YES
                          CXX_EXTENSIONS NO)
    target_include_directories(pyEikonalXX PRIVATE pybind11

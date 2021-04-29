@@ -9,7 +9,7 @@ This is a library for solving the eikonal equation in Cartesian coordinates usin
 The library requires
 
    1. CMake 3.10 or higher.
-   1. A C++17 compliant compiler.
+   1. A C++20 compliant compiler.
    2. A SYCL v1.2 compliant compiler - e.g., dpcpp or Intel.
 
 Optionally, to build the Python bindings the following are needed
