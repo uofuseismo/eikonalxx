@@ -8,6 +8,7 @@
 #include <cstdint>
 #include "eikonalxx/io/vtkRectilinearGrid2d.hpp"
 #include "eikonalxx/geometry2d.hpp"
+#include "private/grid.hpp"
 
 using namespace EikonalXX::IO;
 
@@ -230,7 +231,24 @@ void VTKRectilinearGrid2D::writeNodalDataset(
     if (pImpl->mWriteBinary)
     {
         std::vector<char> cData(nGrid*4);
-        pack(nGrid, data, cData.data());
+        if (ordering == EikonalXX::Ordering2D::NATURAL)
+        {
+            pack(nGrid, data, cData.data());
+        }
+        else
+        {
+            auto nx = pImpl->mGeometry.getNumberOfGridPointsInX();
+            auto nz = pImpl->mGeometry.getNumberOfGridPointsInZ();
+            for (int ix = 0; ix < nx; ++ix)
+            {
+                for (int iz = 0; iz < nz; ++iz)
+                {
+                    auto isrc = gridToIndex(nx, ix, iz);
+                    auto idst = 4*gridToIndex(nz, iz, ix);
+                    pack(data[isrc], &cData[idst]);
+                }
+            }
+        }
         pImpl->mFile.write(cData.data(), cData.size());
 /*
         auto cData = reinterpret_cast<const char *> (data);

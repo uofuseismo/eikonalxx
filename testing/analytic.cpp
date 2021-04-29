@@ -9,8 +9,8 @@ namespace
 TEST(Analytic, Homogeneous2D)
 {
     double velocity = 3000;
-    int nx = 23;
-    int nz = 55;
+    int nx = 55;
+    int nz = 23;
     double dx = 100;
     double dz = 100;
     double x0 = 1;
@@ -35,6 +35,7 @@ TEST(Analytic, Homogeneous2D)
     EXPECT_TRUE(solver.haveVelocityModel());
     EXPECT_NO_THROW(solver.solve());
     auto travelTimes = solver.getTravelTimeField();
+solver.writeVTK("test.vtk");
     // Verify
     double dtMax = 0;
     for (int iz = 0; iz < nz; ++iz)
