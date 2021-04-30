@@ -31,6 +31,7 @@ public:
 
     void setGeometry(const Geometry2D &geometry);
     [[nodiscard]] bool haveGeometry() const noexcept;
+    Geometry2D getGeometry() const;
 
     /// @brief X location
     void setLocationInX(double x);

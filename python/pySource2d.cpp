@@ -1,5 +1,6 @@
 #include "include/pySource2d.hpp"
 #include "include/pyGeometry2d.hpp"
+#include "eikonalxx/geometry2d.hpp"
 #include "eikonalxx/source2d.hpp"
 
 using namespace PEikonalXX;
@@ -44,6 +45,16 @@ void Source2D::setGeometry(const Geometry2D &geometry)
 bool Source2D::haveGeometry() const noexcept
 {
     return pImpl->haveGeometry();
+}
+
+Geometry2D Source2D::getGeometry() const
+{
+    if (!haveGeometry())
+    {
+        throw std::invalid_argument("Geometry not yet set");
+    }
+    Geometry2D geometry(pImpl->getGeometry());
+    return geometry;
 }
 
 /// X location
@@ -96,9 +107,10 @@ void PEikonalXX::initializeSource2D(pybind11::module &m)
     s.def(pybind11::init<> ());
     s.doc() = "This defines a source in a 2D Cartesian grid-based geometry.  To use this you must first set the geometry.  Then the source's x position in the geometry (meters) can be set.  Likewise, the source's z position in the geometry (meters) can be set.  Furthermore, the source's z location can be fixed to the top of the model, i.e., the `free surface', using set_z_to_free_surface.";
 
-    s.def("set_geometry",
-          &Source2D::setGeometry,
-          "Sets the model geometry.");
+    s.def_property("geometry",
+                   &Source2D::getGeometry,
+                   &Source2D::setGeometry,
+                   "The model geometry.");
 
     s.def_property("x",
                    &Source2D::getLocationInX,

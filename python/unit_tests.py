@@ -84,7 +84,64 @@ def test_solverOptions():
     assert options.verbosity == verbosity, 'verbosity failed'
     print("Passed solverOptions")
 
+def test_velocityModel2d():
+    """
+    Test the 2D velocity model.
+    """
+    geo2d = pyEikonalXX.Geometry2D()
+    geo2d.dx = 1
+    geo2d.dz = 2
+    geo2d.nx = 11
+    geo2d.nz = 13
+    geo2d.x0 = 0
+    model2d = pyEikonalXX.VelocityModel2D()
+    model2d.initialize(geo2d)
+
+    assert model2d.is_initialized(), 'initialized failed'
+    geo_back = model2d.get_geometry()
+    assert geo2d.nx == geo_back.nx, 'nx failed'
+    assert geo2d.nz == geo_back.nz, 'nz failed'
+    assert abs(geo2d.dx - geo_back.dx) < 1.e-14, 'dx failed'
+    assert abs(geo2d.dz - geo_back.dz) < 1.e-14, 'dz failed'
+    assert abs(geo2d.x0 - geo_back.x0) < 1.e-14, 'x0 failed'
+    assert abs(geo2d.z0 - geo_back.z0) < 1.e-14, 'z0 failed'
+
+    print("Passed velocityModel2d")
+
+def test_source2d():
+    """
+    Test the 2D source.
+    """
+    geo2d = pyEikonalXX.Geometry2D()
+    geo2d.dx = 100
+    geo2d.dz = 101.
+    geo2d.nx = 55
+    geo2d.nz = 25
+    geo2d.x0 = 1
+    geo2d.z0 = 2
+    source2d = pyEikonalXX.Source2D()
+    source2d.geometry = geo2d
+    x_src = geo2d.x0 + geo2d.nx/4*geo2d.dx
+    z_src = geo2d.z0 + geo2d.nz/8*geo2d.dz
+    source2d.x = x_src
+    source2d.z = z_src
+
+    geo_back = source2d.geometry
+    assert geo2d.nx == geo_back.nx, 'nx failed'
+    assert geo2d.nz == geo_back.nz, 'nz failed'
+    assert abs(geo2d.dx - geo_back.dx) < 1.e-14, 'dx failed'
+    assert abs(geo2d.dz - geo_back.dz) < 1.e-14, 'dz failed'
+    assert abs(geo2d.x0 - geo_back.x0) < 1.e-14, 'x0 failed'
+    assert abs(geo2d.z0 - geo_back.z0) < 1.e-14, 'z0 failed'
+    assert abs(source2d.x - x_src) < 1.e-14, 'x failed'
+    assert abs(source2d.z - z_src) < 1.e-14, 'z failed'
+    source2d.set_z_to_free_surface()
+    assert abs(source2d.z - geo2d.z0) < 1.e-14, 'z to free surface failed'
+    print("Passed source2d")
+
 if __name__ == "__main__":
     test_geometry2d()
     test_geometry3d()
     test_solverOptions()
+    test_velocityModel2d()
+    test_source2d()
