@@ -1,6 +1,7 @@
 #include <cmath>
 #include "eikonalxx/analytic/homogeneous2d.hpp"
 #include "eikonalxx/analytic/homogeneous3d.hpp"
+#include "eikonalxx/analytic/linearGradient2d.hpp"
 #include "eikonalxx/source2d.hpp"
 #include "eikonalxx/source3d.hpp"
 #include "eikonalxx/geometry2d.hpp"
@@ -93,6 +94,7 @@ TEST(Analytic, Homogeneous3D)
     EXPECT_TRUE(solver.haveVelocityModel());
     EXPECT_NO_THROW(solver.solve());
     auto travelTimes = solver.getTravelTimeField();
+    //solver.writeVTK("test3d.vtk");
     // Verify
     double dtMax = 0;
     for (int iz = 0; iz < nz; ++iz)
@@ -114,6 +116,38 @@ TEST(Analytic, Homogeneous3D)
         }
     }
     EXPECT_NEAR(dtMax, 0, 1.e-15);
+}
+
+TEST(Analytic, LinearGradient2D)
+{
+    std::pair<double, double> velocity({1000, 4000});
+    int nx = 56; 
+    int nz = 24; 
+    double dx = 200;
+    double dz = 201;
+    double x0 = 0;
+    double z0 = 1;
+    double xSrc = (nx - 1)/4.*dx + x0 + 4;
+    double zSrc = (nz - 1)/4.*dz + z0 - 40;   
+    // Create geometry
+    EikonalXX::Geometry2D geometry;
+    geometry.setNumberOfGridPointsInX(nx);
+    geometry.setNumberOfGridPointsInZ(nz);
+    geometry.setGridSpacingInX(dx);
+    geometry.setGridSpacingInZ(dz);
+    geometry.setOriginInX(x0);
+    geometry.setOriginInZ(z0);
+    // Initialize solver
+    EikonalXX::Analytic::LinearGradient2D<double> solver;
+    EXPECT_NO_THROW(solver.initialize(geometry));
+    EXPECT_NO_THROW(solver.setSource(std::pair(xSrc, zSrc)));
+    EXPECT_NO_THROW(solver.setVelocityModel(velocity));
+    EXPECT_TRUE(solver.isInitialized());
+    EXPECT_TRUE(solver.haveSource());
+    EXPECT_TRUE(solver.haveVelocityModel());
+    EXPECT_NO_THROW(solver.solve());
+    auto travelTimes = solver.getTravelTimeField();
+solver.writeVTK("test_lg.vtk");
 }
 
 }

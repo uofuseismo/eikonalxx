@@ -287,7 +287,7 @@ template<class T>
 void Homogeneous3D<T>::setVelocityModel(const double velocity)
 {
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
-    if (velocity < 0)
+    if (velocity <= 0)
     {
         throw std::invalid_argument("Velocity = " + std::to_string(velocity)
                                   + " must be positive");

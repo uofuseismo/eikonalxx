@@ -1,6 +1,6 @@
 #include <string>
 #include <CL/sycl.hpp>
-#include "eikonalxx/analytic/homogeneous2d.hpp"
+#include "eikonalxx/analytic/linearGradient2d.hpp"
 #include "eikonalxx/source2d.hpp"
 #include "eikonalxx/geometry2d.hpp"
 #include "eikonalxx/io/vtkRectilinearGrid2d.hpp"
@@ -8,18 +8,37 @@
 
 namespace
 {
-/// Solves the eikonal equation in a 2D homogeneous medium.
+
+template<typename T>
+T acoshArgument(const T delX, const T delZ,
+                const T vel0, const T slow0, const T absG2,
+                const T vGradInX, const T vGradInZ)
+{
+    T dist2 = delX*delX + delZ*delZ;
+    T vel = vel0 + vGradInX*delX + vGradInZ*delZ;
+    T arg = 1 + (slow0*absG2*dist2)/(2*vel);
+    return arg;
+}
+
+/// Solves the eikonal equation in a 2D linear-gradient
 template<class T>
 void solve2d(const size_t nGridX, const size_t nGridZ,
              const double xSrcOffset, const double zSrcOffset,
              const double dx, const double dz,
-             const double vel,
+             const double velTop, const double velBottom,
              std::vector<T> *travelTimes)
 {
     sycl::queue q{sycl::cpu_selector{},
                   sycl::property::queue::in_order()};
     auto workGroupSize = q.get_device().get_info<sycl::info::device::max_work_group_size> (); 
     workGroupSize = static_cast<size_t> (std::sqrt(workGroupSize));
+    constexpr T vGradInX = 0;
+    T vGradInZ = static_cast<T> ((velBottom - velTop)/((nGridZ - 1)*dz));
+    T absG2 = vGradInX*vGradInX + vGradInZ*vGradInZ; 
+    T absG = std::sqrt(absG2);
+    T vel0 = static_cast<T> (velTop + vGradInZ*zSrcOffset);
+std::cout << vel0 << std::endl;
+    auto slow0 = static_cast<T> (1/vel0);
     // Figure out sizes and allocate space 
     auto nGrid = nGridX*nGridZ;
     auto travelTimesDevice = sycl::malloc_device<T> (nGrid, q); 
@@ -33,21 +52,39 @@ void solve2d(const size_t nGridX, const size_t nGridZ,
     auto zShiftedSource = static_cast<T> (zSrcOffset);
     auto hx = static_cast<T> (dx);
     auto hz = static_cast<T> (dz);
-    auto slowness = static_cast<T> (1./vel); // Do division here
     // Compute L2 distance from the source to each point in grid
     // and scale by slowness.
     auto eTravelTimes = q.submit([&](sycl::handler &h) 
     {
-        h.parallel_for(sycl::nd_range{global, local},
-                       [=](sycl::nd_item<2> it) 
+        if (std::abs(velTop - velBottom) > 1.e-14)
         {
-            size_t ix = it.get_global_id(0);
-            size_t iz = it.get_global_id(1);
-            auto idst = gridToIndex(nGridX, ix, iz);
-            T delX = xShiftedSource - ix*hx;
-            T delZ = zShiftedSource - iz*hz;
-            travelTimesDevice[idst] = sycl::hypot(delX, delZ)*slowness;
-        });
+            h.parallel_for(sycl::nd_range{global, local},
+                           [=](sycl::nd_item<2> it) 
+            {
+                size_t ix = it.get_global_id(0);
+                size_t iz = it.get_global_id(1);
+                auto idst = gridToIndex(nGridX, ix, iz);
+                T delX = ix*hx - xShiftedSource;
+                T delZ = iz*hz - zShiftedSource;
+                T arg = acoshArgument(delX, delZ,
+                                      vel0, slow0, absG2,
+                                      vGradInX, vGradInZ);
+                travelTimesDevice[idst] = sycl::acosh(arg)/absG;
+            });
+        }
+        else
+        {
+            h.parallel_for(sycl::nd_range{global, local},
+                           [=](sycl::nd_item<2> it) 
+            {   
+                size_t ix = it.get_global_id(0);
+                size_t iz = it.get_global_id(1);
+                auto idst = gridToIndex(nGridX, ix, iz);
+                T delX = xShiftedSource - ix*hx;
+                T delZ = zShiftedSource - iz*hz;
+                travelTimesDevice[idst] = hypot(delX, delZ)*slow0;
+            });
+        }
     });
     // Return slowness field to host
     if (travelTimes->size() != nGrid)
@@ -69,13 +106,13 @@ void solve2d(const size_t nGridX, const size_t nGridZ,
 using namespace EikonalXX::Analytic;
 
 template<class T>
-class Homogeneous2D<T>::Homogeneous2DImpl
+class LinearGradient2D<T>::LinearGradient2DImpl
 {
 public:
     EikonalXX::Geometry2D mGeometry;
     EikonalXX::Source2D mSource;
     std::vector<T> mTravelTimeField; 
-    double mVelocity = 0;
+    std::pair<double, double> mVelocity = std::pair<double, double> (0, 0);
     bool mHaveTravelTimeField = false;
     bool mHaveSource = false;
     bool mInitialized = false; 
@@ -84,33 +121,33 @@ public:
 
 /// C'tor
 template<class T>
-Homogeneous2D<T>::Homogeneous2D() :
-    pImpl(std::make_unique<Homogeneous2DImpl> ())
+LinearGradient2D<T>::LinearGradient2D() :
+    pImpl(std::make_unique<LinearGradient2DImpl> ())
 {
 }
 
 /// Copy c'tor
 template<class T>
-Homogeneous2D<T>::Homogeneous2D(const Homogeneous2D &solver)
+LinearGradient2D<T>::LinearGradient2D(const LinearGradient2D &solver)
 {
     *this = solver;
 }
 
 /// Move c'tor
 template<class T>
-Homogeneous2D<T>::Homogeneous2D(Homogeneous2D &&solver) noexcept
+LinearGradient2D<T>::LinearGradient2D(LinearGradient2D &&solver) noexcept
 {
     *this = std::move(solver);
 }
 
 /// Reset the class
 template<class T>
-void Homogeneous2D<T>::clear() noexcept
+void LinearGradient2D<T>::clear() noexcept
 {
     pImpl->mGeometry.clear();
     pImpl->mSource.clear();
     pImpl->mTravelTimeField.clear();
-    pImpl->mVelocity = 0;
+    pImpl->mVelocity = std::pair<double, double> (0, 0);
     pImpl->mHaveTravelTimeField = false;
     pImpl->mHaveSource = false;
     pImpl->mInitialized = false;
@@ -118,20 +155,22 @@ void Homogeneous2D<T>::clear() noexcept
 
 /// Destructor
 template<class T>
-Homogeneous2D<T>::~Homogeneous2D() = default;
+LinearGradient2D<T>::~LinearGradient2D() = default;
 
 /// Copy assignment
 template<class T>
-Homogeneous2D<T>& Homogeneous2D<T>::operator=(const Homogeneous2D &solver)
+LinearGradient2D<T>& LinearGradient2D<T>::operator=(
+    const LinearGradient2D &solver)
 {
     if (&solver == this){return *this;}
-    pImpl = std::make_unique<Homogeneous2DImpl> (*solver.pImpl);
+    pImpl = std::make_unique<LinearGradient2DImpl> (*solver.pImpl);
     return *this;
 }
 
 /// Move assignment
 template<class T>
-Homogeneous2D<T>& Homogeneous2D<T>::operator=(Homogeneous2D &&solver) noexcept
+LinearGradient2D<T>& LinearGradient2D<T>::operator=(
+    LinearGradient2D &&solver) noexcept
 {
     if (&solver == this){return *this;}
     pImpl = std::move(solver.pImpl);
@@ -140,25 +179,25 @@ Homogeneous2D<T>& Homogeneous2D<T>::operator=(Homogeneous2D &&solver) noexcept
 
 /// Initialize the class
 template<class T>
-void Homogeneous2D<T>::initialize(const Geometry2D &geometry)
+void LinearGradient2D<T>::initialize(const Geometry2D &geometry)
 {
     clear();
     if (!geometry.haveNumberOfGridPointsInX())
-    {   
+    {
         throw std::invalid_argument("Grid points in x not set on geometry");
-    }   
+    }
     if (!geometry.haveNumberOfGridPointsInZ())
-    {   
+    {
         throw std::invalid_argument("Grid points in z not set on geometry");
-    }   
+    }
     if (!geometry.haveGridSpacingInX())
-    {   
+    {
         throw std::invalid_argument("Grid spacing in x not set on geometry");
-    }   
+    }
     if (!geometry.haveGridSpacingInZ())
-    {   
+    {
         throw std::invalid_argument("Grid spacing in z not set on geometry");
-    }   
+    }
     pImpl->mGeometry = geometry;
     auto nGrid = static_cast<size_t> (geometry.getNumberOfGridPoints());
     pImpl->mTravelTimeField.resize(nGrid, 0);
@@ -167,33 +206,33 @@ void Homogeneous2D<T>::initialize(const Geometry2D &geometry)
 
 /// Initialized?
 template<class T>
-bool Homogeneous2D<T>::isInitialized() const noexcept
+bool LinearGradient2D<T>::isInitialized() const noexcept
 {
     return pImpl->mInitialized;
 }
 
 /// Set source
 template<class T>
-void Homogeneous2D<T>::setSource(const EikonalXX::Source2D &source)
+void LinearGradient2D<T>::setSource(const EikonalXX::Source2D &source)
 {
     pImpl->mHaveSource = false;
     pImpl->mHaveTravelTimeField = false;
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     if (!source.haveLocationInX())
-    {   
+    {
         throw std::invalid_argument("Source location in x not set");
-    }   
+    }
     if (!source.haveLocationInZ())
-    {   
+    {
         throw std::invalid_argument("Source location in z not set");
-    }   
+    }
     pImpl->mSource = source;
     pImpl->mHaveSource = true;
 }
 
 /// Set the source from an (x,z) pair
 template<class T>
-void Homogeneous2D<T>::setSource(
+void LinearGradient2D<T>::setSource(
     const std::pair<double, double> &sourceLocation)
 {
     pImpl->mHaveSource = false; 
@@ -220,7 +259,7 @@ void Homogeneous2D<T>::setSource(
                                   + std::to_string(sourceLocation.second)
                                   + " must be in range [" + std::to_string(zmin)
                                   + "," + std::to_string(zmax) + "]");
-    } 
+    }
     // Create a source
     EikonalXX::Source2D source;
     source.setGeometry(pImpl->mGeometry);
@@ -231,14 +270,14 @@ void Homogeneous2D<T>::setSource(
 
 /// Have source?
 template<class T>
-bool Homogeneous2D<T>::haveSource() const noexcept
+bool LinearGradient2D<T>::haveSource() const noexcept
 {
     return pImpl->mHaveSource;
 }
 
 /// Get source
 template<class T>
-EikonalXX::Source2D Homogeneous2D<T>::getSource() const
+EikonalXX::Source2D LinearGradient2D<T>::getSource() const
 {
     if (!haveSource())
     {
@@ -249,12 +288,20 @@ EikonalXX::Source2D Homogeneous2D<T>::getSource() const
 
 /// Set velocity model
 template<class T>
-void Homogeneous2D<T>::setVelocityModel(const double velocity)
+void LinearGradient2D<T>::setVelocityModel(
+    const std::pair<double, double> &velocity)
 {
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
-    if (velocity <= 0)
+    if (velocity.first <= 0)
     {
-        throw std::invalid_argument("Velocity = " + std::to_string(velocity)
+        throw std::invalid_argument("velocity.first = "
+                                  + std::to_string(velocity.first)
+                                  + " must be positive");
+    }
+    if (velocity.second <= 0)
+    {
+        throw std::invalid_argument("velocity.second = "
+                                  + std::to_string(velocity.second)
                                   + " must be positive");
     }
     pImpl->mVelocity = velocity;
@@ -262,14 +309,14 @@ void Homogeneous2D<T>::setVelocityModel(const double velocity)
 
 /// Have velocity?
 template<class T>
-bool Homogeneous2D<T>::haveVelocityModel() const noexcept
+bool LinearGradient2D<T>::haveVelocityModel() const noexcept
 {
-    return pImpl->mVelocity > 0;
+    return (pImpl->mVelocity.first > 0) & (pImpl->mVelocity.second >  0);
 }
 
 /// Solve the eikonal equation
 template<class T>
-void Homogeneous2D<T>::solve()
+void LinearGradient2D<T>::solve()
 {
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     if (!haveSource()){throw std::runtime_error("Source not yet set");}
@@ -285,20 +332,23 @@ void Homogeneous2D<T>::solve()
     auto xSrcOffset = pImpl->mSource.getOffsetInX();
     auto zSrcOffset = pImpl->mSource.getOffsetInZ();
     // Solve it
-    solve2d(nx, nz, xSrcOffset, zSrcOffset, dx, dz, pImpl->mVelocity,
+    solve2d(nx, nz,
+            xSrcOffset, zSrcOffset,
+            dx, dz,
+            pImpl->mVelocity.first, pImpl->mVelocity.second,
             &pImpl->mTravelTimeField);
     pImpl->mHaveTravelTimeField = true;
 }
 
 /// Have travel time field?
 template<class T>
-bool Homogeneous2D<T>::haveTravelTimeField() const noexcept
+bool LinearGradient2D<T>::haveTravelTimeField() const noexcept
 {
     return pImpl->mHaveTravelTimeField;
 }
 
 template<class T>
-std::vector<T> Homogeneous2D<T>::getTravelTimeField() const
+std::vector<T> LinearGradient2D<T>::getTravelTimeField() const
 {
     if (!haveTravelTimeField())
     {
@@ -308,7 +358,7 @@ std::vector<T> Homogeneous2D<T>::getTravelTimeField() const
 }
 
 template<class T>
-const T* Homogeneous2D<T>::getTravelTimeFieldPointer() const
+const T* LinearGradient2D<T>::getTravelTimeFieldPointer() const
 {
     if (!haveTravelTimeField())
     {
@@ -319,7 +369,7 @@ const T* Homogeneous2D<T>::getTravelTimeFieldPointer() const
 
 /// Write the travel time field
 template<class T>
-void Homogeneous2D<T>::writeVTK(const std::string &fileName,
+void LinearGradient2D<T>::writeVTK(const std::string &fileName,
                                 const std::string &title) const
 {
     auto tPtr = getTravelTimeFieldPointer(); // Throws
@@ -334,5 +384,5 @@ void Homogeneous2D<T>::writeVTK(const std::string &fileName,
 ///                           Template Instantiation                         ///
 ///--------------------------------------------------------------------------///
 
-template class EikonalXX::Analytic::Homogeneous2D<double>;
-template class EikonalXX::Analytic::Homogeneous2D<float>;
+template class EikonalXX::Analytic::LinearGradient2D<double>;
+template class EikonalXX::Analytic::LinearGradient2D<float>;
