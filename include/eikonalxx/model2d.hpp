@@ -116,6 +116,14 @@ public:
     /// @throws std::runtime_error if the velocity model was not set.
     /// @sa \c haveVelocities()
     [[nodiscard]] const T* getSlownessPointer() const;
+    /// @brief Writes the velocity model to VTK.
+    /// @param[in] fileName  The name of the VTK file.
+    /// @param[in] title     The dataset's title.
+    /// @throws std::runtime_error if \c haveVelocities() is false.
+    /// @throws std::invalid_argument if there is an error while opening the
+    ///         output file.
+    void writeVTK(const std::string &fileName,
+                  const std::string &title = "velocity_m/s") const;
   
     /// @result The cell-based velocity model in meters/second in natural
     ///         ordering.

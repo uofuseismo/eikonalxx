@@ -118,7 +118,7 @@ public:
     /// @throws std::invalid_argument if there is an error while opening the
     ///         output file.
     void writeVTK(const std::string &fileName,
-                  const std::string &title = "homogeneous_analytic_traveltime_field");
+                  const std::string &title = "homogeneous_analytic_traveltime_field") const;
     /// @}
 
     /// @name Destructors

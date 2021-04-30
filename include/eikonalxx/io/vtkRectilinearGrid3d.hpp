@@ -1,32 +1,32 @@
-#ifndef EIKONALXX_IO_VTKRECTILINEARGRID2D_HPP
-#define EIKONALXX_IO_VTKRECTILINEARGRID2D_HPP
+#ifndef EIKONALXX_IO_VTKRECTILINEARGRID3D_HPP
+#define EIKONALXX_IO_VTKRECTILINEARGRID3D_HPP
 #include <string>
 #include <memory>
 #include "eikonalxx/enums.hpp"
 namespace EikonalXX
 {
-class Geometry2D;
+class Geometry3D;
 namespace IO
 {
-class VTKRectilinearGrid2D
+class VTKRectilinearGrid3D
 {
 public:
     /// @name Constructors
     /// @{
     /// @brief Constructor.
-    VTKRectilinearGrid2D();
+    VTKRectilinearGrid3D();
     /// @}
 
     /// @name Destructors
     /// @{
-    ~VTKRectilinearGrid2D();
+    ~VTKRectilinearGrid3D();
     /// @}
     
     /// @name Step 1: Open the VTK file 
     /// @{
     /// @brief Opens a VTK file for writing.
     /// @param[in] fileName     The name of the VTK file to write to.
-    /// @param[in] geometry     The 2D geometry.
+    /// @param[in] geometry     The 3D geometry.
     /// @param[in] title        Specifies the title.  If this exceeds 256
     ///                         characters then it will be truncated.  
     ///                         Additionally, blank spaces will be filled by
@@ -37,7 +37,7 @@ public:
     ///         spacing is not fully specified on the geometry or if the file
     ///         path cannot be created. 
     void open(const std::string &fileName,
-              const Geometry2D &geometry,
+              const Geometry3D &geometry,
               const std::string &title = "traveltimes",
               const bool writeBinary = true);
     /// @result True indicates that the the file is open for writing.
@@ -58,7 +58,7 @@ public:
     template<typename T>
     void writeNodalDataset(const std::string &name,
                            const T *data,
-                           Ordering2D ordering = Ordering2D::NATURAL) const;
+                           Ordering3D ordering = Ordering3D::NATURAL) const;
     /// @brief Writes a cell-based dataset.
     /// @brief Writes a nodal dataset.
     /// @param[in] name      The name of the cellular dataset.  Note, all blank
@@ -72,7 +72,7 @@ public:
     template<typename T>
     void writeCellularDataset(const std::string &fname,
                               const T *data,
-                              Ordering2D ordering = Ordering2D::NATURAL) const;
+                              Ordering3D ordering = Ordering3D::NATURAL) const;
     /// @}
 
     /// @name Step 3: Close the file
@@ -82,13 +82,13 @@ public:
     /// @}
 
     // Remove some functionality
-    VTKRectilinearGrid2D(const VTKRectilinearGrid2D &vtk) = delete;
-    VTKRectilinearGrid2D(VTKRectilinearGrid2D &&vtk) noexcept = delete;
-    VTKRectilinearGrid2D& operator=(const VTKRectilinearGrid2D &vtk) = delete;
-    VTKRectilinearGrid2D& operator=(VTKRectilinearGrid2D &&vtk) noexcept = delete;
+    VTKRectilinearGrid3D(const VTKRectilinearGrid3D &vtk) = delete;
+    VTKRectilinearGrid3D(VTKRectilinearGrid3D &&vtk) noexcept = delete;
+    VTKRectilinearGrid3D& operator=(const VTKRectilinearGrid3D &vtk) = delete;
+    VTKRectilinearGrid3D& operator=(VTKRectilinearGrid3D &&vtk) noexcept = delete;
 private:
-    class VTKRectilinearGrid2DImpl;
-    std::unique_ptr<VTKRectilinearGrid2DImpl> pImpl;
+    class VTKRectilinearGrid3DImpl;
+    std::unique_ptr<VTKRectilinearGrid3DImpl> pImpl;
 };
 }
 }

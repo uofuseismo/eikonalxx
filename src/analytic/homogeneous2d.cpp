@@ -320,7 +320,7 @@ const T* Homogeneous2D<T>::getTravelTimeFieldPointer() const
 /// Write the travel time field
 template<class T>
 void Homogeneous2D<T>::writeVTK(const std::string &fileName,
-                                const std::string &title)
+                                const std::string &title) const
 {
     auto tPtr = getTravelTimeFieldPointer(); // Throws
     IO::VTKRectilinearGrid2D vtkWriter;

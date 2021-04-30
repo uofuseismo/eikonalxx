@@ -15,6 +15,7 @@
 //#endif
 #include "eikonalxx/model3d.hpp"
 #include "eikonalxx/geometry3d.hpp"
+#include "eikonalxx/io/vtkRectilinearGrid3d.hpp"
 #include "private/grid.hpp"
 
 using namespace EikonalXX;
@@ -428,6 +429,20 @@ std::vector<T> Model3D<T>::getVelocities() const
                    std::bind1st(std::divides<T> (), one));
 #endif
     return velocities;
+}
+
+/// Write the velocity model
+template<class T>
+void Model3D<T>::writeVTK(const std::string &fileName,
+                          const std::string &title) const
+{
+    auto v = getVelocities(); // Throws
+    IO::VTKRectilinearGrid3D vtkWriter;
+    constexpr bool writeBinary = true;
+    vtkWriter.open(fileName, pImpl->mGeometry, title, writeBinary); 
+    vtkWriter.writeCellularDataset(title, v.data(),
+                                   EikonalXX::Ordering3D::NATURAL);
+    vtkWriter.close();
 }
 
 ///--------------------------------------------------------------------------///

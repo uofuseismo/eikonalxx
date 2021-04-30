@@ -3,36 +3,37 @@
 #include <vector>
 #include <algorithm>
 #include <string>
+#include <map>
 #include <filesystem>
 #include <cstdint>
-#include "eikonalxx/io/vtkRectilinearGrid2d.hpp"
-#include "eikonalxx/geometry2d.hpp"
-#include "private/pack.hpp"
+#include "eikonalxx/io/vtkRectilinearGrid3d.hpp"
+#include "eikonalxx/geometry3d.hpp"
 #include "private/grid.hpp"
+#include "private/pack.hpp"
 
 using namespace EikonalXX::IO;
 
-class VTKRectilinearGrid2D::VTKRectilinearGrid2DImpl
+class VTKRectilinearGrid3D::VTKRectilinearGrid3DImpl
 {
 public:
     std::fstream mFile;
-    EikonalXX::Geometry2D mGeometry;
+    EikonalXX::Geometry3D mGeometry;
     bool mHaveGeometry = false;
     bool mWriteBinary = true;
 };
 
 /// C'tor
-VTKRectilinearGrid2D::VTKRectilinearGrid2D() :
-    pImpl(std::make_unique<VTKRectilinearGrid2DImpl> ())
+VTKRectilinearGrid3D::VTKRectilinearGrid3D() :
+    pImpl(std::make_unique<VTKRectilinearGrid3DImpl> ())
 {
 }
 
 /// Destructor
-VTKRectilinearGrid2D::~VTKRectilinearGrid2D() = default;
+VTKRectilinearGrid3D::~VTKRectilinearGrid3D() = default;
 
 /// Open file
-void VTKRectilinearGrid2D::open(const std::string &fileName,
-                                const EikonalXX::Geometry2D &geometry,
+void VTKRectilinearGrid3D::open(const std::string &fileName,
+                                const EikonalXX::Geometry3D &geometry,
                                 const std::string &title,
                                 const bool writeBinary)
 {
@@ -41,12 +42,13 @@ void VTKRectilinearGrid2D::open(const std::string &fileName,
     // The following will throw on the geometry
     pImpl->mGeometry = geometry;
     auto nx = pImpl->mGeometry.getNumberOfGridPointsInX();
-    int ny = 1;
+    auto ny = pImpl->mGeometry.getNumberOfGridPointsInY();
     auto nz = pImpl->mGeometry.getNumberOfGridPointsInZ(); 
     auto dx = static_cast<float> (pImpl->mGeometry.getGridSpacingInX());
+    auto dy = static_cast<float> (pImpl->mGeometry.getGridSpacingInY());
     auto dz = static_cast<float> (pImpl->mGeometry.getGridSpacingInZ());
     auto x0 = static_cast<float> (pImpl->mGeometry.getOriginInX()); 
-    auto y0 = 0.f;
+    auto y0 = static_cast<float> (pImpl->mGeometry.getOriginInY());
     auto z0 = static_cast<float> (pImpl->mGeometry.getOriginInZ()); 
     // Warn user file will be overwritten if it exists
     if (std::filesystem::exists(fileName))
@@ -104,16 +106,13 @@ void VTKRectilinearGrid2D::open(const std::string &fileName,
         for (int i = 0; i < nx; ++i){xCoords[i] = x0 + dx*i;}
         auto cx = pack(xCoords);
         pImpl->mFile.write(cx.data(), cx.size());
-        //auto xPtr = reinterpret_cast<const char *> (xCoords.data());
-        //pImpl->mFile.write(xPtr, xCoords.size()*sizeof(float)); 
         pImpl->mFile << std::endl;
 
-        pImpl->mFile << "Y_COORDINATES " << 1 << " float" << std::endl;
-        std::vector<float> yCoords(1, 0);
+        pImpl->mFile << "Y_COORDINATES " << ny << " float" << std::endl;
+        std::vector<float> yCoords(ny);
+        for (int i = 0; i < ny; ++i){yCoords[i] = y0 + dy*i;}
         auto cy = pack(yCoords);
         pImpl->mFile.write(cy.data(), cy.size());
-        //auto yPtr = reinterpret_cast<const char *> (&y0);
-        //pImpl->mFile.write(yPtr, 1*sizeof(float));
         pImpl->mFile << std::endl;
 
         pImpl->mFile << "Z_COORDINATES " << nz << " float" << std::endl;
@@ -121,8 +120,6 @@ void VTKRectilinearGrid2D::open(const std::string &fileName,
         for (int i = 0; i < nz; ++i){zCoords[i] = z0 - dz*i;}
         auto cz = pack(zCoords);
         pImpl->mFile.write(cz.data(), cz.size());
-        //auto zPtr = reinterpret_cast<const char *> (zCoords.data());
-        //pImpl->mFile.write(zPtr, zCoords.size()*sizeof(float));
         pImpl->mFile << std::endl;
     }
     else
@@ -133,8 +130,11 @@ void VTKRectilinearGrid2D::open(const std::string &fileName,
             pImpl->mFile << x0 + dx*ix << std::endl;
         }
 
-        pImpl->mFile << "Y_COORDINATES " << 1 << " float" << std::endl;
-        pImpl->mFile << y0 << std::endl;
+        pImpl->mFile << "Y_COORDINATES " << ny << " float" << std::endl;
+        for (int iy = 0; iy < ny; ++iy)
+        {
+            pImpl->mFile << y0 + dy*iy << std::endl;
+        }
 
         pImpl->mFile << "Z_COORDINATES " << nz << " float" << std::endl;
         for (int iz = 0; iz < nz; ++iz)
@@ -145,13 +145,13 @@ void VTKRectilinearGrid2D::open(const std::string &fileName,
 }
 
 /// File is open?
-bool VTKRectilinearGrid2D::isOpen() const noexcept
+bool VTKRectilinearGrid3D::isOpen() const noexcept
 {
     return pImpl->mFile.is_open();
 }
 
 /// Close the file
-void VTKRectilinearGrid2D::close() noexcept
+void VTKRectilinearGrid3D::close() noexcept
 {
     if (isOpen()){pImpl->mFile.close();}
     pImpl->mGeometry.clear();
@@ -161,10 +161,10 @@ void VTKRectilinearGrid2D::close() noexcept
 
 /// Write float nodal dataset
 template<>
-void VTKRectilinearGrid2D::writeNodalDataset(
+void VTKRectilinearGrid3D::writeNodalDataset(
     const std::string &name,
     const float *data,
-    const Ordering2D ordering) const
+    const Ordering3D ordering) const
 {
     if (!isOpen())
     {
@@ -187,21 +187,25 @@ void VTKRectilinearGrid2D::writeNodalDataset(
     if (pImpl->mWriteBinary)
     {
         std::vector<char> cData(nGrid*4);
-        if (ordering == EikonalXX::Ordering2D::NATURAL)
+        if (ordering == EikonalXX::Ordering3D::NATURAL)
         {
             pack(nGrid, data, cData.data());
         }
         else
         {
             auto nx = pImpl->mGeometry.getNumberOfGridPointsInX();
+            auto ny = pImpl->mGeometry.getNumberOfGridPointsInY();
             auto nz = pImpl->mGeometry.getNumberOfGridPointsInZ();
             for (int ix = 0; ix < nx; ++ix)
             {
-                for (int iz = 0; iz < nz; ++iz)
+                for (int iy = 0; iy < ny; ++iy)
                 {
-                    auto isrc = gridToIndex(nx, ix, iz);
-                    auto idst = 4*gridToIndex(nz, iz, ix);
-                    pack(data[isrc], &cData[idst]);
+                    for (int iz = 0; iz < nz; ++iz)
+                    {
+                        auto isrc = gridToIndex(nx, ny, ix, iy, iz);
+                        auto idst = 4*gridToIndex(nz, ny, iz, iy, ix);
+                        pack(data[isrc], &cData[idst]);
+                    }
                 }
             }
         }
@@ -218,10 +222,10 @@ void VTKRectilinearGrid2D::writeNodalDataset(
 
 /// Write float nodal dataset
 template<>
-void VTKRectilinearGrid2D::writeCellularDataset(
+void VTKRectilinearGrid3D::writeCellularDataset(
     const std::string &name,
     const float *data,
-    const Ordering2D ordering) const
+    const Ordering3D ordering) const
 {
     if (!isOpen())
     {
@@ -244,21 +248,25 @@ void VTKRectilinearGrid2D::writeCellularDataset(
     if (pImpl->mWriteBinary)
     { 
         std::vector<char> cData(nCell*4);
-        if (ordering == EikonalXX::Ordering2D::NATURAL)
+        if (ordering == EikonalXX::Ordering3D::NATURAL)
         {
             pack(nCell, data, cData.data());
         }
         else
         {
             auto nCellX = pImpl->mGeometry.getNumberOfCellsInX();
+            auto nCellY = pImpl->mGeometry.getNumberOfCellsInY();
             auto nCellZ = pImpl->mGeometry.getNumberOfCellsInZ();
             for (int ix = 0; ix < nCellX; ++ix)
             {
-                for (int iz = 0; iz < nCellZ; ++iz)
+                for (int iy = 0; iy < nCellY; ++iy)
                 {
-                    auto isrc = gridToIndex(nCellX, ix, iz);
-                    auto idst = 4*gridToIndex(nCellZ, iz, ix);
-                    pack(data[isrc], &cData[idst]);
+                    for (int iz = 0; iz < nCellZ; ++iz)
+                    {
+                        auto isrc = gridToIndex(nCellX, nCellY, ix, iy, iz);
+                        auto idst = 4*gridToIndex(nCellZ, nCellY, iz, iy, ix);
+                        pack(data[isrc], &cData[idst]);
+                    }
                 }
             }
         }
@@ -275,10 +283,10 @@ void VTKRectilinearGrid2D::writeCellularDataset(
 
 /// Double nodal dataset
 template<>
-void VTKRectilinearGrid2D::writeNodalDataset(
+void VTKRectilinearGrid3D::writeNodalDataset(
     const std::string &name,
     const double *__restrict__ data,
-    const Ordering2D ordering) const
+    const Ordering3D ordering) const
 {
     if (!isOpen())
     {   
@@ -293,10 +301,10 @@ void VTKRectilinearGrid2D::writeNodalDataset(
 
 /// Double cell data
 template<>
-void VTKRectilinearGrid2D::writeCellularDataset(
+void VTKRectilinearGrid3D::writeCellularDataset(
     const std::string &name,
     const double *__restrict__ data,
-    const Ordering2D ordering) const
+    const Ordering3D ordering) const
 {
     if (!isOpen())
     {
