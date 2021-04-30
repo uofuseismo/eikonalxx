@@ -66,7 +66,7 @@ std::vector<T> interpolate2d(const size_t nGridX, const size_t nGridZ,
     });
     // Interpolate to cell center.  The cell center is equidistant from all
     // nodes of the cell so a simple average is all that is required.
-    sycl::range global{nCellZ, nCellX};
+    sycl::range global{nCellX, nCellZ};
     auto nTileX = std::min(workGroupSize, nCellX);
     auto nTileZ = std::min(workGroupSize, nCellZ);
     sycl::range local{nTileX, nTileZ};
@@ -80,9 +80,9 @@ std::vector<T> interpolate2d(const size_t nGridX, const size_t nGridZ,
             h.parallel_for(sycl::nd_range{global, local},
                            [=](sycl::nd_item<2> it)
             {
-                size_t iz = it.get_global_id(0);
-                size_t ix = it.get_global_id(1);
-                auto idst = iz*nCellX + ix;
+                size_t ix = it.get_global_id(0);
+                size_t iz = it.get_global_id(1);
+                auto idst = gridToIndex(nCellX, ix, iz); //iz*nCellX + ix;
                 auto idx1 = iz*(nCellX + 1) + ix;
                 auto idx2 = idx1 + 1;
                 auto idx3 = idx1 + (nCellX + 1);
@@ -98,9 +98,9 @@ std::vector<T> interpolate2d(const size_t nGridX, const size_t nGridZ,
             h.parallel_for(sycl::nd_range{global, local},
                            [=](sycl::nd_item<2> it)
             {
-                size_t iz = it.get_global_id(0);
-                size_t ix = it.get_global_id(1);
-                auto idst = iz*nCellX + ix;
+                size_t ix = it.get_global_id(0);
+                size_t iz = it.get_global_id(1);
+                auto idst = gridToIndex(nCellX, ix, iz); //iz*nCellX + ix;
                 auto idx1 = ix*(nCellZ + 1) + iz;
                 auto idx2 = idx1 + 1;
                 auto idx3 = idx1 + (nCellZ + 1);

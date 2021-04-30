@@ -715,6 +715,7 @@ std::cout.precision(10);
 nEps = 2;//500; //500;
     auto solverAlgorithm = EikonalXX::SolverAlgorithm::FAST_SWEEPING_METHOD;
 
+return;
     SolverOptions options;
     options.setVerbosity(Verbosity::DEBUG);
     options.setNumberOfSweeps(nSweeps);

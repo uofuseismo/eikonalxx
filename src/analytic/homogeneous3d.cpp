@@ -1,37 +1,42 @@
 #include <string>
 #include <CL/sycl.hpp>
-#include "eikonalxx/analytic/homogeneous2d.hpp"
-#include "eikonalxx/source2d.hpp"
-#include "eikonalxx/geometry2d.hpp"
-#include "eikonalxx/io/vtkRectilinearGrid2d.hpp"
+#include "eikonalxx/analytic/homogeneous3d.hpp"
+#include "eikonalxx/source3d.hpp"
+#include "eikonalxx/geometry3d.hpp"
+#include "eikonalxx/io/vtkRectilinearGrid3d.hpp"
 #include "private/grid.hpp"
 
 namespace
 {
-/// Solves the eikonal equation in a 2D homogeneous medium.
+/// Solves the eikonal equation in a 3D homogeneous medium.
 template<class T>
-void solve2d(const size_t nGridX, const size_t nGridZ,
-             const double xSrcOffset, const double zSrcOffset,
-             const double dx, const double dz,
+void solve3d(const size_t nGridX, const size_t nGridY, const size_t nGridZ,
+             const double xSrcOffset,
+             const double ySrcOffset,
+             const double zSrcOffset,
+             const double dx, const double dy, const double dz,
              const double vel,
              std::vector<T> *travelTimes)
 {
     sycl::queue q{sycl::cpu_selector{},
                   sycl::property::queue::in_order()};
     auto workGroupSize = q.get_device().get_info<sycl::info::device::max_work_group_size> (); 
-    workGroupSize = static_cast<size_t> (std::sqrt(workGroupSize));
+    workGroupSize = static_cast<size_t> (std::cbrt(workGroupSize));
     // Figure out sizes and allocate space 
-    auto nGrid = nGridX*nGridZ;
+    auto nGrid = nGridX*nGridY*nGridZ;
     auto travelTimesDevice = sycl::malloc_device<T> (nGrid, q); 
     // Determine ranges (with tiling)
-    sycl::range global{nGridX, nGridZ};
+    sycl::range global{nGridX, nGridY, nGridZ};
     auto nTileX = std::min(workGroupSize, nGridX);
+    auto nTileY = std::min(workGroupSize, nGridY);
     auto nTileZ = std::min(workGroupSize, nGridZ);
-    sycl::range local{nTileX, nTileZ};
+    sycl::range local{nTileX, nTileY, nTileZ};
     // Simplify some geometric terms
     auto xShiftedSource = static_cast<T> (xSrcOffset);
+    auto yShiftedSource = static_cast<T> (ySrcOffset);
     auto zShiftedSource = static_cast<T> (zSrcOffset);
     auto hx = static_cast<T> (dx);
+    auto hy = static_cast<T> (dy);
     auto hz = static_cast<T> (dz);
     auto slowness = static_cast<T> (1./vel); // Do division here
     // Compute L2 distance from the source to each point in grid
@@ -39,14 +44,17 @@ void solve2d(const size_t nGridX, const size_t nGridZ,
     auto eTravelTimes = q.submit([&](sycl::handler &h) 
     {
         h.parallel_for(sycl::nd_range{global, local},
-                       [=](sycl::nd_item<2> it) 
+                       [=](sycl::nd_item<3> it) 
         {
             size_t ix = it.get_global_id(0);
-            size_t iz = it.get_global_id(1);
-            auto idst = gridToIndex(nGridX, ix, iz);
+            size_t iy = it.get_global_id(1);
+            size_t iz = it.get_global_id(2);
+            auto idst = gridToIndex(nGridX, nGridY, ix, iy, iz);
             T delX = xShiftedSource - ix*hx;
+            T delY = yShiftedSource - iy*hy;
             T delZ = zShiftedSource - iz*hz;
-            travelTimesDevice[idst] = sycl::hypot(delX, delZ)*slowness;
+            travelTimesDevice[idst]
+                = sycl::sqrt(delX*delX + delY*delY + delZ*delZ)*slowness;
         });
     });
     // Return slowness field to host
@@ -69,11 +77,11 @@ void solve2d(const size_t nGridX, const size_t nGridZ,
 using namespace EikonalXX::Analytic;
 
 template<class T>
-class Homogeneous2D<T>::Homogeneous2DImpl
+class Homogeneous3D<T>::Homogeneous3DImpl
 {
 public:
-    EikonalXX::Geometry2D mGeometry;
-    EikonalXX::Source2D mSource;
+    EikonalXX::Geometry3D mGeometry;
+    EikonalXX::Source3D mSource;
     std::vector<T> mTravelTimeField; 
     double mVelocity = 0;
     bool mHaveTravelTimeField = false;
@@ -84,28 +92,28 @@ public:
 
 /// C'tor
 template<class T>
-Homogeneous2D<T>::Homogeneous2D() :
-    pImpl(std::make_unique<Homogeneous2DImpl> ())
+Homogeneous3D<T>::Homogeneous3D() :
+    pImpl(std::make_unique<Homogeneous3DImpl> ())
 {
 }
 
 /// Copy c'tor
 template<class T>
-Homogeneous2D<T>::Homogeneous2D(const Homogeneous2D &solver)
+Homogeneous3D<T>::Homogeneous3D(const Homogeneous3D &solver)
 {
     *this = solver;
 }
 
 /// Move c'tor
 template<class T>
-Homogeneous2D<T>::Homogeneous2D(Homogeneous2D &&solver) noexcept
+Homogeneous3D<T>::Homogeneous3D(Homogeneous3D &&solver) noexcept
 {
     *this = std::move(solver);
 }
 
 /// Reset the class
 template<class T>
-void Homogeneous2D<T>::clear() noexcept
+void Homogeneous3D<T>::clear() noexcept
 {
     pImpl->mGeometry.clear();
     pImpl->mSource.clear();
@@ -118,20 +126,20 @@ void Homogeneous2D<T>::clear() noexcept
 
 /// Destructor
 template<class T>
-Homogeneous2D<T>::~Homogeneous2D() = default;
+Homogeneous3D<T>::~Homogeneous3D() = default;
 
 /// Copy assignment
 template<class T>
-Homogeneous2D<T>& Homogeneous2D<T>::operator=(const Homogeneous2D &solver)
+Homogeneous3D<T>& Homogeneous3D<T>::operator=(const Homogeneous3D &solver)
 {
     if (&solver == this){return *this;}
-    pImpl = std::make_unique<Homogeneous2DImpl> (*solver.pImpl);
+    pImpl = std::make_unique<Homogeneous3DImpl> (*solver.pImpl);
     return *this;
 }
 
 /// Move assignment
 template<class T>
-Homogeneous2D<T>& Homogeneous2D<T>::operator=(Homogeneous2D &&solver) noexcept
+Homogeneous3D<T>& Homogeneous3D<T>::operator=(Homogeneous3D &&solver) noexcept
 {
     if (&solver == this){return *this;}
     pImpl = std::move(solver.pImpl);
@@ -140,25 +148,33 @@ Homogeneous2D<T>& Homogeneous2D<T>::operator=(Homogeneous2D &&solver) noexcept
 
 /// Initialize the class
 template<class T>
-void Homogeneous2D<T>::initialize(const Geometry2D &geometry)
+void Homogeneous3D<T>::initialize(const Geometry3D &geometry)
 {
     clear();
     if (!geometry.haveNumberOfGridPointsInX())
-    {   
+    {
         throw std::invalid_argument("Grid points in x not set on geometry");
-    }   
+    }
+    if (!geometry.haveNumberOfGridPointsInY())
+    {
+        throw std::invalid_argument("Grid points in y not set on geometry");
+    }
     if (!geometry.haveNumberOfGridPointsInZ())
-    {   
+    {
         throw std::invalid_argument("Grid points in z not set on geometry");
-    }   
+    }
     if (!geometry.haveGridSpacingInX())
-    {   
+    {
         throw std::invalid_argument("Grid spacing in x not set on geometry");
-    }   
+    }
+    if (!geometry.haveGridSpacingInY())
+    {
+        throw std::invalid_argument("Grid spacing in y not set on geometry");
+    }
     if (!geometry.haveGridSpacingInZ())
-    {   
+    {
         throw std::invalid_argument("Grid spacing in z not set on geometry");
-    }   
+    }
     pImpl->mGeometry = geometry;
     auto nGrid = static_cast<size_t> (geometry.getNumberOfGridPoints());
     pImpl->mTravelTimeField.resize(nGrid, 0);
@@ -167,14 +183,14 @@ void Homogeneous2D<T>::initialize(const Geometry2D &geometry)
 
 /// Initialized?
 template<class T>
-bool Homogeneous2D<T>::isInitialized() const noexcept
+bool Homogeneous3D<T>::isInitialized() const noexcept
 {
     return pImpl->mInitialized;
 }
 
 /// Set source
 template<class T>
-void Homogeneous2D<T>::setSource(const EikonalXX::Source2D &source)
+void Homogeneous3D<T>::setSource(const EikonalXX::Source3D &source)
 {
     pImpl->mHaveSource = false;
     pImpl->mHaveTravelTimeField = false;
@@ -183,62 +199,81 @@ void Homogeneous2D<T>::setSource(const EikonalXX::Source2D &source)
     {   
         throw std::invalid_argument("Source location in x not set");
     }   
+    if (!source.haveLocationInY())
+    {
+        throw std::invalid_argument("Source location in y not set");
+    }
     if (!source.haveLocationInZ())
-    {   
+    {
         throw std::invalid_argument("Source location in z not set");
-    }   
+    }
     pImpl->mSource = source;
     pImpl->mHaveSource = true;
 }
 
 /// Set the source from an (x,z) pair
 template<class T>
-void Homogeneous2D<T>::setSource(
-    const std::pair<double, double> &sourceLocation)
+void Homogeneous3D<T>::setSource(
+    const std::tuple<double, double, double> &sourceLocation)
 {
     pImpl->mHaveSource = false; 
     pImpl->mHaveTravelTimeField = false;
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     auto dx = pImpl->mGeometry.getGridSpacingInX();
+    auto dy = pImpl->mGeometry.getGridSpacingInY();
     auto dz = pImpl->mGeometry.getGridSpacingInZ();
     auto nx = pImpl->mGeometry.getNumberOfGridPointsInX();
+    auto ny = pImpl->mGeometry.getNumberOfGridPointsInY();
     auto nz = pImpl->mGeometry.getNumberOfGridPointsInZ();
     auto xmin = pImpl->mGeometry.getOriginInX();
+    auto ymin = pImpl->mGeometry.getOriginInY();
     auto zmin = pImpl->mGeometry.getOriginInZ();
     auto xmax = xmin + (nx - 1)*dx;
+    auto ymax = ymin + (ny - 1)*dy;
     auto zmax = zmin + (nz - 1)*dz; 
-    if (sourceLocation.first < xmin || sourceLocation.first > xmax)
+    if (std::get<0> (sourceLocation) < xmin ||
+        std::get<0> (sourceLocation) > xmax)
     {
         throw std::invalid_argument("x source position = "
-                                  + std::to_string(sourceLocation.first)
+                                  + std::to_string(std::get<0> (sourceLocation))
                                   + " must be in range [" + std::to_string(xmin)
                                   + "," + std::to_string(xmax) + "]");
     }
-    if (sourceLocation.second < zmin || sourceLocation.second > zmax)
+    if (std::get<1> (sourceLocation) < ymin ||
+        std::get<1> (sourceLocation) > ymax)
+    {
+        throw std::invalid_argument("y source position = "
+                                  + std::to_string(std::get<1> (sourceLocation))
+                                  + " must be in range [" + std::to_string(ymin)
+                                  + "," + std::to_string(ymax) + "]");
+    }
+    if (std::get<2> (sourceLocation) < zmin ||
+        std::get<2> (sourceLocation) > zmax)
     {
         throw std::invalid_argument("z source position = "
-                                  + std::to_string(sourceLocation.second)
+                                  + std::to_string(std::get<2> (sourceLocation))
                                   + " must be in range [" + std::to_string(zmin)
                                   + "," + std::to_string(zmax) + "]");
-    } 
+    }
     // Create a source
-    EikonalXX::Source2D source;
+    EikonalXX::Source3D source;
     source.setGeometry(pImpl->mGeometry);
-    source.setLocationInX(sourceLocation.first);
-    source.setLocationInZ(sourceLocation.second);
+    source.setLocationInX(std::get<0> (sourceLocation));
+    source.setLocationInY(std::get<1> (sourceLocation));
+    source.setLocationInZ(std::get<2> (sourceLocation));
     setSource(source);
 }
 
 /// Have source?
 template<class T>
-bool Homogeneous2D<T>::haveSource() const noexcept
+bool Homogeneous3D<T>::haveSource() const noexcept
 {
     return pImpl->mHaveSource;
 }
 
 /// Get source
 template<class T>
-EikonalXX::Source2D Homogeneous2D<T>::getSource() const
+EikonalXX::Source3D Homogeneous3D<T>::getSource() const
 {
     if (!haveSource())
     {
@@ -249,7 +284,7 @@ EikonalXX::Source2D Homogeneous2D<T>::getSource() const
 
 /// Set velocity model
 template<class T>
-void Homogeneous2D<T>::setVelocityModel(const double velocity)
+void Homogeneous3D<T>::setVelocityModel(const double velocity)
 {
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     if (velocity < 0)
@@ -262,14 +297,14 @@ void Homogeneous2D<T>::setVelocityModel(const double velocity)
 
 /// Have velocity?
 template<class T>
-bool Homogeneous2D<T>::haveVelocityModel() const noexcept
+bool Homogeneous3D<T>::haveVelocityModel() const noexcept
 {
     return pImpl->mVelocity > 0;
 }
 
 /// Solve the eikonal equation
 template<class T>
-void Homogeneous2D<T>::solve()
+void Homogeneous3D<T>::solve()
 {
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     if (!haveSource()){throw std::runtime_error("Source not yet set");}
@@ -279,26 +314,32 @@ void Homogeneous2D<T>::solve()
     }
     pImpl->mHaveTravelTimeField = false;
     auto nx = static_cast<size_t> (pImpl->mGeometry.getNumberOfGridPointsInX());
+    auto ny = static_cast<size_t> (pImpl->mGeometry.getNumberOfGridPointsInY());
     auto nz = static_cast<size_t> (pImpl->mGeometry.getNumberOfGridPointsInZ());
     auto dx = pImpl->mGeometry.getGridSpacingInX();
+    auto dy = pImpl->mGeometry.getGridSpacingInY();
     auto dz = pImpl->mGeometry.getGridSpacingInZ();
     auto xSrcOffset = pImpl->mSource.getOffsetInX();
+    auto ySrcOffset = pImpl->mSource.getOffsetInY();
     auto zSrcOffset = pImpl->mSource.getOffsetInZ();
     // Solve it
-    solve2d(nx, nz, xSrcOffset, zSrcOffset, dx, dz, pImpl->mVelocity,
+    solve3d(nx, ny, nz,
+            xSrcOffset, ySrcOffset, zSrcOffset,
+            dx, dy, dz,
+            pImpl->mVelocity,
             &pImpl->mTravelTimeField);
     pImpl->mHaveTravelTimeField = true;
 }
 
 /// Have travel time field?
 template<class T>
-bool Homogeneous2D<T>::haveTravelTimeField() const noexcept
+bool Homogeneous3D<T>::haveTravelTimeField() const noexcept
 {
     return pImpl->mHaveTravelTimeField;
 }
 
 template<class T>
-std::vector<T> Homogeneous2D<T>::getTravelTimeField() const
+std::vector<T> Homogeneous3D<T>::getTravelTimeField() const
 {
     if (!haveTravelTimeField())
     {
@@ -308,7 +349,7 @@ std::vector<T> Homogeneous2D<T>::getTravelTimeField() const
 }
 
 template<class T>
-const T* Homogeneous2D<T>::getTravelTimeFieldPointer() const
+const T* Homogeneous3D<T>::getTravelTimeFieldPointer() const
 {
     if (!haveTravelTimeField())
     {
@@ -319,14 +360,14 @@ const T* Homogeneous2D<T>::getTravelTimeFieldPointer() const
 
 /// Write the travel time field
 template<class T>
-void Homogeneous2D<T>::writeVTK(const std::string &fileName,
+void Homogeneous3D<T>::writeVTK(const std::string &fileName,
                                 const std::string &title) const
 {
     auto tPtr = getTravelTimeFieldPointer(); // Throws
-    IO::VTKRectilinearGrid2D vtkWriter;
+    IO::VTKRectilinearGrid3D vtkWriter;
     constexpr bool writeBinary = true;
     vtkWriter.open(fileName, pImpl->mGeometry, title, writeBinary); 
-    vtkWriter.writeNodalDataset(title, tPtr, EikonalXX::Ordering2D::NATURAL);
+    vtkWriter.writeNodalDataset(title, tPtr, EikonalXX::Ordering3D::NATURAL);
     vtkWriter.close();
 }
 
@@ -334,5 +375,5 @@ void Homogeneous2D<T>::writeVTK(const std::string &fileName,
 ///                           Template Instantiation                         ///
 ///--------------------------------------------------------------------------///
 
-template class EikonalXX::Analytic::Homogeneous2D<double>;
-template class EikonalXX::Analytic::Homogeneous2D<float>;
+template class EikonalXX::Analytic::Homogeneous3D<double>;
+template class EikonalXX::Analytic::Homogeneous3D<float>;

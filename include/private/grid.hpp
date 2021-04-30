@@ -10,8 +10,9 @@ namespace
 /// @result The index in a row-major [nz x nx] matrix corresponding to the
 ///         given (ix, iz)'th grid point.
 #pragma omp declare(simd) uniform(nx)
+template<typename T>
 [[nodiscard]] [[maybe_unused]]
-int gridToIndex(const int nx, const int ix, const int iz)
+T gridToIndex(const T nx, const T ix, const T iz)
 {
     return iz*nx + ix;
 }
@@ -23,9 +24,10 @@ int gridToIndex(const int nx, const int ix, const int iz)
 /// @param[in] iy   The iy'th grid point.
 /// @param[in] iz   The iz'th grid point
 #pragma omp declare(simd) uniform(nx, ny)
+template<typename T>
 [[nodiscard]] [[maybe_unused]]
-int gridToIndex(const int nx, const int ny,
-                const int ix, const int iy, const int iz)
+T gridToIndex(const T nx, const T ny,
+              const T ix, const T iy, const T iz)
 {
     return iz*(nx*ny) + iy*nx + ix;
 }
