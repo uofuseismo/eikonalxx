@@ -147,7 +147,7 @@ TEST(Analytic, LinearGradient2D)
     EXPECT_TRUE(solver.haveVelocityModel());
     EXPECT_NO_THROW(solver.solve());
     auto travelTimes = solver.getTravelTimeField();
-solver.writeVTK("test_lg.vtk");
+//solver.writeVTK("test_lg.vtk");
 }
 
 }

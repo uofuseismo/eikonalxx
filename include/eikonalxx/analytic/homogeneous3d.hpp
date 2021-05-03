@@ -2,6 +2,7 @@
 #define EIKONALXX_ANALYTIC_HOMOGENEOUS3D_HPP
 #include <memory>
 #include <vector>
+#include "eikonalxx/abstractBaseClass/solver3d.hpp"
 namespace EikonalXX
 {
 /// Forward declarations
@@ -13,7 +14,7 @@ namespace Analytic
 /// @brief Solves the eikonal equation in a constant velocity model.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 template<class T>
-class Homogeneous3D
+class Homogeneous3D : public EikonalXX::AbstractBaseClass::ISolver3D<T>
 {
 public:
     /// @name Constructor

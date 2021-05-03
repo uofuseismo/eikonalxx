@@ -771,7 +771,7 @@ std::cout << travelTimePtr[(nGridX-1)*(nGridZ-1)] << std::endl;
 template<class T>
 std::vector<T> Solver2D<T>::getTravelTimeField() const
 {
-    return pImpl->mTravelTimeField;;
+    return pImpl->mTravelTimeField;
 }
 
 /// Get travel time field pointer

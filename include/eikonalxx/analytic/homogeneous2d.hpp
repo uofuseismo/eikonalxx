@@ -2,6 +2,7 @@
 #define EIKONALXX_ANALYTIC_HOMOGENEOUS2D_HPP
 #include <memory>
 #include <vector>
+#include "eikonalxx/abstractBaseClass/solver2d.hpp"
 namespace EikonalXX
 {
 /// Forward declarations
@@ -13,7 +14,7 @@ namespace Analytic
 /// @brief Solves the eikonal equation in a constant velocity model.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 template<class T>
-class Homogeneous2D
+class Homogeneous2D : public EikonalXX::AbstractBaseClass::ISolver2D<T>
 {
 public:
     /// @name Constructor
@@ -100,16 +101,16 @@ public:
     ///         in seconds.  This uses the natural ordering.
     /// @note This has dimension getGeometry.getNumberOfGridPoints().
     /// @sa \c Ordering2D, \c haveTravelTimeField(), \c getGeometry()
-    [[nodiscard]] std::vector<T> getTravelTimeField() const;
+    [[nodiscard]] std::vector<T> getTravelTimeField() const override;
     /// @result A pointer to the travel time field at all nodes in the model
     ///         in seconds.   This uses the natural ordering and
     ///         has dimension [getGeometry.getNumberOfGridPoints()].
     /// @throws std::runtime_error if \c haveTravelTimeField() is false.
     /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
-    [[nodiscard]] const T* getTravelTimeFieldPointer() const;
+    [[nodiscard]] const T* getTravelTimeFieldPointer() const override;
     /// @result True indicates that \c solve() has been called and the travel
     ///         time field is available.
-    [[nodiscard]] bool haveTravelTimeField() const noexcept;
+    [[nodiscard]] bool haveTravelTimeField() const noexcept override;
 
     /// @brief Writes the travel time field to VTK.
     /// @param[in] fileName  The name of the VTK file.

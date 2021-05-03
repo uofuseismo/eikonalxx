@@ -466,6 +466,31 @@ return;
     }
 }
 
+/// Get travel time field
+template<class T>
+std::vector<T> Solver3D<T>::getTravelTimeField() const
+{
+    return pImpl->mTravelTimeField;
+}
+
+/// Get travel time field pointer
+template<class T>
+const T* Solver3D<T>::getTravelTimeFieldPointer() const
+{
+    if (!haveTravelTimeField())
+    {
+        throw std::runtime_error("Travel time field not yet computed");
+    }
+    return pImpl->mTravelTimeField.data();
+}
+
+/// Have travel time field?
+template<class T>
+bool Solver3D<T>::haveTravelTimeField() const noexcept
+{
+    return pImpl->mHaveTravelTimeField;
+}
+
 ///--------------------------------------------------------------------------///
 ///                           Template Class Instantiation                   ///
 ///--------------------------------------------------------------------------///
