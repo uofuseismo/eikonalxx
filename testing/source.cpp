@@ -9,7 +9,7 @@ namespace
 
 using namespace EikonalXX;
 
-TEST(Source2D, source2d)
+TEST(Source, source2d)
 {
     int nx = 21;
     int nz = 20;
@@ -59,7 +59,7 @@ TEST(Source2D, source2d)
     EXPECT_EQ(sourceCopy.getCellInZ(), 0);
 }
 
-TEST(Source3D, source3d)
+TEST(Source, source3d)
 {
     int nx = 21; 
     int ny = 18;

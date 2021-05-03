@@ -8,7 +8,7 @@ namespace
 
 using namespace EikonalXX;
 
-TEST(TestGeometry, geometry2d)
+TEST(Geometry, geometry2d)
 {
     Geometry2D geo;
     int nx = 5;
@@ -41,7 +41,7 @@ TEST(TestGeometry, geometry2d)
     EXPECT_NEAR(geoCopy.getOriginInZ(), z0, 1.e-10);
 }
 
-TEST(TestGeometry, geometry3d)
+TEST(Geometry, geometry3d)
 {
     Geometry3D geo;
     int nx = 5;
