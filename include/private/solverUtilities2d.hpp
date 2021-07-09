@@ -6,7 +6,8 @@
 #ifndef NDEBUG
 #include <cassert>
 #endif
-#include <tbb/tbb.h>
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
 #include "private/grid.hpp"
 #include "private/pad.hpp"
 
