@@ -6,7 +6,8 @@
 #ifndef NDEBUG
 #include <cassert>
 #endif
-#include <tbb/tbb.h>
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
 #include <tbb/cache_aligned_allocator.h>
 #include "eikonalxx/enums.hpp"
 #include "eikonalxx/graph3d.hpp"
