@@ -2,6 +2,7 @@
 #include "eikonalxx/analytic/homogeneous2d.hpp"
 #include "eikonalxx/analytic/homogeneous3d.hpp"
 #include "eikonalxx/analytic/linearGradient2d.hpp"
+#include "eikonalxx/analytic/linearGradient3d.hpp"
 #include "eikonalxx/source2d.hpp"
 #include "eikonalxx/source3d.hpp"
 #include "eikonalxx/geometry2d.hpp"
