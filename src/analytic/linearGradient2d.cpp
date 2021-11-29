@@ -37,7 +37,6 @@ void solve2d(const size_t nGridX, const size_t nGridZ,
     T absG2 = vGradInX*vGradInX + vGradInZ*vGradInZ; 
     T absG = std::sqrt(absG2);
     T vel0 = static_cast<T> (velTop + vGradInZ*zSrcOffset);
-std::cout << vel0 << std::endl;
     auto slow0 = static_cast<T> (1/vel0);
     // Figure out sizes and allocate space 
     auto nGrid = nGridX*nGridZ;

@@ -147,7 +147,38 @@ TEST(Analytic, LinearGradient2D)
     EXPECT_TRUE(solver.haveVelocityModel());
     EXPECT_NO_THROW(solver.solve());
     auto travelTimes = solver.getTravelTimeField();
-//solver.writeVTK("test_lg.vtk");
+    // Verify
+    constexpr double vGradInX = 0;
+    constexpr double vGradInY = 0;
+    const double vGradInZ = std::abs(velocity.second - velocity.first)
+                           /((nz - 1)*dz);
+    const double absG2 = vGradInX*vGradInX
+                       + vGradInY*vGradInY
+                       + vGradInZ*vGradInZ; 
+    const double absG = std::sqrt(absG2);
+    const double velSrc = velocity.first + (zSrc - z0)*vGradInZ;
+    const double slowSrc = 1/velSrc;
+    double dtMax = 0;
+    for (int iz = 0; iz < nz; ++iz)
+    {
+        for (int ix = 0; ix < nx; ++ix)
+        {
+            auto x = x0 + ix*dx;
+            auto z = z0 + iz*dz; 
+            auto dxSrc = x - xSrc;
+            auto dySrc = 0;
+            auto dzSrc = z - zSrc; 
+            auto indx = iz*nx + ix; 
+            auto vel = velSrc
+                     + vGradInX*dxSrc + vGradInY*dySrc + vGradInZ*dzSrc;
+            auto dist2 = dxSrc*dxSrc + dySrc*dySrc + dzSrc*dzSrc;
+            auto arg = 1 + (0.5/vel)*(slowSrc*absG2)*dist2;
+            auto tAnalytic = std::acosh(arg)/absG;
+            dtMax = std::max(dtMax, std::abs(tAnalytic - travelTimes[indx]));
+        }
+    }
+    EXPECT_NEAR(dtMax, 0, 1.e-12);
+    //solver.writeVTK("linGrad2d.vtk");
 }
 
 }

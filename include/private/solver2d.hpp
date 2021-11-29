@@ -262,7 +262,7 @@ std::cout.precision(10);
                                             mSourceOffsetX, mSourceOffsetZ,
                                             s0, s1, s3,
                                             t1, t2, t3);
-std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl << std::endl;
+std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl;
                     // Update?
                     //if (mUpdateNode[it0] == UPDATE_NODE)
                     if (tUpd < t0)
@@ -306,7 +306,7 @@ std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travel
                                             mSourceOffsetX, mSourceOffsetZ,
                                             s0, s1, s3, 
                                             t1, t2, t3);
-std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl << std::endl;
+std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl;
                     // Update?
                     //if (mUpdateNode[it0] == UPDATE_NODE)
                     if (tUpd < t0)

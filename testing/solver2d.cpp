@@ -1249,8 +1249,8 @@ TEST(Solver2D, solveHomogeneous)
     EXPECT_TRUE(solver.haveVelocityModel());
     EXPECT_TRUE(solver.haveSource());
     // Solve
-/*
     EXPECT_NO_THROW(solver.solve());
+/*
     EXPECT_TRUE(solver.haveTravelTimeField());
     auto tEst = solver.getTravelTimeField();
     std::ofstream ofl("ttimes.txt");
