@@ -281,7 +281,7 @@ std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travel
                 {
                     gridToSurroundingSlowness<E>(ix, iz, 
                                                  mCellX, mCellZ,
-                                              &iCell0, &iCell1, &iCell3);
+                                                 &iCell0, &iCell1, &iCell3);
                     s0 = slowness[iCell0];
                     s1 = slowness[iCell1];
                     s3 = slowness[iCell3];
@@ -293,6 +293,15 @@ std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travel
                     t2 = travelTimes[it2];
                     t3 = travelTimes[it3];
 
+/*
+if (ix == 14 && iz == 12)
+{
+ std::cout << "input" << std::endl;
+ std::cout << s0 << " " << s1 << " " << s3 << std::endl;
+ std::cout << t0 << " " << t1 << " " << t2 << " " << t3 << std::endl;
+}
+*/
+ 
                     tUpd = finiteDifference(mFactoredEikonalSolverRadius,
                                             huge,
                                             mDx, mDz,
@@ -307,6 +316,7 @@ std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travel
                                             s0, s1, s3, 
                                             t1, t2, t3);
 std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl;
+//if (ix == 14 && iz == 12){getchar();}
                     // Update?
                     //if (mUpdateNode[it0] == UPDATE_NODE)
                     if (tUpd < t0)

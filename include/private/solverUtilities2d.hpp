@@ -499,6 +499,7 @@ T finiteDifference(const int factoredEikonalRadius,
     T sz = sinTheta*s0;
     T hxs0 = dx*s0;
     T hzs0 = dz*s0;
+//std::cout << "eps " << factoredEikonalRadius << std::endl;
     // Cartesian
     if (std::abs(iSrcX - ix) > factoredEikonalRadius ||
         std::abs(iSrcZ - iz) > factoredEikonalRadius)
@@ -598,6 +599,7 @@ T finiteDifference(const int factoredEikonalRadius,
                 - four*((dt0dx*tauX)*dxinv + (dt0dz*tauZ)*dzinv)
                 + four*(sourceSlowness*sourceSlowness - s0*s0); 
             T det = b*b - four*a*c;
+//std::cout << sourceSlowness << " " << s0 << " " << std::endl;
 //std::cout << "apoly: " << a << " " << b << " " << c << " " << t0 << std::endl;
             if (det >= 0)
             {
@@ -1280,21 +1282,23 @@ void gridToSurroundingSlowness(const int ix, const int iz,
                                const int nCellX, const int nCellZ,
                                int *iCell0, int *iCell1, int *iCell3)
 {
-    int iCell0X, iCell0Z, iCell1X, iCell1Z,
-        iCell2X, iCell2Z, iCell3X, iCell3Z = 0;
+    int iCell0X, iCell0Z = 0;
+    int iCell1X, iCell1Z = 0;
+    //int iCell2X, iCell2Z = 0;
+    int iCell3X, iCell3Z = 0;
     if constexpr (E == SweepNumber2D::SWEEP1)
     {
         iCell0X = sycl::max(0, ix - 1);
         iCell1X = sycl::min(nCellX - 1, iCell0X + 1);
         if (ix == 0){iCell1X = 0;}
-        iCell2X = iCell1X;
+        //iCell2X = iCell1X;
         iCell3X = iCell0X;
 
         iCell0Z = sycl::max(0, iz - 1);
-        iCell2Z = sycl::min(nCellZ - 1, iCell0Z + 1);
-        if (iz == 0){iCell2Z = 0;}
+        iCell3Z = sycl::min(nCellZ - 1, iCell0Z + 1);
+        if (iz == 0){iCell3Z = 0;}
         iCell1Z = iCell0Z;
-        iCell3Z = iCell2Z;
+        //iCell3Z = iCell2Z;
     }
     else if constexpr (E == SweepNumber2D::SWEEP2)
     {
@@ -1305,32 +1309,32 @@ void gridToSurroundingSlowness(const int ix, const int iz,
             iCell0X = ix - 1;
             iCell1X = ix - 1;
         }
-        iCell2X = iCell1X;
+        //iCell2X = iCell1X;
         iCell3X = iCell0X;
 
         iCell0Z = sycl::max(0, iz - 1);
-        iCell2Z = sycl::min(nCellZ - 1, iCell0Z + 1);
-        if (iz == 0){iCell2Z = 0;}
+        iCell3Z = sycl::min(nCellZ - 1, iCell0Z + 1);
+        if (iz == 0){iCell3Z = 0;}
         iCell1Z = iCell0Z;
-        iCell3Z = iCell2Z;
+        //iCell3Z = iCell2Z;
     }
     else if constexpr (E == SweepNumber2D::SWEEP3)
     {
         iCell0X = sycl::max(0, ix - 1);
         iCell1X = sycl::min(nCellX - 1, iCell0X + 1);
         if (ix == 0){iCell1X = 0;}
-        iCell2X = iCell1X;
+        //iCell2X = iCell1X;
         iCell3X = iCell0X;
 
         iCell0Z = iz;
-        iCell2Z = sycl::max(0, iCell0Z - 1);
+        iCell3Z = sycl::max(0, iCell0Z - 1);
         if (iz == nCellZ)
         {
             iCell0Z = iz - 1;
-            iCell2Z = iz - 1;
+            iCell3Z = iz - 1;
         }
         iCell1Z = iCell0Z;
-        iCell3Z = iCell2Z;
+        //iCell3Z = iCell2Z;
     }
     else if constexpr (E == SweepNumber2D::SWEEP4)
     {
@@ -1341,18 +1345,18 @@ void gridToSurroundingSlowness(const int ix, const int iz,
             iCell0X = ix - 1;
             iCell1X = ix - 1;
         }
-        iCell2X = iCell1X;
+        //iCell2X = iCell1X;
         iCell3X = iCell0X;
 
         iCell0Z = iz;
-        iCell2Z = sycl::max(0, iCell0Z - 1);
+        iCell3Z = sycl::max(0, iCell0Z - 1);
         if (iz == nCellZ)
         {
             iCell0Z = iz - 1;
-            iCell2Z = iz - 1;
+            iCell3Z = iz - 1;
         }
         iCell1Z = iCell0Z;
-        iCell3Z = iCell2Z;
+        //iCell3Z = iCell2Z;
     } 
 #ifndef NDEBUG
     else

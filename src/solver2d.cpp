@@ -415,6 +415,7 @@ void Solver2D<T>::solve()
         auto tTimesPtr = pImpl->mTravelTimeField.data();
         pImpl->mSolverSweep1.updateFSM(slownessPtr, tTimesPtr, initialize);
 std::cout << "---------------------------------------------------------------" << std::endl;
+getchar();
         pImpl->mSolverSweep2.updateFSM(slownessPtr, tTimesPtr, initialize);
 std::cout << "---------------------------------------------------------------" << std::endl;
         pImpl->mSolverSweep3.updateFSM(slownessPtr, tTimesPtr, initialize);
@@ -427,13 +428,14 @@ std::cout << "---------------------------------------------------------------" <
         }
         timer.end();
         // Refinement sweeps
-        for (int k=0; k<nIterations; ++k)
+        for (int k = 0; k < nIterations; ++k)
         {
             pImpl->mSolverSweep1.updateFSM(slownessPtr, tTimesPtr, noInitialize);
             pImpl->mSolverSweep2.updateFSM(slownessPtr, tTimesPtr, noInitialize);
             pImpl->mSolverSweep3.updateFSM(slownessPtr, tTimesPtr, noInitialize);
             pImpl->mSolverSweep4.updateFSM(slownessPtr, tTimesPtr, noInitialize);
         }
+        pImpl->mHaveTravelTimeField = true;
     }
     else // Perform level set method on device
     {
@@ -455,7 +457,7 @@ std::cout << "---------------------------------------------------------------" <
 
         q.wait();
 
-        for (int k=0; k<nIterations; ++k)
+        for (int k = 0; k < nIterations; ++k)
         {
         }
         q.wait();

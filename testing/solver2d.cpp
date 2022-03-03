@@ -1249,7 +1249,7 @@ TEST(Solver2D, solveHomogeneous)
     EXPECT_TRUE(solver.haveVelocityModel());
     EXPECT_TRUE(solver.haveSource());
     // Solve
-    EXPECT_NO_THROW(solver.solve());
+//    EXPECT_NO_THROW(solver.solve());
 /*
     EXPECT_TRUE(solver.haveTravelTimeField());
     auto tEst = solver.getTravelTimeField();
@@ -1266,6 +1266,71 @@ TEST(Solver2D, solveHomogeneous)
     ofl.close();
 */
 } 
+
+TEST(Solver2D, Increment)
+{
+    int nx = 21;
+    int nz = 20;
+    double dx = 100; 
+    double dz = 100.05;
+    double x0 = 1; 
+    double z0 = 2; 
+    double xSrc = x0 + dx*(nx/2.) + dx/4.;
+    double zSrc = z0 + dz*(nz/2.);
+    int nSweeps = 0; 
+    int nEps = 3; 
+    auto solverAlgorithm = EikonalXX::SolverAlgorithm::FAST_SWEEPING_METHOD;
+
+    // Initialize the geometry
+    Geometry2D geometry;
+    geometry.setNumberOfGridPointsInX(nx);
+    geometry.setNumberOfGridPointsInZ(nz);
+    geometry.setGridSpacingInX(dx);
+    geometry.setGridSpacingInZ(dz);
+    geometry.setOriginInX(x0);
+    geometry.setOriginInZ(z0);
+
+    // Initialize the velocity model
+    std::vector<double> vIncrement(nx*nz, 0);
+    int ic = 0;
+    for (int iz = 0; iz < nz; ++iz)
+    {
+        for (int ix = 0; ix < nx; ++ix)
+        {
+            ic = ic + 1;
+            auto indx = gridToIndex(nx, ix, iz);
+            vIncrement.at(indx) = ic;//10*(indx + 1) + 1;
+        }
+    }
+    getchar();
+    Model2D<double> vModel;
+    vModel.initialize(geometry);
+    vModel.setNodalVelocities(vIncrement.size(), vIncrement.data(),
+                              EikonalXX::Ordering2D::NATURAL);
+
+    // Set the source
+    Source2D source;
+    source.setGeometry(geometry);
+    source.setLocationInX(xSrc);
+    source.setLocationInZ(zSrc);
+
+    // Set the solver options
+    SolverOptions options;
+    options.setNumberOfSweeps(nSweeps);
+    options.setFactoredEikonalEquationSolverRadius(nEps);
+    options.setVerbosity(Verbosity::DEBUG);
+    options.setAlgorithm(solverAlgorithm);
+    // Initialize 
+    Solver2D<double> solver;
+    EXPECT_NO_THROW(solver.initialize(options, geometry));
+    EXPECT_TRUE(solver.isInitialized());
+    EXPECT_NO_THROW(solver.setVelocityModel(vModel));
+    EXPECT_NO_THROW(solver.setSource(std::pair(xSrc, zSrc)));
+    EXPECT_TRUE(solver.haveVelocityModel());
+    EXPECT_TRUE(solver.haveSource());
+    // Solve
+    EXPECT_NO_THROW(solver.solve());
+}
 
 /*
 TEST(Solver2D, finiteDifferenceShift)
