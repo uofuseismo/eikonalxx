@@ -131,35 +131,51 @@ void PEikonalXX::initializeGeometry2D(pybind11::module &m)
 {
     pybind11::class_<PEikonalXX::Geometry2D> g(m, "Geometry2D");
     g.def(pybind11::init<> ());
-    g.doc() = "This defines a 2D Cartesian grid-based geometry.  The geometry is increases +x right and +z down.  There are three things that define a grid geometry - the number of grid points, the grid spacing, and, optionally, the grid origin.\n\nThe number of grid number of grid points is specified by (nx,nz) where nx and nz must both be at least 3.\n\nThe grid spacing is given by (dx,dz) in meters where both dx and dz must be positive.\n\nThe origin is defined by (x0,z0) in meters.  This will default to (0,0).";
+    g.doc() = R"""(
+This defines a 2D Cartesian grid-based geometry.  The geometry is increases +x right and +z down. 
+There are three things that define a grid geometry - the number of grid points, the grid spacing, and, optionally, the grid origin.
+
+Required Properties
+-------------------
+nx : int
+    The number of grid points in x.  This must be at least 3.
+nz : int
+    The number of grid points in z.  This must be at least 3.
+dx : float
+    The grid spacing in meters in x.  This must be positive.
+dz : float
+    The grid spacing in meters in z.  This must be positive.
+
+Optional Properties
+-------------------
+x0 : float
+    The x origin in meters.  By default this is 0.
+z0 : float
+    The z origin in meters.  By default this is 0.
+
+)""";
     
 
     g.def_property("nx",
                    &Geometry2D::getNumberOfGridPointsInX,
-                   &Geometry2D::setNumberOfGridPointsInX,
-                   "The number of grid points in x.  This must be at least 3.");
+                   &Geometry2D::setNumberOfGridPointsInX);
     g.def_property("nz",
                    &Geometry2D::getNumberOfGridPointsInZ,
-                   &Geometry2D::setNumberOfGridPointsInZ,
-                   "The number of grid points in z.  This must be at least 3.");
+                   &Geometry2D::setNumberOfGridPointsInZ);
 
     g.def_property("dx",
                    &Geometry2D::getGridSpacingInX,
-                   &Geometry2D::setGridSpacingInX,
-                   "The grid spacing in x in meters.  This must be positive.");
+                   &Geometry2D::setGridSpacingInX);
     g.def_property("dz",
                    &Geometry2D::getGridSpacingInZ,
-                   &Geometry2D::setGridSpacingInZ,
-                   "The grid spacing in z in meters.  This must be positive.");
+                   &Geometry2D::setGridSpacingInZ);
 
     g.def_property("x0",
                    &Geometry2D::getOriginInX,
-                   &Geometry2D::setOriginInX,
-                   "The grid origin in x in meters.");
+                   &Geometry2D::setOriginInX);
     g.def_property("z0",
                    &Geometry2D::getOriginInZ,
-                   &Geometry2D::setOriginInZ,
-                   "The grid origin in z in meters.");
+                   &Geometry2D::setOriginInZ);
 
     g.def("clear",
           &Geometry2D::clear,

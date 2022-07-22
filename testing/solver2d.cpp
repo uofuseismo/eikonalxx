@@ -26,28 +26,28 @@ TEST(Solver2D, numberOfLevels)
 TEST(Solver2D, sweepSigns)
 {
     int ixShift, izShift, signX, signZ;
-    getSweepFiniteDifferenceSigns<SweepNumber2D::SWEEP1>(&ixShift, &izShift,
+    getSweepFiniteDifferenceSigns<SweepNumber2D::Sweep1>(&ixShift, &izShift,
                                                          &signX, &signZ);
     EXPECT_EQ(ixShift,-1);
     EXPECT_EQ(izShift,-1);
     EXPECT_EQ(signX, 1);
     EXPECT_EQ(signZ, 1);
 
-    getSweepFiniteDifferenceSigns<SweepNumber2D::SWEEP2>(&ixShift, &izShift,
+    getSweepFiniteDifferenceSigns<SweepNumber2D::Sweep2>(&ixShift, &izShift,
                                                          &signX, &signZ);
     EXPECT_EQ(ixShift, 1);
     EXPECT_EQ(izShift,-1);
     EXPECT_EQ(signX,-1);
     EXPECT_EQ(signZ, 1);
 
-    getSweepFiniteDifferenceSigns<SweepNumber2D::SWEEP3>(&ixShift, &izShift,
+    getSweepFiniteDifferenceSigns<SweepNumber2D::Sweep3>(&ixShift, &izShift,
                                                          &signX, &signZ);
     EXPECT_EQ(ixShift,-1);
     EXPECT_EQ(izShift, 1);
     EXPECT_EQ(signX, 1);
     EXPECT_EQ(signZ,-1);
 
-    getSweepFiniteDifferenceSigns<SweepNumber2D::SWEEP4>(&ixShift, &izShift,
+    getSweepFiniteDifferenceSigns<SweepNumber2D::Sweep4>(&ixShift, &izShift,
                                                          &signX, &signZ);
     EXPECT_EQ(ixShift, 1);
     EXPECT_EQ(izShift, 1);
@@ -261,32 +261,32 @@ TEST(Solver2D, levelSetIndices)
     {
         auto sweep = static_cast<SweepNumber2D> (is);
         int j = 0;
-        for (int level=0; level<nLevels; ++level)
+        for (int level = 0; level < nLevels; ++level)
         {
             int i0, i1;
             int ix, iz;
             getLevelStartStopIndices(nx, nz, level, &i0, &i1);
-            for (int indx=i0; indx<i1; ++indx)
+            for (int indx = i0; indx < i1; ++indx)
             {
-                if (sweep == SweepNumber2D::SWEEP1)
+                if (sweep == SweepNumber2D::Sweep1)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP1>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep1>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
                     EXPECT_EQ(ix, refLevels[j].first);
                     EXPECT_EQ(iz, refLevels[j].second);
                 }
-                else if (sweep == SweepNumber2D::SWEEP2)
+                else if (sweep == SweepNumber2D::Sweep2)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP2>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep2>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
                     EXPECT_EQ(ix, nx - 1 - refLevels[j].first);
                     EXPECT_EQ(iz, refLevels[j].second);
                 }
-                else if (sweep == SweepNumber2D::SWEEP3)
+                else if (sweep == SweepNumber2D::Sweep3)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP3>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep3>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
                     EXPECT_EQ(ix, refLevels[j].first);
@@ -294,7 +294,7 @@ TEST(Solver2D, levelSetIndices)
                 }
                 else
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP4>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep4>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
                     EXPECT_EQ(ix, nx - 1 - refLevels[j].first);
@@ -332,25 +332,25 @@ TEST(Solver2D, levelSetIndices)
             getLevelStartStopIndices(nx, nz, level, &i0, &i1);
             for (int indx=i0; indx<i1; ++indx)
             {
-                if (sweep == SweepNumber2D::SWEEP1)
+                if (sweep == SweepNumber2D::Sweep1)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP1>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep1>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
                     EXPECT_EQ(ix, refLevels[j].first);
                     EXPECT_EQ(iz, refLevels[j].second);
                 }
-                else if (sweep == SweepNumber2D::SWEEP2)
+                else if (sweep == SweepNumber2D::Sweep2)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP2>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep2>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
                     EXPECT_EQ(ix, nx - 1 - refLevels[j].first);
                     EXPECT_EQ(iz, refLevels[j].second);
                 }
-                else if (sweep == SweepNumber2D::SWEEP3)
+                else if (sweep == SweepNumber2D::Sweep3)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP3>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep3>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
                     EXPECT_EQ(ix, refLevels[j].first);
@@ -358,7 +358,7 @@ TEST(Solver2D, levelSetIndices)
                 }
                 else
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP4>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep4>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
                     EXPECT_EQ(ix, nx - 1 - refLevels[j].first);
@@ -396,25 +396,25 @@ TEST(Solver2D, levelSetIndices)
             getLevelStartStopIndices(nx, nz, level, &i0, &i1);
             for (int indx = i0; indx < i1; ++indx)
             {
-                if (sweep == SweepNumber2D::SWEEP1)
+                if (sweep == SweepNumber2D::Sweep1)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP1>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep1>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
                     EXPECT_EQ(ix, refLevels[j].first);
                     EXPECT_EQ(iz, refLevels[j].second);
                 }
-                else if (sweep == SweepNumber2D::SWEEP2)
+                else if (sweep == SweepNumber2D::Sweep2)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP2>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep2>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
                     EXPECT_EQ(ix, nx - 1 - refLevels[j].first);
                     EXPECT_EQ(iz, refLevels[j].second);
                 }
-                else if (sweep == SweepNumber2D::SWEEP3)
+                else if (sweep == SweepNumber2D::Sweep3)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP3>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep3>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
                     EXPECT_EQ(ix, refLevels[j].first);
@@ -422,7 +422,7 @@ TEST(Solver2D, levelSetIndices)
                 }
                 else
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP4>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep4>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
                     EXPECT_EQ(ix, nx - 1 - refLevels[j].first);
@@ -455,39 +455,39 @@ TEST(Solver2D, gridSweepToLevelIndex)
             for (int indx = i0; indx < i1; ++indx)
             {
                 int levelTest, indxTest =-1;
-                if (sweep == SweepNumber2D::SWEEP1)
+                if (sweep == SweepNumber2D::Sweep1)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP1>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep1>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
-                    gridSweepToLevelIndex<SweepNumber2D::SWEEP1>(ix, iz, nx, nz,
+                    gridSweepToLevelIndex<SweepNumber2D::Sweep1>(ix, iz, nx, nz,
                                                                  &levelTest,
                                                                  &indxTest);
                 }
-                else if (sweep == SweepNumber2D::SWEEP2)
+                else if (sweep == SweepNumber2D::Sweep2)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP2>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep2>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
-                    gridSweepToLevelIndex<SweepNumber2D::SWEEP2>(ix, iz, nx, nz,
+                    gridSweepToLevelIndex<SweepNumber2D::Sweep2>(ix, iz, nx, nz,
                                                                  &levelTest,
                                                                  &indxTest);
                 }
-                else if (sweep == SweepNumber2D::SWEEP3)
+                else if (sweep == SweepNumber2D::Sweep3)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP3>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep3>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
-                    gridSweepToLevelIndex<SweepNumber2D::SWEEP3>(ix, iz, nx, nz,
+                    gridSweepToLevelIndex<SweepNumber2D::Sweep3>(ix, iz, nx, nz,
                                                                  &levelTest,
                                                                  &indxTest);
                 }
-                else if (sweep == SweepNumber2D::SWEEP4)
+                else if (sweep == SweepNumber2D::Sweep4)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP4>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep4>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
-                    gridSweepToLevelIndex<SweepNumber2D::SWEEP4>(ix, iz, nx, nz,
+                    gridSweepToLevelIndex<SweepNumber2D::Sweep4>(ix, iz, nx, nz,
                                                                  &levelTest,
                                                                  &indxTest);
                 }
@@ -513,39 +513,39 @@ TEST(Solver2D, gridSweepToLevelIndex)
             for (int indx = i0; indx < i1; ++indx)
             {
                 int levelTest, indxTest =-1;
-                if (sweep == SweepNumber2D::SWEEP1)
+                if (sweep == SweepNumber2D::Sweep1)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP1>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep1>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
-                    gridSweepToLevelIndex<SweepNumber2D::SWEEP1>(ix, iz, nx, nz,
+                    gridSweepToLevelIndex<SweepNumber2D::Sweep1>(ix, iz, nx, nz,
                                                                  &levelTest,
                                                                  &indxTest);
                 }
-                else if (sweep == SweepNumber2D::SWEEP2)
+                else if (sweep == SweepNumber2D::Sweep2)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP2>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep2>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
-                    gridSweepToLevelIndex<SweepNumber2D::SWEEP2>(ix, iz, nx, nz,
+                    gridSweepToLevelIndex<SweepNumber2D::Sweep2>(ix, iz, nx, nz,
                                                                  &levelTest,
                                                                  &indxTest);
                 }
-                else if (sweep == SweepNumber2D::SWEEP3)
+                else if (sweep == SweepNumber2D::Sweep3)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP3>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep3>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
-                    gridSweepToLevelIndex<SweepNumber2D::SWEEP3>(ix, iz, nx, nz,
+                    gridSweepToLevelIndex<SweepNumber2D::Sweep3>(ix, iz, nx, nz,
                                                                  &levelTest,
                                                                  &indxTest);
                 }
-                else if (sweep == SweepNumber2D::SWEEP4)
+                else if (sweep == SweepNumber2D::Sweep4)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP4>(level, indx,
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep4>(level, indx,
                                                                  nx, nz,
                                                                  &ix, &iz);
-                    gridSweepToLevelIndex<SweepNumber2D::SWEEP4>(ix, iz, nx, nz,
+                    gridSweepToLevelIndex<SweepNumber2D::Sweep4>(ix, iz, nx, nz,
                                                                  &levelTest,
                                                                  &indxTest);
                 }
@@ -605,11 +605,11 @@ TEST(Solver2D, sweepToGridTravelTimeIndices)
         getLevelStartStopIndices(nx, nz, level, &iStart, &iEnd);
         for (int indx = iStart; indx < iEnd; ++indx)
         {
-            sweepLevelIndexToTravelTimeIndices<SweepNumber2D::SWEEP1>(
+            sweepLevelIndexToTravelTimeIndices<SweepNumber2D::Sweep1>(
                                                level, indx,
                                                nx, nz, 
                                                &it0, &it1, &it2, &it3);
-            auto jt0 = sweepLevelIndexToIndex<SweepNumber2D::SWEEP1>(level,
+            auto jt0 = sweepLevelIndexToIndex<SweepNumber2D::Sweep1>(level,
                                                                      indx,
                                                                      nx, nz);
             EXPECT_NEAR(tTimes[it0], tRef0.at(j),   1.e-10);
@@ -632,11 +632,11 @@ TEST(Solver2D, sweepToGridTravelTimeIndices)
         getLevelStartStopIndices(nx, nz, level, &iStart, &iEnd);
         for (int indx = iStart; indx < iEnd; ++indx)
         {
-            sweepLevelIndexToTravelTimeIndices<SweepNumber2D::SWEEP2>(
+            sweepLevelIndexToTravelTimeIndices<SweepNumber2D::Sweep2>(
                                                level, indx,
                                                nx, nz,
                                                &it0, &it1, &it2, &it3);
-            auto jt0 = sweepLevelIndexToIndex<SweepNumber2D::SWEEP2>(level,
+            auto jt0 = sweepLevelIndexToIndex<SweepNumber2D::Sweep2>(level,
                                                                      indx,
                                                                      nx, nz);
             EXPECT_NEAR(tTimes[it0], tRef1.at(j),   1.e-10);
@@ -658,11 +658,11 @@ TEST(Solver2D, sweepToGridTravelTimeIndices)
 //std::cout << level << std::endl;
         for (int indx = iStart; indx < iEnd; ++indx)
         {
-            sweepLevelIndexToTravelTimeIndices<SweepNumber2D::SWEEP3>(
+            sweepLevelIndexToTravelTimeIndices<SweepNumber2D::Sweep3>(
                                                level, indx,
                                                nx, nz,
                                                &it0, &it1, &it2, &it3);
-            auto jt0 = sweepLevelIndexToIndex<SweepNumber2D::SWEEP3>(level,
+            auto jt0 = sweepLevelIndexToIndex<SweepNumber2D::Sweep3>(level,
                                                                      indx,
                                                                      nx, nz);
 //std::cout << it0 << " " << it1 << " " << it2 << " " << it3 << "|";
@@ -686,11 +686,11 @@ TEST(Solver2D, sweepToGridTravelTimeIndices)
 //std::cout << level << std::endl;
         for (int indx = iStart; indx < iEnd; ++indx)
         {
-            sweepLevelIndexToTravelTimeIndices<SweepNumber2D::SWEEP4>(
+            sweepLevelIndexToTravelTimeIndices<SweepNumber2D::Sweep4>(
                                                level, indx,
                                                nx, nz,
                                                &it0, &it1, &it2, &it3);
-            auto jt0 = sweepLevelIndexToIndex<SweepNumber2D::SWEEP4>(level,
+            auto jt0 = sweepLevelIndexToIndex<SweepNumber2D::Sweep4>(level,
                                                                      indx,
                                                                      nx, nz);
 //std::cout << it0 << " " << it1 << " " << it2 << " " << it3 << "|";
@@ -757,7 +757,7 @@ TEST(Solver2D, setVelocityModel)
                                        5, 5, 1, 1,  2, 1, 1, 2,
                                        1, 1, 1, 1};
                                       
-    //auto sweep = SweepNumber2D::SWEEP1;
+    //auto sweep = SweepNumber2D::Sweep1;
     auto nLevels = computeNumberOfLevels(nx, nz);
     auto levelOffset = makeLevelOffset(nx, nz);
     sweepSlowness.resize(nLevels);
@@ -766,7 +766,7 @@ TEST(Solver2D, setVelocityModel)
         auto nNodes = levelOffset[level+1] - levelOffset[level];
         sweepSlowness[level].allocate(nNodes);
     }
-    slownessToSweepSlowness<double, SweepNumber2D::SWEEP1>(nLevels,
+    slownessToSweepSlowness<double, SweepNumber2D::Sweep1>(nLevels,
                                                    nx, nz, ncx, ncz,
                                                    slow.data(),
                                                    sweepSlowness.data());
@@ -789,8 +789,8 @@ TEST(Solver2D, setVelocityModel)
     }
     EXPECT_EQ(i0, static_cast<int> (sweepSlowRef1.size()));
     
-    //sweep = SweepNumber2D::SWEEP2;
-    slownessToSweepSlowness<double, SweepNumber2D::SWEEP2>(nLevels,
+    //sweep = SweepNumber2D::Sweep2;
+    slownessToSweepSlowness<double, SweepNumber2D::Sweep2>(nLevels,
                                                    nx, nz, ncx, ncz, 
                                                    slow.data(),
                                                    sweepSlowness.data());
@@ -813,8 +813,8 @@ TEST(Solver2D, setVelocityModel)
     }
     EXPECT_EQ(i0, static_cast<int> (sweepSlowRef2.size()));
 
-    //sweep = SweepNumber2D::SWEEP3;
-    slownessToSweepSlowness<double, SweepNumber2D::SWEEP3>(nLevels,
+    //sweep = SweepNumber2D::Sweep3;
+    slownessToSweepSlowness<double, SweepNumber2D::Sweep3>(nLevels,
                                                    nx, nz, ncx, ncz, 
                                                    slow.data(),
                                                    sweepSlowness.data());
@@ -837,8 +837,8 @@ TEST(Solver2D, setVelocityModel)
     }
     EXPECT_EQ(i0, static_cast<int> (sweepSlowRef3.size()));
 
-    //sweep = SweepNumber2D::SWEEP4;
-    slownessToSweepSlowness<double, SweepNumber2D::SWEEP4>(nLevels,
+    //sweep = SweepNumber2D::Sweep4;
+    slownessToSweepSlowness<double, SweepNumber2D::Sweep4>(nLevels,
                                                    nx, nz, ncx, ncz, 
                                                    slow.data(),
                                                    sweepSlowness.data());
@@ -862,7 +862,7 @@ TEST(Solver2D, setVelocityModel)
     EXPECT_EQ(i0, static_cast<int> (sweepSlowRef4.size()));
 
     // Do a more involved test 
-    //sweep = SweepNumber2D::SWEEP1;
+    //sweep = SweepNumber2D::Sweep1;
     nx = 242;
     nz = 323;
     ncx = nx - 1;
@@ -889,28 +889,28 @@ TEST(Solver2D, setVelocityModel)
         auto sweep = static_cast<SweepNumber2D> (is);
         if (is == 0)
         {
-            slownessToSweepSlowness<double, SweepNumber2D::SWEEP1>(nLevels,
+            slownessToSweepSlowness<double, SweepNumber2D::Sweep1>(nLevels,
                                                           nx, nz, ncx, ncz,
                                                           slow.data(),
                                                           sweepSlowness.data());
         }
         else if (is == 1)
         {
-            slownessToSweepSlowness<double, SweepNumber2D::SWEEP2>(nLevels, 
+            slownessToSweepSlowness<double, SweepNumber2D::Sweep2>(nLevels, 
                                                           nx, nz, ncx, ncz,
                                                           slow.data(),
                                                           sweepSlowness.data()); 
         } 
         else if (is == 2)
         {
-            slownessToSweepSlowness<double, SweepNumber2D::SWEEP3>(nLevels, 
+            slownessToSweepSlowness<double, SweepNumber2D::Sweep3>(nLevels, 
                                                           nx, nz, ncx, ncz,
                                                           slow.data(),
                                                           sweepSlowness.data());
         }
         else //if (is == 3)
         {
-            slownessToSweepSlowness<double, SweepNumber2D::SWEEP4>(nLevels, 
+            slownessToSweepSlowness<double, SweepNumber2D::Sweep4>(nLevels, 
                                                           nx, nz, ncx, ncz,
                                                           slow.data(),
                                                           sweepSlowness.data());
@@ -924,9 +924,9 @@ TEST(Solver2D, setVelocityModel)
             for (int indx = i0; indx < i1; ++indx)
             {
                 // Get the neighbors surrounding the grid point
-                if (sweep == SweepNumber2D::SWEEP1)
+                if (sweep == SweepNumber2D::Sweep1)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP1>(
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep1>(
                                           level, indx, nx, nz, &ix, &iz);
                     iCell0X = std::max(0, ix - 1);
                     iCell1X = std::min(ncx - 1, iCell0X + 1);
@@ -939,9 +939,9 @@ TEST(Solver2D, setVelocityModel)
                     if (iz == 0){iCell2Z = 0;}
                     iCell3Z = iCell2Z;
                 }
-                else if (sweep == SweepNumber2D::SWEEP2)
+                else if (sweep == SweepNumber2D::Sweep2)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP2>(
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep2>(
                                           level, indx, nx, nz, &ix, &iz);
                     iCell0X = ix;
                     iCell1X = sycl::max(0, iCell0X - 1);
@@ -959,9 +959,9 @@ TEST(Solver2D, setVelocityModel)
                     iCell1Z = iCell0Z;
                     iCell3Z = iCell2Z;
                 }
-                else if (sweep == SweepNumber2D::SWEEP3)
+                else if (sweep == SweepNumber2D::Sweep3)
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP3>(
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep3>(
                                           level, indx, nx, nz, &ix, &iz);
                     iCell0X = sycl::max(0, ix - 1);
                     iCell1X = sycl::min(ncx - 1, iCell0X + 1);
@@ -979,9 +979,9 @@ TEST(Solver2D, setVelocityModel)
                     iCell1Z = iCell0Z;
                     iCell3Z = iCell2Z;
                 }
-                else // sweep == SweepNumber2D::SWEEP4 
+                else // sweep == SweepNumber2D::Sweep4 
                 {
-                    sweepLevelIndexToGrid<SweepNumber2D::SWEEP4>(
+                    sweepLevelIndexToGrid<SweepNumber2D::Sweep4>(
                                           level, indx, nx, nz, &ix, &iz);
                     iCell0X = ix;
                     iCell1X = sycl::max(0, iCell0X - 1);
@@ -1073,28 +1073,28 @@ TEST(Solver2D, loopLimits)
         offset = is*nx*nz;
         if (is == 0)
         {
-            getLoopLimits<SweepNumber2D::SWEEP1>(nx, nz,
+            getLoopLimits<SweepNumber2D::Sweep1>(nx, nz,
                                                  &ix0, &iz0,
                                                  &ix1, &iz1,
                                                  &ixDir, &izDir);
         }
         else if (is == 1)
         {
-            getLoopLimits<SweepNumber2D::SWEEP2>(nx, nz,
+            getLoopLimits<SweepNumber2D::Sweep2>(nx, nz,
                                                  &ix0, &iz0,
                                                  &ix1, &iz1,
                                                  &ixDir, &izDir);
         }
         else if (is == 2)
         {
-            getLoopLimits<SweepNumber2D::SWEEP3>(nx, nz,
+            getLoopLimits<SweepNumber2D::Sweep3>(nx, nz,
                                                  &ix0, &iz0,
                                                  &ix1, &iz1,
                                                  &ixDir, &izDir);
         }
         else // if (is == 3)
         {
-            getLoopLimits<SweepNumber2D::SWEEP4>(nx, nz,
+            getLoopLimits<SweepNumber2D::Sweep4>(nx, nz,
                                                  &ix0, &iz0,
                                                  &ix1, &iz1,
                                                  &ixDir, &izDir);
@@ -1130,28 +1130,28 @@ TEST(Solver2D, maskFSMNodes)
             for (int ix = 0; ix < nx; ++ix)
             {
                 auto indx = gridToIndex(nx, ix, iz);
-                if (sweep == SweepNumber2D::SWEEP1)
+                if (sweep == SweepNumber2D::Sweep1)
                 {
                     if (ix == 0 || iz == 0)
                     {
                         refUpdateNodes.at(indx) = BOUNDARY_NODE;
                     }
                 }
-                else if (sweep == SweepNumber2D::SWEEP2)
+                else if (sweep == SweepNumber2D::Sweep2)
                 {
                     if (ix == nx - 2 || iz == 0)
                     {
                         refUpdateNodes.at(indx) = BOUNDARY_NODE;
                     }
                 }
-                else if (sweep == SweepNumber2D::SWEEP3)
+                else if (sweep == SweepNumber2D::Sweep3)
                 {
                     if (ix == 0 || iz == nz - 2)
                     {
                         refUpdateNodes.at(indx) = BOUNDARY_NODE;
                     }
                 }
-                else // (sweep == SweepNumber2D::SWEEP4)
+                else // (sweep == SweepNumber2D::Sweep4)
                 {
                     if (ix == nx - 2 || iz == nz - 2)
                     {
@@ -1162,22 +1162,22 @@ TEST(Solver2D, maskFSMNodes)
         } // Loop on z
         if (is == 0)
         {
-            setPreliminaryUpdateNodes<SweepNumber2D::SWEEP1>(
+            setPreliminaryUpdateNodes<SweepNumber2D::Sweep1>(
                 nx, nz, updateNodes.data());
         }
         else if (is == 1)
         {
-            setPreliminaryUpdateNodes<SweepNumber2D::SWEEP2>(
+            setPreliminaryUpdateNodes<SweepNumber2D::Sweep2>(
                 nx, nz, updateNodes.data());
         }
         else if (is == 2)
         {
-            setPreliminaryUpdateNodes<SweepNumber2D::SWEEP3>(
+            setPreliminaryUpdateNodes<SweepNumber2D::Sweep3>(
                 nx, nz, updateNodes.data());
         }
         else if (is == 3)
         {
-            setPreliminaryUpdateNodes<SweepNumber2D::SWEEP4>(
+            setPreliminaryUpdateNodes<SweepNumber2D::Sweep4>(
                 nx, nz, updateNodes.data());
         }
         int dmax = 0;
@@ -1204,7 +1204,7 @@ TEST(Solver2D, solveHomogeneous)
     double zSrc = z0 + dz*(nz/2);
     int nSweeps = 0;
     int nEps = 3;
-    auto solverAlgorithm = EikonalXX::SolverAlgorithm::FAST_SWEEPING_METHOD;
+    auto solverAlgorithm = EikonalXX::SolverAlgorithm::FastSweepingMethod;
 
     // Initialize the geometry
     Geometry2D geometry;
@@ -1273,7 +1273,7 @@ TEST(Solver2D, Increment)
     double zSrc = z0 + dz*(nz/2.);
     int nSweeps = 0; 
     int nEps = 3; 
-    auto solverAlgorithm = EikonalXX::SolverAlgorithm::FAST_SWEEPING_METHOD;
+    auto solverAlgorithm = EikonalXX::SolverAlgorithm::FastSweepingMethod;
 
     // Initialize the geometry
     Geometry2D geometry;

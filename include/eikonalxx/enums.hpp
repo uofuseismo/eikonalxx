@@ -43,36 +43,36 @@ enum class Ordering3D
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 enum class SolverAlgorithm
 {
-    LEVEL_SET_METHOD,     /*! This solves the eikonal equation using a
-                              reordering that allows for parallel updates
-                              of travel time nodes during a sweep.  */
-    FAST_SWEEPING_METHOD  /*! This is the traditional fast-sweeping method
-                              that does not provide for parallel updates
-                              of travel time nodes during a sweep. */
+    LevelSetMethod,     /*! This solves the eikonal equation using a
+                            reordering that allows for parallel updates
+                            of travel time nodes during a sweep.  */
+    FastSweepingMethod  /*! This is the traditional fast-sweeping method
+                            that does not provide for parallel updates
+                            of travel time nodes during a sweep. */
 };
 
 /// @brief Defines the sweep number for the 2D fast-sweeping method solver.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 enum class SweepNumber2D
 {
-    SWEEP1 = 0,  /*! This sweep increases in x and z. */ 
-    SWEEP2 = 1,  /*! This sweep decreases in x and increases in z. */
-    SWEEP3 = 2,  /*! This sweep increases in x and decreases in z. */
-    SWEEP4 = 3   /*! This sweep decreases in x and z. */
+    Sweep1 = 0,  /*!< This sweep increases in x and z. */ 
+    Sweep2 = 1,  /*!< This sweep decreases in x and increases in z. */
+    Sweep3 = 2,  /*!< This sweep increases in x and decreases in z. */
+    Sweep4 = 3,  /*!< This sweep decreases in x and z. */
 };
 
 /// @brief Defines the sweep number for the 2D fast-sweeping method solver.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 enum class SweepNumber3D
 {
-    SWEEP1 = 0,  /*! This sweep increases in x, y, and z. */ 
-    SWEEP2 = 1,
-    SWEEP3 = 2,
-    SWEEP4 = 3,
-    SWEEP5 = 4,
-    SWEEP6 = 5,
-    SWEEP7 = 6,
-    SWEEP8 = 7   /*! This sweep decreases in x, y, and z. */
+    Sweep1 = 0,  /*!< This sweep increases in x, y, and z. */ 
+    Sweep2 = 1,  /*!< This sweep decreases in x, increases in y, and increases in z. */
+    Sweep3 = 2,  /*!< This sweep increases in x, decreases in y, and increases in z. */
+    Sweep4 = 3,  /*!< This sweep decreases in x, decreases in y, and increases in z. */
+    Sweep5 = 4,  /*!< This sweep decreases in x, increases in y, and decreases in z. */
+    Sweep6 = 5,  /*!< This sweep increases in x, decreases in y, and decreases in z. */
+    Sweep7 = 6,  /*!< This sweep decreases in x, decreases in y, and decreases in z. */
+    Sweep8 = 7   /*!< This sweep decreases in x, y, and z. */
 };
 
 

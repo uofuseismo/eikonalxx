@@ -161,7 +161,7 @@ TEST(Graph, Graph3D)
                                       59,
                                       60};
                                             
-    Graph3D<SweepNumber3D::SWEEP1> graph1;
+    Graph3D<SweepNumber3D::Sweep1> graph1;
     EXPECT_NO_THROW(graph1.initialize(nx, ny, nz));
     EXPECT_TRUE(graph1.isInitialized());
     EXPECT_EQ(nx*ny*nz, graph1.getNumberOfGridPoints());
@@ -194,7 +194,7 @@ TEST(Graph, Graph3D)
     } 
 
     // Sweep direction 2
-    Graph3D<SweepNumber3D::SWEEP2> graph2;
+    Graph3D<SweepNumber3D::Sweep2> graph2;
     EXPECT_NO_THROW(graph2.initialize(nx, ny, nz));
     nodeInLevelToGridPointPtr = graph2.getNodeInLevelToIndexPointer();
     for (int i = 0; i < graph1.getNumberOfGridPoints(); ++i)
@@ -204,7 +204,7 @@ TEST(Graph, Graph3D)
     }   
 
     // Sweep direction 3
-    Graph3D<SweepNumber3D::SWEEP3> graph3;
+    Graph3D<SweepNumber3D::Sweep3> graph3;
     EXPECT_NO_THROW(graph3.initialize(nx, ny, nz));
     nodeInLevelToGridPointPtr = graph3.getNodeInLevelToIndexPointer();
     for (int i = 0; i < graph1.getNumberOfGridPoints(); ++i)
@@ -214,7 +214,7 @@ TEST(Graph, Graph3D)
     }   
 
     // Sweep direction 4
-    Graph3D<SweepNumber3D::SWEEP4> graph4;
+    Graph3D<SweepNumber3D::Sweep4> graph4;
     EXPECT_NO_THROW(graph4.initialize(nx, ny, nz));
     nodeInLevelToGridPointPtr = graph4.getNodeInLevelToIndexPointer();
     for (int i = 0; i < graph1.getNumberOfGridPoints(); ++i)
@@ -224,7 +224,7 @@ TEST(Graph, Graph3D)
     }
 
     // Sweep direction 5
-    Graph3D<SweepNumber3D::SWEEP5> graph5;
+    Graph3D<SweepNumber3D::Sweep5> graph5;
     EXPECT_NO_THROW(graph5.initialize(nx, ny, nz));
     nodeInLevelToGridPointPtr = graph5.getNodeInLevelToIndexPointer();
     for (int i = 0; i < graph1.getNumberOfGridPoints(); ++i)
@@ -234,7 +234,7 @@ TEST(Graph, Graph3D)
     }
 
     // Sweep direction 6
-    Graph3D<SweepNumber3D::SWEEP6> graph6;
+    Graph3D<SweepNumber3D::Sweep6> graph6;
     EXPECT_NO_THROW(graph6.initialize(nx, ny, nz));
     nodeInLevelToGridPointPtr = graph6.getNodeInLevelToIndexPointer();
     for (int i = 0; i < graph1.getNumberOfGridPoints(); ++i)
@@ -244,7 +244,7 @@ TEST(Graph, Graph3D)
     }
 
     // Sweep direction 7
-    Graph3D<SweepNumber3D::SWEEP7> graph7;
+    Graph3D<SweepNumber3D::Sweep7> graph7;
     EXPECT_NO_THROW(graph7.initialize(nx, ny, nz));
     nodeInLevelToGridPointPtr = graph7.getNodeInLevelToIndexPointer();
     for (int i = 0; i < graph1.getNumberOfGridPoints(); ++i)
@@ -254,7 +254,7 @@ TEST(Graph, Graph3D)
     }
 
     // Sweep direction 8
-    Graph3D<SweepNumber3D::SWEEP8> graph8;
+    Graph3D<SweepNumber3D::Sweep8> graph8;
     EXPECT_NO_THROW(graph8.initialize(nx, ny, nz));
     nodeInLevelToGridPointPtr = graph8.getNodeInLevelToIndexPointer();
     for (int i = 0; i < graph1.getNumberOfGridPoints(); ++i)

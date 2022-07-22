@@ -1,5 +1,6 @@
 #ifndef EIKONALXX_SOLVEROPTIONS_HPP
 #define EIKONALXX_SOLVEROPTIONS_HPP
+#include <ostream>
 #include <memory>
 #include "eikonalxx/enums.hpp"
 namespace EikonalXX
@@ -12,6 +13,7 @@ class SolverOptions
 public:
     /// @name Constructors
     /// @{
+
     /// @brief Constructor.
     SolverOptions();
     /// @brief Copy constructor.
@@ -27,6 +29,7 @@ public:
 
     /// @name Operators
     /// @{
+
     /// @brief Copy assignment operator.
     /// @param[in] options   The options class to copy to this.
     /// @result A deep copy of the options class.
@@ -41,6 +44,7 @@ public:
 
     /// @name Properties
     /// @{
+
     /// @brief Sets the number of (Gauss-Seidel) sweeps.
     /// @param[in] nSweeps  The number of Gauss-Seidel sweeps.
     /// @note This does not include the initialization sweep which will always
@@ -95,6 +99,7 @@ public:
 
     /// @name Destructors
     /// @{
+
     /// @brief Destructor.
     ~SolverOptions();
     /// @brief Resets the class and restores the defaults.
@@ -104,5 +109,6 @@ private:
     class SolverOptionsImpl;
     std::unique_ptr<SolverOptionsImpl> pImpl;
 };
+std::ostream& operator<<(std::ostream &os, const SolverOptions &options);
 }
 #endif

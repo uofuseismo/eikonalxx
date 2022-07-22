@@ -81,14 +81,14 @@ public:
             }   
         }
     }
-    Solver3DSweep<T, SweepNumber3D::SWEEP1> mSolverSweep1;
-    Solver3DSweep<T, SweepNumber3D::SWEEP2> mSolverSweep2;
-    Solver3DSweep<T, SweepNumber3D::SWEEP3> mSolverSweep3;
-    Solver3DSweep<T, SweepNumber3D::SWEEP4> mSolverSweep4;
-    Solver3DSweep<T, SweepNumber3D::SWEEP5> mSolverSweep5;
-    Solver3DSweep<T, SweepNumber3D::SWEEP6> mSolverSweep6;
-    Solver3DSweep<T, SweepNumber3D::SWEEP7> mSolverSweep7;
-    Solver3DSweep<T, SweepNumber3D::SWEEP8> mSolverSweep8;
+    Solver3DSweep<T, SweepNumber3D::Sweep1> mSolverSweep1;
+    Solver3DSweep<T, SweepNumber3D::Sweep2> mSolverSweep2;
+    Solver3DSweep<T, SweepNumber3D::Sweep3> mSolverSweep3;
+    Solver3DSweep<T, SweepNumber3D::Sweep4> mSolverSweep4;
+    Solver3DSweep<T, SweepNumber3D::Sweep5> mSolverSweep5;
+    Solver3DSweep<T, SweepNumber3D::Sweep6> mSolverSweep6;
+    Solver3DSweep<T, SweepNumber3D::Sweep7> mSolverSweep7;
+    Solver3DSweep<T, SweepNumber3D::Sweep8> mSolverSweep8;
     Model3D<T> mVelocityModel;
     Geometry3D mGeometry;
     Source3D mSource;
@@ -415,7 +415,7 @@ void Solver3D<T>::solve()
     auto algorithm = pImpl->mOptions.getAlgorithm();
     constexpr bool initialize = true;
     constexpr bool noInitialize = false;
-    if (algorithm == SolverAlgorithm::FAST_SWEEPING_METHOD)
+    if (algorithm == SolverAlgorithm::FastSweepingMethod)
     {
         if (verbosity == Verbosity::DEBUG)
         {

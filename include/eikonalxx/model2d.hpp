@@ -7,17 +7,16 @@ namespace EikonalXX
 {
 // Forward declarations
 class Geometry2D;
-/*!
- * @class Model2D "model2d.hpp" "eikonalxx/model2d.hpp"
- * @brief Defines a 2D velocity model.
- * @copyright Ben Baker (University of Utah) distributed under the MIT license.
- */
+/// @class Model2D "model2d.hpp" "eikonalxx/model2d.hpp"
+/// @brief Defines a 2D velocity model.
+/// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 template<class T>
 class Model2D
 {
 public:
     /// @name Constructors
     /// @{
+
     /// @brief Default constructor.
     Model2D();
     /// @brief Copy constructor.
@@ -31,6 +30,7 @@ public:
 
     /// @name Operators
     /// @{
+
     /// @brief Copy assignment.
     /// @param[in] model  The model to copy to this.
     /// @result A deep copy of model to this.
@@ -39,14 +39,6 @@ public:
     /// @param[in,out] model  The memory on model to move to this.
     /// @result The memory from model moved to this.
     Model2D& operator=(Model2D &&model) noexcept;
-    /// @}
-
-    /// @name Destructors
-    /// @{
-    /// @brief Destructor.
-    ~Model2D();
-    /// @brief Resets the class and releases all memory.
-    void clear() noexcept;
     /// @}
 
     /// @brief Initializes the class.
@@ -61,6 +53,7 @@ public:
 
     /// @name Grid Geometry Information
     /// @{
+
     /// @result The number of grid points.
     /// @throws std::runtime_error if \c isInitialized() is false.
     [[nodiscard]] int getNumberOfGridPoints() const; 
@@ -74,6 +67,7 @@ public:
 
     /// @name Velocity and Slowness Models
     /// @{
+
     /// @brief Sets a nodal velocity model.
     /// @param[in] nGrid  The number of grid points where nGrid = nGridZ*nGridX.
     ///                   The number of grid points in each direction can be
@@ -129,7 +123,16 @@ public:
     ///         ordering.
     /// @throws std::runtime_error if \c haveVelocities() is false.
     [[nodiscard]] std::vector<T> getVelocities() const;
-    /// @}  
+    /// @}
+
+    /// @name Destructors
+    /// @{
+
+    /// @brief Resets the class and releases all memory.
+    void clear() noexcept;
+    /// @brief Destructor.
+    ~Model2D();
+    /// @}
 private:
     class Model2DImpl;
     std::unique_ptr<Model2DImpl> pImpl;

@@ -844,7 +844,7 @@ template<EikonalXX::SweepNumber3D E>
 void getSweepFiniteDifferenceSigns(int *ixShift, int *iyShift, int *izShift,
                                    int *signX, int *signY, int *signZ)
 {
-    if constexpr(E == EikonalXX::SweepNumber3D::SWEEP1)
+    if constexpr(E == EikonalXX::SweepNumber3D::Sweep1)
     {
         *ixShift =-1;
         *iyShift =-1;
@@ -853,7 +853,7 @@ void getSweepFiniteDifferenceSigns(int *ixShift, int *iyShift, int *izShift,
         *signY = 1;
         *signZ = 1; 
     }
-    else if constexpr(E == EikonalXX::SweepNumber3D::SWEEP2)
+    else if constexpr(E == EikonalXX::SweepNumber3D::Sweep2)
     {
         *ixShift =+1;
         *iyShift =-1;
@@ -862,7 +862,7 @@ void getSweepFiniteDifferenceSigns(int *ixShift, int *iyShift, int *izShift,
         *signY = 1;
         *signZ = 1;
     }
-    else if constexpr(E == EikonalXX::SweepNumber3D::SWEEP3)
+    else if constexpr(E == EikonalXX::SweepNumber3D::Sweep3)
     {
         *ixShift =-1;
         *iyShift =+1;
@@ -871,7 +871,7 @@ void getSweepFiniteDifferenceSigns(int *ixShift, int *iyShift, int *izShift,
         *signY =-1;
         *signZ = 1;
     }
-    else if constexpr(E == EikonalXX::SweepNumber3D::SWEEP4)
+    else if constexpr(E == EikonalXX::SweepNumber3D::Sweep4)
     {
         *ixShift =+1;
         *iyShift =+1;
@@ -880,7 +880,7 @@ void getSweepFiniteDifferenceSigns(int *ixShift, int *iyShift, int *izShift,
         *signY =-1;
         *signZ = 1; 
     }
-    else if constexpr(E == EikonalXX::SweepNumber3D::SWEEP5) // Sweep 1; flip z
+    else if constexpr(E == EikonalXX::SweepNumber3D::Sweep5) // Sweep 1; flip z
     {
         *ixShift =-1;
         *iyShift =-1;
@@ -889,7 +889,7 @@ void getSweepFiniteDifferenceSigns(int *ixShift, int *iyShift, int *izShift,
         *signY = 1;
         *signZ =-1;
     }
-    else if constexpr(E == EikonalXX::SweepNumber3D::SWEEP6) // Sweep 2; flip z
+    else if constexpr(E == EikonalXX::SweepNumber3D::Sweep6) // Sweep 2; flip z
     {
         *ixShift =+1;
         *iyShift =-1;
@@ -898,7 +898,7 @@ void getSweepFiniteDifferenceSigns(int *ixShift, int *iyShift, int *izShift,
         *signY = 1;
         *signZ =-1;
     }
-    else if constexpr(E == EikonalXX::SweepNumber3D::SWEEP7) // Sweep 3; flip z
+    else if constexpr(E == EikonalXX::SweepNumber3D::Sweep7) // Sweep 3; flip z
     {
         *ixShift =-1;
         *iyShift =+1;
@@ -907,7 +907,7 @@ void getSweepFiniteDifferenceSigns(int *ixShift, int *iyShift, int *izShift,
         *signY =-1;
         *signZ =-1;
     }
-    else if constexpr(E == EikonalXX::SweepNumber3D::SWEEP8) // Sweep 4 ; flip z
+    else if constexpr(E == EikonalXX::SweepNumber3D::Sweep8) // Sweep 4 ; flip z
     {
         *ixShift =+1;
         *iyShift =+1;
@@ -947,7 +947,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
                    int *ix1, int *iy1, int *iz1,
                    int *ixDir, int *iyDir, int *izDir)
 {
-    if constexpr (E == SweepNumber3D::SWEEP1)
+    if constexpr (E == SweepNumber3D::Sweep1)
     {
         *ix0 = 1;
         *ix1 = nGridX;
@@ -959,7 +959,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir = 1;
         *izDir = 1;
     }    
-    else if constexpr (E == SweepNumber3D::SWEEP2)
+    else if constexpr (E == SweepNumber3D::Sweep2)
     {
         *ix0 = nGridX - 2;
         *ix1 =-1;
@@ -971,7 +971,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir = 1;
         *izDir = 1;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP3)
+    else if constexpr (E == SweepNumber3D::Sweep3)
     {
         *ix0 = 1; 
         *ix1 = nGridX;
@@ -983,7 +983,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir =-1;
         *izDir = 1;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP4)
+    else if constexpr (E == SweepNumber3D::Sweep4)
     {
         *ix0 = nGridX - 2;
         *ix1 =-1;
@@ -995,7 +995,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir =-1;
         *izDir = 1;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP5)
+    else if constexpr (E == SweepNumber3D::Sweep5)
     {
         *ix0 = 1;
         *ix1 = nGridX;
@@ -1007,7 +1007,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir = 1;
         *izDir =-1;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP6)
+    else if constexpr (E == SweepNumber3D::Sweep6)
     {
         *ix0 = nGridX - 2;
         *ix1 =-1;
@@ -1019,7 +1019,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir = 1;
         *izDir =-1;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP7)
+    else if constexpr (E == SweepNumber3D::Sweep7)
     {
         *ix0 = 1;
         *ix1 = nGridX;
@@ -1031,7 +1031,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir =-1;
         *izDir =-1;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP8)
+    else if constexpr (E == SweepNumber3D::Sweep8)
     {
         *ix0 = nGridX - 2;
         *ix1 =-1;
@@ -1079,7 +1079,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
                    int *ix1, int *iy1, int *iz1,
                    int *ixDir, int *iyDir, int *izDir)
 {
-    if constexpr (E == SweepNumber3D::SWEEP1)
+    if constexpr (E == SweepNumber3D::Sweep1)
     {
         *ix0 = std::max(1, iSrcX);
         *ix1 = nGridX;
@@ -1091,7 +1091,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir = 1;
         *izDir = 1;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP2)
+    else if constexpr (E == SweepNumber3D::Sweep2)
     {
         *ix0 = std::min(iSrcX + 1, nGridX - 2);
         *ix1 =-1;
@@ -1103,7 +1103,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir = 1;
         *izDir = 1;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP3)
+    else if constexpr (E == SweepNumber3D::Sweep3)
     {
         *ix0 = std::max(1, iSrcX);
         *ix1 = nGridX;
@@ -1115,7 +1115,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir =-1;
         *izDir = 1;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP4)
+    else if constexpr (E == SweepNumber3D::Sweep4)
     {
         *ix0 = std::min(iSrcX + 1, nGridX - 2);
         *ix1 =-1;
@@ -1127,7 +1127,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir =-1;
         *izDir = 1;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP5)
+    else if constexpr (E == SweepNumber3D::Sweep5)
     {
         *ix0 = std::max(1, iSrcX);
         *ix1 = nGridX;
@@ -1139,7 +1139,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir = 1;
         *izDir =-1;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP6)
+    else if constexpr (E == SweepNumber3D::Sweep6)
     {
         *ix0 = std::min(iSrcX + 1, nGridX - 2);
         *ix1 =-1;
@@ -1151,7 +1151,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir = 1;
         *izDir =-1;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP7)
+    else if constexpr (E == SweepNumber3D::Sweep7)
     {
         *ix0 = std::max(1, iSrcX);
         *ix1 = nGridX;
@@ -1163,7 +1163,7 @@ void getLoopLimits(const int nGridX, const int nGridY, const int nGridZ,
         *iyDir =-1;
         *izDir =-1;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP8)
+    else if constexpr (E == SweepNumber3D::Sweep8)
     {
         *ix0 = std::min(iSrcX + 1, nGridX - 2);
         *ix1 =-1;
@@ -1200,49 +1200,49 @@ void permuteGrid(const int ix, const int iy, const int iz,
                  const int nx, const int ny, const int nz,
                  int *jx, int *jy, int *jz)
 {
-    if constexpr (E == SweepNumber3D::SWEEP1)
+    if constexpr (E == SweepNumber3D::Sweep1)
     {
         *jx = ix;
         *jy = iy;
         *jz = iz;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP2)
+    else if constexpr (E == SweepNumber3D::Sweep2)
     {
         *jx = nx - 1 - ix;
         *jy = iy;
         *jz = iz;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP3)
+    else if constexpr (E == SweepNumber3D::Sweep3)
     {
         *jx = ix;
         *jy = ny - 1 - iy;
         *jz = iz;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP4)
+    else if constexpr (E == SweepNumber3D::Sweep4)
     {
         *jx = nx - 1 - ix;
         *jy = ny - 1 - iy;
         *jz = iz;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP5)
+    else if constexpr (E == SweepNumber3D::Sweep5)
     {
         *jx = ix;
         *jy = iy;
         *jz = nz - 1 - iz;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP6)
+    else if constexpr (E == SweepNumber3D::Sweep6)
     {
         *jx = nx - 1 - ix;
         *jy = iy;
         *jz = nz - 1 - iz;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP7)
+    else if constexpr (E == SweepNumber3D::Sweep7)
     {
         *jx = ix;
         *jy = ny - 1 - iy;
         *jz = nz - 1 - iz;
     }
-    else if constexpr (E == SweepNumber3D::SWEEP8)
+    else if constexpr (E == SweepNumber3D::Sweep8)
     {
         *jx = nx - 1 - ix;
         *jy = ny - 1 - iy;
@@ -1305,7 +1305,7 @@ void gridToSurroundingSlownessIndices(
     int *iCell0, int *iCell1, int *iCell2, int *iCell3,
     int *iCell4, int *iCell5, int *iCell7)
 {
-    if constexpr (E == SweepNumber3D::SWEEP1)
+    if constexpr (E == SweepNumber3D::Sweep1)
     {
         int ixUpdate = std::max(0, std::min(nCellX - 1, ix - 1));
         int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate + 1));
@@ -1321,7 +1321,7 @@ void gridToSurroundingSlownessIndices(
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
         *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP2)
+    else if constexpr (E == SweepNumber3D::Sweep2)
     {
         int ixUpdate = std::max(0, std::min(nCellX - 1, ix));
         int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate - 1));
@@ -1337,7 +1337,7 @@ void gridToSurroundingSlownessIndices(
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
         *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP3)
+    else if constexpr (E == SweepNumber3D::Sweep3)
     {
         int ixUpdate = std::max(0, std::min(nCellX - 1, ix - 1));
         int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate + 1));
@@ -1353,7 +1353,7 @@ void gridToSurroundingSlownessIndices(
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
         *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP4)
+    else if constexpr (E == SweepNumber3D::Sweep4)
     {
         int ixUpdate = std::max(0, std::min(nCellX - 1, ix));
         int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate - 1));
@@ -1369,7 +1369,7 @@ void gridToSurroundingSlownessIndices(
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
         *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP5)
+    else if constexpr (E == SweepNumber3D::Sweep5)
     {
         int ixUpdate = std::max(0, std::min(nCellX - 1, ix - 1));
         int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate + 1));
@@ -1385,7 +1385,7 @@ void gridToSurroundingSlownessIndices(
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
         *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP6)
+    else if constexpr (E == SweepNumber3D::Sweep6)
     {
         int ixUpdate = std::max(0, std::min(nCellX - 1, ix));
         int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate - 1));
@@ -1401,7 +1401,7 @@ void gridToSurroundingSlownessIndices(
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
         *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP7)
+    else if constexpr (E == SweepNumber3D::Sweep7)
     {
         int ixUpdate = std::max(0, std::min(nCellX - 1, ix - 1));
         int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate + 1));
@@ -1417,7 +1417,7 @@ void gridToSurroundingSlownessIndices(
         *iCell5 = gridToIndex(nCellX, nCellY, ixOffset, iyUpdate, izOffset);
         *iCell7 = gridToIndex(nCellX, nCellY, ixUpdate, iyOffset, izOffset);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP8)
+    else if constexpr (E == SweepNumber3D::Sweep8)
     {
         int ixUpdate = std::max(0, std::min(nCellX - 1, ix));
         int ixOffset = std::max(0, std::min(nCellX - 1, ixUpdate - 1));
@@ -1465,7 +1465,7 @@ void gridToSurroundingTravelTimeIndices(
     int *i0, int *i1, int *i2, int *i3,
     int *i4, int *i5, int *i6, int *i7)
 {
-    if constexpr (E == SweepNumber3D::SWEEP1)
+    if constexpr (E == SweepNumber3D::Sweep1)
     {
         int ixShift = std::max(0, std::min(nGridX - 1, ix - 1));
         int iyShift = std::max(0, std::min(nGridY - 1, iy - 1));
@@ -1479,7 +1479,7 @@ void gridToSurroundingTravelTimeIndices(
         *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
         *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP2)
+    else if constexpr (E == SweepNumber3D::Sweep2)
     {
         int ixShift = std::max(0, std::min(nGridX - 1, ix + 1));
         int iyShift = std::max(0, std::min(nGridY - 1, iy - 1));
@@ -1493,7 +1493,7 @@ void gridToSurroundingTravelTimeIndices(
         *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
         *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP3)
+    else if constexpr (E == SweepNumber3D::Sweep3)
     {
         int ixShift = std::max(0, std::min(nGridX - 1, ix - 1));
         int iyShift = std::max(0, std::min(nGridY - 1, iy + 1));
@@ -1507,7 +1507,7 @@ void gridToSurroundingTravelTimeIndices(
         *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
         *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP4)
+    else if constexpr (E == SweepNumber3D::Sweep4)
     {
         int ixShift = std::max(0, std::min(nGridX - 1, ix + 1));
         int iyShift = std::max(0, std::min(nGridY - 1, iy + 1));
@@ -1521,7 +1521,7 @@ void gridToSurroundingTravelTimeIndices(
         *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
         *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP5)
+    else if constexpr (E == SweepNumber3D::Sweep5)
     {
         int ixShift = std::max(0, std::min(nGridX - 1, ix - 1));
         int iyShift = std::max(0, std::min(nGridY - 1, iy - 1));
@@ -1535,7 +1535,7 @@ void gridToSurroundingTravelTimeIndices(
         *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
         *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP6)
+    else if constexpr (E == SweepNumber3D::Sweep6)
     {
         int ixShift = std::max(0, std::min(nGridX - 1, ix + 1));
         int iyShift = std::max(0, std::min(nGridY - 1, iy - 1));
@@ -1549,7 +1549,7 @@ void gridToSurroundingTravelTimeIndices(
         *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
         *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP7)
+    else if constexpr (E == SweepNumber3D::Sweep7)
     {
         int ixShift = std::max(0, std::min(nGridX - 1, ix - 1));
         int iyShift = std::max(0, std::min(nGridY - 1, iy + 1));
@@ -1563,7 +1563,7 @@ void gridToSurroundingTravelTimeIndices(
         *i6 = gridToIndex(nGridX, nGridY, ixShift, iyShift, izShift);
         *i7 = gridToIndex(nGridX, nGridY, ix,      iyShift, izShift);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP8)
+    else if constexpr (E == SweepNumber3D::Sweep8)
     {
         int ixShift = std::max(0, std::min(nGridX - 1, ix + 1));
         int iyShift = std::max(0, std::min(nGridY - 1, iy + 1));
@@ -1601,35 +1601,35 @@ bool isSweepBoundaryNode(const int ix, const int iy, const int iz,
                          const int nGridX, const int nGridY, const int nGridZ)
 {
     bool onBoundary = false;
-    if constexpr (E == SweepNumber3D::SWEEP1)
+    if constexpr (E == SweepNumber3D::Sweep1)
     {
         onBoundary = (ix == 0 || iy == 0 || iz == 0);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP2)
+    else if constexpr (E == SweepNumber3D::Sweep2)
     {
         onBoundary = (ix == nGridX - 1 || iy == 0 || iz == 0);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP3)
+    else if constexpr (E == SweepNumber3D::Sweep3)
     {
         onBoundary = (ix == 0 || iy == nGridY - 1 || iz == 0);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP4)
+    else if constexpr (E == SweepNumber3D::Sweep4)
     {
         onBoundary = (ix == nGridX - 1 || iy == nGridY - 1 || iz == 0);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP5)
+    else if constexpr (E == SweepNumber3D::Sweep5)
     {
         onBoundary = (ix == 0 || iy == 0 || iz == nGridZ - 1);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP6)
+    else if constexpr (E == SweepNumber3D::Sweep6)
     {
         onBoundary = (ix == nGridX - 1 || iy == 0 || iz == nGridZ - 1);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP7)
+    else if constexpr (E == SweepNumber3D::Sweep7)
     {
         onBoundary = (ix == 0 || iy == nGridY - 1 || iz == nGridZ - 1);
     }
-    else if constexpr (E == SweepNumber3D::SWEEP8)
+    else if constexpr (E == SweepNumber3D::Sweep8)
     {
         onBoundary = (ix == nGridX - 1 || iy == nGridY - 1 || iz == nGridZ - 1);
     }

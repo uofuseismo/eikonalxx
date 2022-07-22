@@ -14,7 +14,7 @@ public:
     /// Spherical solver radius in grid points.
     int mFactoredEikonalRadius = DEFAULT_FACTORED_EIKONAL_RADIUS;
     /// Solver algorithm
-    SolverAlgorithm mAlgorithm = SolverAlgorithm::LEVEL_SET_METHOD;
+    SolverAlgorithm mAlgorithm = SolverAlgorithm::LevelSetMethod;
     /// Verbosity
     Verbosity mVerbosity = Verbosity::ERROR;
     /// Number of sweeps (Gauss-Seidel iterations)
@@ -124,8 +124,31 @@ void SolverOptions::clear() noexcept
 {
     pImpl->mConvergenceTolerance = DEFFAULT_CONVERGENCE_TOLERANCE;
     pImpl->mFactoredEikonalRadius = DEFAULT_FACTORED_EIKONAL_RADIUS;
-    pImpl->mAlgorithm = SolverAlgorithm::LEVEL_SET_METHOD;
+    pImpl->mAlgorithm = SolverAlgorithm::LevelSetMethod;
     pImpl->mVerbosity = Verbosity::ERROR;
     pImpl->mSweeps = DEFAULT_NUMBER_OF_SWEEPS;
 }
 
+std::ostream&
+EikonalXX::operator<<(std::ostream &os, const SolverOptions &options)
+{
+    std::string result{ "Solver Options:\n"};
+    result = result + "    Number of sweeps: "
+           + std::to_string(options.getNumberOfSweeps()) + "\n";
+    if (options.getAlgorithm() == SolverAlgorithm::LevelSetMethod)
+    {
+        result = result + "    Solver type: Level-set method\n";  
+    }
+    else
+    {
+        result = result + "    Solver type: Fast-sweeping method\n";
+    }
+    result = result + "    Convergence (seconds): "
+           + std::to_string(options.getConvergenceTolerance()) + "\n";
+    result = result + "    Factored-eikonal equation radius (grid points): "
+           + std::to_string(options.getFactoredEikonalEquationSolverRadius())
+           + "\n";
+    result = result + "    Verbosity: "
+           + std::to_string(static_cast<int> (options.getVerbosity())) + "\n";
+    return os << result;
+}

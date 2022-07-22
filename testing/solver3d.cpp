@@ -65,49 +65,49 @@ TEST(Solver3D, sweepSigns)
 {
     int ixShift, iyShift, izShift;
     int signX, signY, signZ;
-    getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP1>(
+    getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep1>(
         &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
     EXPECT_EQ(ixShift, -1); EXPECT_EQ(signX,  1);
     EXPECT_EQ(iyShift, -1); EXPECT_EQ(signY,  1);
     EXPECT_EQ(izShift, -1); EXPECT_EQ(signZ,  1);
 
-    getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP2>(
+    getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep2>(
         &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
     EXPECT_EQ(ixShift, +1); EXPECT_EQ(signX, -1);
     EXPECT_EQ(iyShift, -1); EXPECT_EQ(signY,  1);
     EXPECT_EQ(izShift, -1); EXPECT_EQ(signZ,  1);
 
-    getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP3>(
+    getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep3>(
         &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
     EXPECT_EQ(ixShift, -1); EXPECT_EQ(signX,  1);
     EXPECT_EQ(iyShift, +1); EXPECT_EQ(signY, -1);
     EXPECT_EQ(izShift, -1); EXPECT_EQ(signZ,  1);
 
-    getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP4>(
+    getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep4>(
         &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
     EXPECT_EQ(ixShift, +1); EXPECT_EQ(signX, -1); 
     EXPECT_EQ(iyShift, +1); EXPECT_EQ(signY, -1); 
     EXPECT_EQ(izShift, -1); EXPECT_EQ(signZ,  1);
 
-    getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP5>(
+    getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep5>(
         &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
     EXPECT_EQ(ixShift, -1); EXPECT_EQ(signX,  1);
     EXPECT_EQ(iyShift, -1); EXPECT_EQ(signY,  1);
     EXPECT_EQ(izShift, +1); EXPECT_EQ(signZ, -1);
 
-    getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP6>(
+    getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep6>(
         &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
     EXPECT_EQ(ixShift, +1); EXPECT_EQ(signX, -1);
     EXPECT_EQ(iyShift, -1); EXPECT_EQ(signY,  1);
     EXPECT_EQ(izShift, +1); EXPECT_EQ(signZ, -1);
 
-    getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP7>(
+    getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep7>(
         &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
     EXPECT_EQ(ixShift, -1); EXPECT_EQ(signX,  1);
     EXPECT_EQ(iyShift, +1); EXPECT_EQ(signY, -1);
     EXPECT_EQ(izShift, +1); EXPECT_EQ(signZ, -1);
 
-    getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP8>(
+    getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep8>(
         &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
     EXPECT_EQ(ixShift, +1); EXPECT_EQ(signX, -1); 
     EXPECT_EQ(iyShift, +1); EXPECT_EQ(signY, -1);
@@ -134,51 +134,51 @@ TEST(Solver3D, sweepToSlownessIndices)
         int sgnvz = 1;
         if (is == 0)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP1>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep1>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
         }
         else if (is == 1)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP2>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep2>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
             sgnvx = 0;
         }
         else if (is == 2)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP3>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep3>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
             sgnvy = 0;
         }
         else if (is == 3)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP4>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep4>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
             sgnvx = 0;
             sgnvy = 0;
         }
         else if (is == 4)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP5>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep5>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
             sgnvz = 0;
         }
         else if (is == 5)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP6>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep6>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
             sgnvx = 0;
             sgnvz = 0;
         }
         else if (is == 6)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP7>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep7>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
             sgnvy = 0;
             sgnvz = 0;
         }
         else
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP8>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep8>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
             sgnvx = 0;
             sgnvy = 0;
@@ -222,7 +222,7 @@ TEST(Solver3D, sweepToSlownessIndices)
                             std::max(0, std::min(nCellZ - 1, iCellZ - izShift)));
                     if (is == 0)
                     {
-                        gridToSurroundingSlownessIndices<SweepNumber3D::SWEEP1>(
+                        gridToSurroundingSlownessIndices<SweepNumber3D::Sweep1>(
                                                  ix, iy, iz, 
                                                  nCellX, nCellY, nCellZ, 
                                                  &i0, &i1, &i2, &i3,
@@ -230,7 +230,7 @@ TEST(Solver3D, sweepToSlownessIndices)
                     }
                     else if (is == 1)
                     {
-                        gridToSurroundingSlownessIndices<SweepNumber3D::SWEEP2>(
+                        gridToSurroundingSlownessIndices<SweepNumber3D::Sweep2>(
                                                  ix, iy, iz, 
                                                  nCellX, nCellY, nCellZ, 
                                                  &i0, &i1, &i2, &i3,
@@ -238,7 +238,7 @@ TEST(Solver3D, sweepToSlownessIndices)
                     }
                     else if (is == 2)
                     {
-                        gridToSurroundingSlownessIndices<SweepNumber3D::SWEEP3>(
+                        gridToSurroundingSlownessIndices<SweepNumber3D::Sweep3>(
                                                  ix, iy, iz,
                                                  nCellX, nCellY, nCellZ,
                                                  &i0, &i1, &i2, &i3,
@@ -246,7 +246,7 @@ TEST(Solver3D, sweepToSlownessIndices)
                     }
                     else if (is == 3)
                     {
-                        gridToSurroundingSlownessIndices<SweepNumber3D::SWEEP4>(
+                        gridToSurroundingSlownessIndices<SweepNumber3D::Sweep4>(
                                                  ix, iy, iz,
                                                  nCellX, nCellY, nCellZ,
                                                  &i0, &i1, &i2, &i3,
@@ -254,7 +254,7 @@ TEST(Solver3D, sweepToSlownessIndices)
                     }
                     else if (is == 4)
                     {
-                        gridToSurroundingSlownessIndices<SweepNumber3D::SWEEP5>(
+                        gridToSurroundingSlownessIndices<SweepNumber3D::Sweep5>(
                                                  ix, iy, iz,
                                                  nCellX, nCellY, nCellZ,
                                                  &i0, &i1, &i2, &i3,
@@ -262,7 +262,7 @@ TEST(Solver3D, sweepToSlownessIndices)
                     }
                     else if (is == 5)
                     {
-                        gridToSurroundingSlownessIndices<SweepNumber3D::SWEEP6>(
+                        gridToSurroundingSlownessIndices<SweepNumber3D::Sweep6>(
                                                  ix, iy, iz,
                                                  nCellX, nCellY, nCellZ,
                                                  &i0, &i1, &i2, &i3,
@@ -270,7 +270,7 @@ TEST(Solver3D, sweepToSlownessIndices)
                     }
                     else if (is == 6)
                     {
-                        gridToSurroundingSlownessIndices<SweepNumber3D::SWEEP7>(
+                        gridToSurroundingSlownessIndices<SweepNumber3D::Sweep7>(
                                                  ix, iy, iz,
                                                  nCellX, nCellY, nCellZ,
                                                  &i0, &i1, &i2, &i3,
@@ -278,7 +278,7 @@ TEST(Solver3D, sweepToSlownessIndices)
                     }
                     else
                     {
-                        gridToSurroundingSlownessIndices<SweepNumber3D::SWEEP8>(
+                        gridToSurroundingSlownessIndices<SweepNumber3D::Sweep8>(
                                                  ix, iy, iz,
                                                  nCellX, nCellY, nCellZ,
                                                  &i0, &i1, &i2, &i3,
@@ -319,42 +319,42 @@ TEST(Solver3D, sweepToTravelTimeIndices)
     {
         if (is == 0)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP1>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep1>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
         }
         else if (is == 1)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP2>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep2>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
         }
         else if (is == 2)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP3>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep3>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
         }
         else if (is == 3)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP4>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep4>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
         }
         else if (is == 4)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP5>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep5>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
         }
         else if (is == 5)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP6>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep6>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
         }
         else if (is == 6)
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP7>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep7>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
         }
         else
         {
-            getSweepFiniteDifferenceSigns<SweepNumber3D::SWEEP8>(
+            getSweepFiniteDifferenceSigns<SweepNumber3D::Sweep8>(
                 &ixShift, &iyShift, &izShift, &signX, &signY, &signZ);
         }
         // Loop on grid
@@ -395,7 +395,7 @@ TEST(Solver3D, sweepToTravelTimeIndices)
                                    std::max(0, std::min(nz - 1, iz + izShift)));
                     if (is == 0)
                     {
-                        gridToSurroundingTravelTimeIndices<SweepNumber3D::SWEEP1>(
+                        gridToSurroundingTravelTimeIndices<SweepNumber3D::Sweep1>(
                                                  ix, iy, iz,
                                                  nx, ny, nz,
                                                  &i0, &i1, &i2, &i3,
@@ -403,7 +403,7 @@ TEST(Solver3D, sweepToTravelTimeIndices)
                     }
                     else if (is == 1)
                     {
-                        gridToSurroundingTravelTimeIndices<SweepNumber3D::SWEEP2>(
+                        gridToSurroundingTravelTimeIndices<SweepNumber3D::Sweep2>(
                                                  ix, iy, iz, 
                                                  nx, ny, nz, 
                                                  &i0, &i1, &i2, &i3,
@@ -411,7 +411,7 @@ TEST(Solver3D, sweepToTravelTimeIndices)
                     }
                     else if (is == 2)
                     {
-                        gridToSurroundingTravelTimeIndices<SweepNumber3D::SWEEP3>(
+                        gridToSurroundingTravelTimeIndices<SweepNumber3D::Sweep3>(
                                                  ix, iy, iz,
                                                  nx, ny, nz, 
                                                  &i0, &i1, &i2, &i3,
@@ -419,7 +419,7 @@ TEST(Solver3D, sweepToTravelTimeIndices)
                     }
                     else if (is == 3)
                     {
-                        gridToSurroundingTravelTimeIndices<SweepNumber3D::SWEEP4>(
+                        gridToSurroundingTravelTimeIndices<SweepNumber3D::Sweep4>(
                                                  ix, iy, iz,
                                                  nx, ny, nz, 
                                                  &i0, &i1, &i2, &i3,
@@ -427,7 +427,7 @@ TEST(Solver3D, sweepToTravelTimeIndices)
                     }
                     else if (is == 4)
                     {
-                        gridToSurroundingTravelTimeIndices<SweepNumber3D::SWEEP5>(
+                        gridToSurroundingTravelTimeIndices<SweepNumber3D::Sweep5>(
                                                  ix, iy, iz,
                                                  nx, ny, nz, 
                                                  &i0, &i1, &i2, &i3,
@@ -435,7 +435,7 @@ TEST(Solver3D, sweepToTravelTimeIndices)
                     }
                     else if (is == 5)
                     {
-                        gridToSurroundingTravelTimeIndices<SweepNumber3D::SWEEP6>(
+                        gridToSurroundingTravelTimeIndices<SweepNumber3D::Sweep6>(
                                                  ix, iy, iz,
                                                  nx, ny, nz, 
                                                  &i0, &i1, &i2, &i3,
@@ -443,7 +443,7 @@ TEST(Solver3D, sweepToTravelTimeIndices)
                     }
                     else if (is == 6)
                     {
-                        gridToSurroundingTravelTimeIndices<SweepNumber3D::SWEEP7>(
+                        gridToSurroundingTravelTimeIndices<SweepNumber3D::Sweep7>(
                                                  ix, iy, iz,
                                                  nx, ny, nz, 
                                                  &i0, &i1, &i2, &i3,
@@ -451,7 +451,7 @@ TEST(Solver3D, sweepToTravelTimeIndices)
                     }
                     else
                     {
-                        gridToSurroundingTravelTimeIndices<SweepNumber3D::SWEEP8>(
+                        gridToSurroundingTravelTimeIndices<SweepNumber3D::Sweep8>(
                                                  ix, iy, iz,
                                                  nx, ny, nz, 
                                                  &i0, &i1, &i2, &i3,
@@ -489,7 +489,7 @@ TEST(Solver3D, loopLimits)
     int nGridY = 11;
     int nGridZ = 9;
     int ix0, iy0, iz0, ix1, iy1, iz1, ixDir, iyDir, izDir;
-    getLoopLimits<SweepNumber3D::SWEEP1>(nGridX, nGridY, nGridZ,
+    getLoopLimits<SweepNumber3D::Sweep1>(nGridX, nGridY, nGridZ,
                                          &ix0, &iy0, &iz0,
                                          &ix1, &iy1, &iz1,
                                          &ixDir, &iyDir, &izDir);
@@ -497,7 +497,7 @@ TEST(Solver3D, loopLimits)
     EXPECT_EQ(iy0, 1); EXPECT_EQ(iy1, nGridY); EXPECT_EQ(iyDir, 1);
     EXPECT_EQ(iz0, 1); EXPECT_EQ(iz1, nGridZ); EXPECT_EQ(izDir, 1);
 
-    getLoopLimits<SweepNumber3D::SWEEP2>(nGridX, nGridY, nGridZ,
+    getLoopLimits<SweepNumber3D::Sweep2>(nGridX, nGridY, nGridZ,
                                          &ix0, &iy0, &iz0,
                                          &ix1, &iy1, &iz1,
                                          &ixDir, &iyDir, &izDir);
@@ -505,7 +505,7 @@ TEST(Solver3D, loopLimits)
     EXPECT_EQ(iy0, 1);          EXPECT_EQ(iy1, nGridY); EXPECT_EQ(iyDir, 1); 
     EXPECT_EQ(iz0, 1);          EXPECT_EQ(iz1, nGridZ); EXPECT_EQ(izDir, 1);
 
-    getLoopLimits<SweepNumber3D::SWEEP3>(nGridX, nGridY, nGridZ,
+    getLoopLimits<SweepNumber3D::Sweep3>(nGridX, nGridY, nGridZ,
                                          &ix0, &iy0, &iz0,
                                          &ix1, &iy1, &iz1,
                                          &ixDir, &iyDir, &izDir);
@@ -513,7 +513,7 @@ TEST(Solver3D, loopLimits)
     EXPECT_EQ(iy0, nGridY - 2); EXPECT_EQ(iy1,-1);      EXPECT_EQ(iyDir,-1);
     EXPECT_EQ(iz0, 1);          EXPECT_EQ(iz1, nGridZ); EXPECT_EQ(izDir, 1); 
 
-    getLoopLimits<SweepNumber3D::SWEEP4>(nGridX, nGridY, nGridZ,
+    getLoopLimits<SweepNumber3D::Sweep4>(nGridX, nGridY, nGridZ,
                                          &ix0, &iy0, &iz0,
                                          &ix1, &iy1, &iz1,
                                          &ixDir, &iyDir, &izDir);
@@ -521,7 +521,7 @@ TEST(Solver3D, loopLimits)
     EXPECT_EQ(iy0, nGridY - 2); EXPECT_EQ(iy1,-1);      EXPECT_EQ(iyDir,-1);
     EXPECT_EQ(iz0, 1);          EXPECT_EQ(iz1, nGridZ); EXPECT_EQ(izDir, 1);
 
-    getLoopLimits<SweepNumber3D::SWEEP5>(nGridX, nGridY, nGridZ,
+    getLoopLimits<SweepNumber3D::Sweep5>(nGridX, nGridY, nGridZ,
                                          &ix0, &iy0, &iz0,
                                          &ix1, &iy1, &iz1,
                                          &ixDir, &iyDir, &izDir);
@@ -529,7 +529,7 @@ TEST(Solver3D, loopLimits)
     EXPECT_EQ(iy0, 1);          EXPECT_EQ(iy1, nGridY); EXPECT_EQ(iyDir, 1); 
     EXPECT_EQ(iz0, nGridZ - 2); EXPECT_EQ(iz1,-1);      EXPECT_EQ(izDir,-1); 
 
-    getLoopLimits<SweepNumber3D::SWEEP6>(nGridX, nGridY, nGridZ,
+    getLoopLimits<SweepNumber3D::Sweep6>(nGridX, nGridY, nGridZ,
                                          &ix0, &iy0, &iz0,
                                          &ix1, &iy1, &iz1,
                                          &ixDir, &iyDir, &izDir);
@@ -537,7 +537,7 @@ TEST(Solver3D, loopLimits)
     EXPECT_EQ(iy0, 1);          EXPECT_EQ(iy1, nGridY); EXPECT_EQ(iyDir, 1); 
     EXPECT_EQ(iz0, nGridZ - 2); EXPECT_EQ(iz1,-1);      EXPECT_EQ(izDir,-1);
 
-    getLoopLimits<SweepNumber3D::SWEEP7>(nGridX, nGridY, nGridZ,
+    getLoopLimits<SweepNumber3D::Sweep7>(nGridX, nGridY, nGridZ,
                                          &ix0, &iy0, &iz0,
                                          &ix1, &iy1, &iz1,
                                          &ixDir, &iyDir, &izDir);
@@ -545,7 +545,7 @@ TEST(Solver3D, loopLimits)
     EXPECT_EQ(iy0, nGridY - 2); EXPECT_EQ(iy1,-1);      EXPECT_EQ(iyDir,-1);
     EXPECT_EQ(iz0, nGridZ - 2); EXPECT_EQ(iz1,-1);      EXPECT_EQ(izDir,-1);
 
-    getLoopLimits<SweepNumber3D::SWEEP8>(nGridX, nGridY, nGridZ,
+    getLoopLimits<SweepNumber3D::Sweep8>(nGridX, nGridY, nGridZ,
                                          &ix0, &iy0, &iz0,
                                          &ix1, &iy1, &iz1,
                                          &ixDir, &iyDir, &izDir);
@@ -566,43 +566,43 @@ TEST(Solver3D, permuteGrid)
             for (int ix = 0; ix < nx; ++ix)
             {
                 int jx, jy, jz;
-                permuteGrid<SweepNumber3D::SWEEP1>(ix, iy, iz, nx, ny, nz,
+                permuteGrid<SweepNumber3D::Sweep1>(ix, iy, iz, nx, ny, nz,
                                                    &jx, &jy, &jz);
                 EXPECT_EQ(ix, jx);
                 EXPECT_EQ(iy, jy);
                 EXPECT_EQ(iz, jz);
-                permuteGrid<SweepNumber3D::SWEEP2>(ix, iy, iz, nx, ny, nz, 
+                permuteGrid<SweepNumber3D::Sweep2>(ix, iy, iz, nx, ny, nz, 
                                                    &jx, &jy, &jz);
                 EXPECT_EQ(nx - 1 - ix, jx);
                 EXPECT_EQ(iy, jy);
                 EXPECT_EQ(iz, jz);
-                permuteGrid<SweepNumber3D::SWEEP3>(ix, iy, iz, nx, ny, nz, 
+                permuteGrid<SweepNumber3D::Sweep3>(ix, iy, iz, nx, ny, nz, 
                                                    &jx, &jy, &jz);
                 EXPECT_EQ(ix, jx);
                 EXPECT_EQ(ny - 1 - iy, jy);
                 EXPECT_EQ(iz, jz);
-                permuteGrid<SweepNumber3D::SWEEP4>(ix, iy, iz, nx, ny, nz, 
+                permuteGrid<SweepNumber3D::Sweep4>(ix, iy, iz, nx, ny, nz, 
                                                    &jx, &jy, &jz);
                 EXPECT_EQ(nx - 1 - ix, jx); 
                 EXPECT_EQ(ny - 1 - iy, jy);
                 EXPECT_EQ(iz, jz);
 
-                permuteGrid<SweepNumber3D::SWEEP5>(ix, iy, iz, nx, ny, nz, 
+                permuteGrid<SweepNumber3D::Sweep5>(ix, iy, iz, nx, ny, nz, 
                                                    &jx, &jy, &jz);
                 EXPECT_EQ(ix, jx);
                 EXPECT_EQ(iy, jy);
                 EXPECT_EQ(nz - 1 - iz, jz);
-                permuteGrid<SweepNumber3D::SWEEP6>(ix, iy, iz, nx, ny, nz,
+                permuteGrid<SweepNumber3D::Sweep6>(ix, iy, iz, nx, ny, nz,
                                                    &jx, &jy, &jz);
                 EXPECT_EQ(nx - 1 - ix, jx);
                 EXPECT_EQ(iy, jy);
                 EXPECT_EQ(nz - 1 - iz, jz);
-                permuteGrid<SweepNumber3D::SWEEP7>(ix, iy, iz, nx, ny, nz,
+                permuteGrid<SweepNumber3D::Sweep7>(ix, iy, iz, nx, ny, nz,
                                                    &jx, &jy, &jz);
                 EXPECT_EQ(ix, jx);
                 EXPECT_EQ(ny - 1 - iy, jy);
                 EXPECT_EQ(nz - 1 - iz, jz);
-                permuteGrid<SweepNumber3D::SWEEP8>(ix, iy, iz, nx, ny, nz,
+                permuteGrid<SweepNumber3D::Sweep8>(ix, iy, iz, nx, ny, nz,
                                                    &jx, &jy, &jz);
                 EXPECT_EQ(nx - 1 - ix, jx);
                 EXPECT_EQ(ny - 1 - iy, jy);
@@ -629,25 +629,25 @@ TEST(Solver3D, isSweepBoundaryNode)
                     bool lbRef = false;
                     if (is == 0)
                     {
-                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP1>(
+                        lb = isSweepBoundaryNode<SweepNumber3D::Sweep1>(
                                  ix, iy, iz, nx, ny, nz);
                         if (ix == 0 || iy == 0 || iz == 0){lbRef = true;} 
                     }
                     else if (is == 1)
                     {
-                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP2>(
+                        lb = isSweepBoundaryNode<SweepNumber3D::Sweep2>(
                                  ix, iy, iz, nx, ny, nz);
                         if (ix == nx - 1 || iy == 0 || iz == 0){lbRef = true;}
                     }
                     else if (is == 2)
                     {
-                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP3>(
+                        lb = isSweepBoundaryNode<SweepNumber3D::Sweep3>(
                                  ix, iy, iz, nx, ny, nz);
                         if (ix == 0 || iy == ny - 1 || iz == 0){lbRef = true;}
                     }
                     else if (is == 3)
                     {
-                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP4>(
+                        lb = isSweepBoundaryNode<SweepNumber3D::Sweep4>(
                                  ix, iy, iz, nx, ny, nz);
                         if (ix == nx - 1 || iy == ny - 1 || iz == 0)
                         {
@@ -656,13 +656,13 @@ TEST(Solver3D, isSweepBoundaryNode)
                     }
                     else if (is == 4)
                     {
-                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP5>(
+                        lb = isSweepBoundaryNode<SweepNumber3D::Sweep5>(
                                  ix, iy, iz, nx, ny, nz);
                         if (ix == 0 || iy == 0 || iz == nz - 1){lbRef = true;} 
                     }
                     else if (is == 5)
                     {
-                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP6>(
+                        lb = isSweepBoundaryNode<SweepNumber3D::Sweep6>(
                                  ix, iy, iz, nx, ny, nz);
                         if (ix == nx - 1 || iy == 0 || iz == nz - 1)
                         {
@@ -671,7 +671,7 @@ TEST(Solver3D, isSweepBoundaryNode)
                     }
                     else if (is == 6)
                     {
-                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP7>(
+                        lb = isSweepBoundaryNode<SweepNumber3D::Sweep7>(
                                  ix, iy, iz, nx, ny, nz);
                         if (ix == 0 || iy == ny - 1 || iz == nz - 1)
                         {
@@ -680,7 +680,7 @@ TEST(Solver3D, isSweepBoundaryNode)
                     }
                     else if (is == 7)
                     {
-                        lb = isSweepBoundaryNode<SweepNumber3D::SWEEP8>(
+                        lb = isSweepBoundaryNode<SweepNumber3D::Sweep8>(
                                  ix, iy, iz, nx, ny, nz);
                         if (ix == nx - 1 || iy == ny - 1 || iz == nz - 1)
                         {
@@ -713,7 +713,7 @@ std::cout.precision(10);
     int nSweeps = 1;
     int nEps =-1;
 nEps = 2;//500; //500;
-    auto solverAlgorithm = EikonalXX::SolverAlgorithm::FAST_SWEEPING_METHOD;
+    auto solverAlgorithm = EikonalXX::SolverAlgorithm::FastSweepingMethod;
 
 return;
     SolverOptions options;

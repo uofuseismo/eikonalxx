@@ -14,7 +14,7 @@ TEST(SolverOptions, solverOptions)
     Verbosity verbosity = Verbosity::INFO;
     int nSweeps = 12;
     int epsilon = 6;
-    auto algorithm = SolverAlgorithm::LEVEL_SET_METHOD;
+    auto algorithm = SolverAlgorithm::FastSweepingMethod;
 
     options.setConvergenceTolerance(tol);
     options.setNumberOfSweeps(nSweeps);

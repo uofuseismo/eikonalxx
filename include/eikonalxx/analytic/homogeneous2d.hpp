@@ -19,6 +19,7 @@ class Homogeneous2D : public EikonalXX::AbstractBaseClass::ISolver2D<T>
 public:
     /// @name Constructor
     /// @{
+
     /// @brief Constructor.
     Homogeneous2D(); 
     /// @brief Copy constructor.
@@ -42,8 +43,10 @@ public:
     /// @}
 
     /// @}
+
     /// @name Step 1: Initialization
     /// @{
+
     /// @brief Initializes the class.
     void initialize(const EikonalXX::Geometry2D &geometry);
     /// @result True indicates that the class is initialized.
@@ -55,6 +58,7 @@ public:
     
     /// @name Step 2: Velocity Model
     /// @{
+
     /// @brief Sets the constant velocity model.
     /// @param[in] velocity   The velocity in m/s.
     /// @throws std::invalid_argument if velocity is not positive.
@@ -65,6 +69,7 @@ public:
 
     /// @name Step 3: Source
     /// @{
+
     /// @brief Sets the source location.
     /// @param[in] source   A class defining the source.
     /// @throws std::invalid_argument if the source location in x and z
@@ -89,6 +94,7 @@ public:
 
     /// @name Step 4: Solve
     /// @{
+
     /// @brief Solves the eikonal equation for the given source/velocity model.
     /// @throws std::runtime_error if the source or velocity model is not set.
     /// @sa \c isInitialized(), \c haveVelocityModel(), \c haveSource()
@@ -97,6 +103,7 @@ public:
 
     /// @name Step 5: Results
     /// @{
+
     /// @result The travel times from the source to all nodes in the model in
     ///         in seconds.  This uses the natural ordering.
     /// @note This has dimension getGeometry.getNumberOfGridPoints().
@@ -124,6 +131,7 @@ public:
 
     /// @name Destructors
     /// @{
+
     /// @brief Releases all memory and resets the class.
     void clear() noexcept;
     /// @brief Destructor.

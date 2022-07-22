@@ -50,7 +50,7 @@ public:
         mCellY = geometry.getNumberOfCellsInY();
         mCellZ = geometry.getNumberOfCellsInZ();
         // Initialize graph and allocate space for level set method
-        if (mAlgorithm == EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD)
+        if (mAlgorithm == EikonalXX::SolverAlgorithm::LevelSetMethod)
         {
             // Create graph
             mGraph.initialize(mGridX, mGridY, mGridZ);
@@ -68,7 +68,7 @@ public:
     /// Set the velocity model
     void setVelocityModel(const EikonalXX::Model3D<T> &velocityModel)
     {
-        if (mAlgorithm == EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD)
+        if (mAlgorithm == EikonalXX::SolverAlgorithm::LevelSetMethod)
         {
 #ifndef NDEBUG
             for (int level = 0; level < mLevels; ++level)
@@ -114,7 +114,7 @@ public:
         mSourceIndexZ = 0;
         mLevels = 0;
         mFactoredEikonalSolverRadius = 0;
-        mAlgorithm = EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD;
+        mAlgorithm = EikonalXX::SolverAlgorithm::LevelSetMethod;
         mUniformGrid = true;
     }
     /// Sets the source information
@@ -361,7 +361,7 @@ std::cout.precision(16);
     int mFactoredEikonalSolverRadius = 0;
     /// Algorithm type.
     EikonalXX::SolverAlgorithm mAlgorithm
-        = EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD;
+        = EikonalXX::SolverAlgorithm::LevelSetMethod;
     /// Is the grid spacing the same in x, y, and z?
     bool mUniformGrid = true;
 };
@@ -370,22 +370,22 @@ std::cout.precision(16);
 ///                               Template Instantiation                     ///
 ///--------------------------------------------------------------------------///
 
-template class Solver3DSweep<double, EikonalXX::SweepNumber3D::SWEEP1>;
-template class Solver3DSweep<double, EikonalXX::SweepNumber3D::SWEEP2>;
-template class Solver3DSweep<double, EikonalXX::SweepNumber3D::SWEEP3>;
-template class Solver3DSweep<double, EikonalXX::SweepNumber3D::SWEEP4>;
-template class Solver3DSweep<double, EikonalXX::SweepNumber3D::SWEEP5>;
-template class Solver3DSweep<double, EikonalXX::SweepNumber3D::SWEEP6>;
-template class Solver3DSweep<double, EikonalXX::SweepNumber3D::SWEEP7>;
-template class Solver3DSweep<double, EikonalXX::SweepNumber3D::SWEEP8>;
-template class Solver3DSweep<float, EikonalXX::SweepNumber3D::SWEEP1>;
-template class Solver3DSweep<float, EikonalXX::SweepNumber3D::SWEEP2>;
-template class Solver3DSweep<float, EikonalXX::SweepNumber3D::SWEEP3>;
-template class Solver3DSweep<float, EikonalXX::SweepNumber3D::SWEEP4>;
-template class Solver3DSweep<float, EikonalXX::SweepNumber3D::SWEEP5>;
-template class Solver3DSweep<float, EikonalXX::SweepNumber3D::SWEEP6>;
-template class Solver3DSweep<float, EikonalXX::SweepNumber3D::SWEEP7>;
-template class Solver3DSweep<float, EikonalXX::SweepNumber3D::SWEEP8>;
+template class Solver3DSweep<double, EikonalXX::SweepNumber3D::Sweep1>;
+template class Solver3DSweep<double, EikonalXX::SweepNumber3D::Sweep2>;
+template class Solver3DSweep<double, EikonalXX::SweepNumber3D::Sweep3>;
+template class Solver3DSweep<double, EikonalXX::SweepNumber3D::Sweep4>;
+template class Solver3DSweep<double, EikonalXX::SweepNumber3D::Sweep5>;
+template class Solver3DSweep<double, EikonalXX::SweepNumber3D::Sweep6>;
+template class Solver3DSweep<double, EikonalXX::SweepNumber3D::Sweep7>;
+template class Solver3DSweep<double, EikonalXX::SweepNumber3D::Sweep8>;
+template class Solver3DSweep<float, EikonalXX::SweepNumber3D::Sweep1>;
+template class Solver3DSweep<float, EikonalXX::SweepNumber3D::Sweep2>;
+template class Solver3DSweep<float, EikonalXX::SweepNumber3D::Sweep3>;
+template class Solver3DSweep<float, EikonalXX::SweepNumber3D::Sweep4>;
+template class Solver3DSweep<float, EikonalXX::SweepNumber3D::Sweep5>;
+template class Solver3DSweep<float, EikonalXX::SweepNumber3D::Sweep6>;
+template class Solver3DSweep<float, EikonalXX::SweepNumber3D::Sweep7>;
+template class Solver3DSweep<float, EikonalXX::SweepNumber3D::Sweep8>;
 
 
 }

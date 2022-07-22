@@ -330,11 +330,11 @@ int EikonalXX::computeNumberOfLevels(const int nx,
 ///--------------------------------------------------------------------------///
 ///                           Template Instantiation                         ///
 ///--------------------------------------------------------------------------///
-template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::SWEEP1>;
-template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::SWEEP2>;
-template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::SWEEP3>;
-template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::SWEEP4>;
-template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::SWEEP5>;
-template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::SWEEP6>;
-template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::SWEEP7>;
-template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::SWEEP8>;
+template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::Sweep1>;
+template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::Sweep2>;
+template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::Sweep3>;
+template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::Sweep4>;
+template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::Sweep5>;
+template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::Sweep6>;
+template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::Sweep7>;
+template class EikonalXX::Graph3D<EikonalXX::SweepNumber3D::Sweep8>;

@@ -105,25 +105,34 @@ void PEikonalXX::initializeSource2D(pybind11::module &m)
 {
     pybind11::class_<PEikonalXX::Source2D> s(m, "Source2D");
     s.def(pybind11::init<> ());
-    s.doc() = "This defines a source in a 2D Cartesian grid-based geometry.  To use this you must first set the geometry.  Then the source's x position in the geometry (meters) can be set.  Likewise, the source's z position in the geometry (meters) can be set.  Furthermore, the source's z location can be fixed to the top of the model, i.e., the `free surface', using set_z_to_free_surface.";
+    s.doc() = R"""(
+This defines a source in a 2D Cartesian grid-based geometry.  To use this you must first set the geometry.
+
+Properties
+----------
+geometry : Geometry2D
+    The 2D model geometry.
+x : float
+    The source's position (meters) in x in the geometry.
+z : float
+    The source's position (meters) in z in the geometry.
+    Note, this can be forced to the free-surface of the geometry
+    with source2d.set_z_to_free_surface().
+)""";
 
     s.def_property("geometry",
                    &Source2D::getGeometry,
-                   &Source2D::setGeometry,
-                   "The model geometry.");
-
+                   &Source2D::setGeometry);
     s.def_property("x",
                    &Source2D::getLocationInX,
-                   &Source2D::setLocationInX,
-                   "The source's x position");
+                   &Source2D::setLocationInX);
     s.def_property("z",
                    &Source2D::getLocationInZ,
-                   &Source2D::setLocationInZ,
-                   "The source's z position");
+                   &Source2D::setLocationInZ);
+
     s.def("set_z_to_free_surface",
           &Source2D::setZToFreeSurface,
           "Sets the source's position in z to the free surface.");
-
     s.def("clear",
           &Source2D::clear,
           "Resets the class.");

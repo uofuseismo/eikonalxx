@@ -36,9 +36,9 @@ PYBIND11_MODULE(pyEikonalXX, m)
 
 
     pybind11::enum_<EikonalXX::SolverAlgorithm> (m, "SolverAlgorithm")
-        .value("level_set_method", EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD,
+        .value("level_set_method", EikonalXX::SolverAlgorithm::LevelSetMethod,
                "The solver solves the eikonal equation using fast-sweeping where nodes in a level-set can be updated in parallel.  The parallelism can result in obtaining a solution faster but with considerably higher memory overhead.")
-        .value("fast_sweeping_method", EikonalXX::SolverAlgorithm::FAST_SWEEPING_METHOD,
+        .value("fast_sweeping_method", EikonalXX::SolverAlgorithm::FastSweepingMethod,
                "The solver solves the eikonal equation using fast-sweeping.  All updates during the sweep are performed serially.");
 
      pybind11::enum_<EikonalXX::Verbosity> (m, "Verbosity")

@@ -249,20 +249,20 @@ bool Source2D::haveLocationInZ() const noexcept
     return pImpl->mHaveZLocation;
 }
 
-/// sdt::cout << source << std::endl;
+/// std::cout << source << std::endl;
 std::ostream&
 EikonalXX::operator<<(std::ostream &os, const Source2D &source)
 {
     std::string result;
     if (source.haveLocationInX() && source.haveLocationInZ())
     {
-        result = "Source location: (x,z) = ("
+        result = "Source Information:\n    Location: (x,z) = ("
                + std::to_string(source.getLocationInX()) + ","
                + std::to_string(source.getLocationInZ()) + ")\n"
-               + "Source offset: (x,z) = ("
+               + "    Offset: (x,z) = ("
                + std::to_string(source.getOffsetInX()) + ","
                + std::to_string(source.getOffsetInZ()) + ")\n"
-               + "Source cell: (iCellX,iCellZ) = ("
+               + "    Cell: (iCellX,iCellZ) = ("
                + std::to_string(source.getCellInX()) + ","
                + std::to_string(source.getCellInZ()) + ")\n";
     }

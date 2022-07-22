@@ -54,12 +54,12 @@ public:
         // Pointers for LSM solver
         mUpdateNode.resize(mGrid, UPDATE_NODE);
         mLevels = computeNumberOfLevels(mGridX, mGridZ);
-        if (mAlgorithm == EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD)
+        if (mAlgorithm == EikonalXX::SolverAlgorithm::LevelSetMethod)
         {
             mLevelOffset = makeLevelOffset(mGridX, mGridZ);
             // Set space for sweep's slowness
             mSweepSlowness.resize(mLevels);
-            for (int level=0; level<mLevels; ++level)
+            for (int level = 0; level < mLevels; ++level)
             {
                 auto nNodes = mLevelOffset[level+1] - mLevelOffset[level];
                 mMaxNodesInLevel = std::max(mMaxNodesInLevel, nNodes);
@@ -73,7 +73,7 @@ public:
         const EikonalXX::Verbosity verbosity)
     {
         auto ldebug = (verbosity == EikonalXX::Verbosity::DEBUG);
-        if (mAlgorithm == EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD)
+        if (mAlgorithm == EikonalXX::SolverAlgorithm::LevelSetMethod)
         {
             auto updateNodePtr = mUpdateNode.data();
             setPreliminaryUpdateNodes<E>(mLevels,
@@ -150,16 +150,16 @@ public:
         mSourceIndexX = 0;
         mSourceIndexZ = 0;
         mFactoredEikonalSolverRadius = 0;
-        mAlgorithm = EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD;
+        mAlgorithm = EikonalXX::SolverAlgorithm::LevelSetMethod;
         mUniformGrid = false;
     }
     /// Set the velocity model
     void setVelocityModel(const EikonalXX::Model2D<T> &velocityModel)
     {
-        if (mAlgorithm == EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD)
+        if (mAlgorithm == EikonalXX::SolverAlgorithm::LevelSetMethod)
         {
 #ifndef NDEBUG
-            for (int level=0; level<mLevels; ++level)
+            for (int level = 0; level < mLevels; ++level)
             {
                 mSweepSlowness[level].zero();
             }
@@ -204,7 +204,6 @@ public:
                    T *__restrict__ travelTimes,
                    const bool initialize)
     {
-std::cout.precision(10);
         int ix0, ix1, ixDir, iz0, iz1, izDir;
         if (initialize)
         {
@@ -227,8 +226,8 @@ std::cout.precision(10);
         T t0, t1, t2, t3, tUpd;
         T s0, s1, s3; 
         int iCell0, iCell1, iCell3, it0, it1, it2, it3;
-        T huge = HUGE;
-        T diffMax = HUGE;
+        constexpr T huge{HUGE};
+        T diffMax{HUGE};
         if (mUniformGrid)
         {
             auto h = mDx; // dx = dz
@@ -262,7 +261,7 @@ std::cout.precision(10);
                                             mSourceOffsetX, mSourceOffsetZ,
                                             s0, s1, s3,
                                             t1, t2, t3);
-std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl;
+//std::cout << std::setprecision(17) << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl;
                     // Update?
                     //if (mUpdateNode[it0] == UPDATE_NODE)
                     if (tUpd < t0)
@@ -313,7 +312,7 @@ if (ix == 14 && iz == 12)
                                             mSourceOffsetX, mSourceOffsetZ,
                                             s0, s1, s3, 
                                             t1, t2, t3);
-std::cout << std::setprecision(17) << "nonuniform: " << ix << " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl;
+//std::cout << std::setprecision(17) << "nonuniform: " << ix << " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl;
 //if (ix == 14 && iz == 12){getchar();}
                     // Update?
                     //if (mUpdateNode[it0] == UPDATE_NODE)
@@ -327,6 +326,148 @@ std::cout << std::setprecision(17) << "nonuniform: " << ix << " " << iz << " " <
         } // End check on uniform grid
     }
 
+    void updateLSM(T *__restrict__ travelTimes,
+                   sycl::queue &q)
+    {
+        const int nGridX = mGridX;
+        const int nGridZ = mGridZ;
+        const auto nGrid = static_cast<size_t> (mGrid);
+        const int radius{mFactoredEikonalSolverRadius};
+        const T sourceSlowness{mSourceSlowness};
+        const int sourceIndexX{mSourceIndexX};
+        const int sourceIndexZ{mSourceIndexZ};
+        const T sourceOffsetX{mSourceOffsetX};
+        const T sourceOffsetZ{mSourceOffsetZ};
+        auto t0 = sycl::malloc_device<T> (mMaxNodesInLevel, q); 
+        auto t1 = sycl::malloc_device<T> (mMaxNodesInLevel, q); 
+        auto t2 = sycl::malloc_device<T> (mMaxNodesInLevel, q);
+        auto t3 = sycl::malloc_device<T> (mMaxNodesInLevel, q);
+        auto s0 = sycl::malloc_device<T> (mMaxNodesInLevel, q);
+        auto s1 = sycl::malloc_device<T> (mMaxNodesInLevel, q);
+        auto s3 = sycl::malloc_device<T> (mMaxNodesInLevel, q);
+ 
+        T *tTimes = sycl::malloc_shared<T> (nGrid*sizeof(T), q);
+        auto eSetTravelTimes = q.memcpy(tTimes, travelTimes, nGrid*sizeof(T));
+
+        q.wait();
+
+        int i0, i1, ix, iz, ixShift, izShift, signX, signZ;
+        getSweepFiniteDifferenceSigns<E>(&ixShift, &izShift,
+                                         &signX, &signZ);
+        constexpr T huge{HUGE};
+//        T diffMax = 0;
+        if (mUniformGrid)
+        {
+            const T dGrid{mDx}; // dx = dz
+            for (int level = 0; level < mLevels; ++level)
+            {
+                getLevelStartStopIndices(nGridX, nGridZ, level, &i0, &i1);
+                auto nNodesInLevel = static_cast<size_t> (i1 - i0);
+#ifndef NDEBUG
+                assert(mSweepSlowness[level].nNodes ==
+                       static_cast<int> (nNodesInLevel));
+#endif
+                // Pre-fetch travel time information for solver
+                auto eCopyTravelTimes = q.submit([&](sycl::handler &h)
+                {
+                    h.depends_on(eSetTravelTimes);
+                    h.parallel_for(sycl::range{nNodesInLevel},
+                                   [=](sycl::id<1> indx)
+                    { 
+                        int jndx = indx + i0;
+                        int it0, it1, it2, it3;
+                        sweepLevelIndexToTravelTimeIndices<E>(level, jndx,
+                                                              nGridX, nGridZ,
+                                                              &it0, &it1,
+                                                              &it2, &it3);
+                        t0[indx] = tTimes[it0];
+                        t1[indx] = tTimes[it1];
+                        t2[indx] = tTimes[it2];
+                        t3[indx] = tTimes[it3];
+                    });
+                });
+                // Pre-fetch slowness information for solver
+                auto eCopySlowness0 = q.memcpy(s0, mSweepSlowness[level].s0,
+                                               nNodesInLevel*sizeof(T));
+                auto eCopySlowness1 = q.memcpy(s1, mSweepSlowness[level].s1,
+                                               nNodesInLevel*sizeof(T));
+                auto eCopySlowness3 = q.memcpy(s3, mSweepSlowness[level].s3,
+                                               nNodesInLevel*sizeof(T));
+                // Apply finite difference
+                auto eFiniteDifference = q.submit([&](sycl::handler &h)
+                {
+                    h.depends_on(eCopyTravelTimes);
+                    h.depends_on(eCopySlowness0);
+                    h.depends_on(eCopySlowness1);
+                    h.depends_on(eCopySlowness3);
+                    h.parallel_for(sycl::range{nNodesInLevel},
+                                   [=](sycl::id<1> indx)
+                    {
+                        int jndx = indx + i0;
+                        int ix, iz;
+                        sweepLevelIndexToGrid<E>(level, jndx,
+                                                 nGridX, nGridZ,
+                                                 &ix, &iz);
+                        T s0 = 1, s1 = 1, s3 = 1;
+                        T t1i = t1[indx];
+                        T t2i = t2[indx];
+                        T t3i = t3[indx];
+                        T tUpd = finiteDifference<T>(radius,
+                                                     huge,
+                                                     dGrid,
+                                                     sourceSlowness,
+                                                     ix, iz,
+                                                     signX, signZ,
+                                                     ixShift, izShift,
+                                                     sourceIndexX, sourceIndexZ,
+                                                     sourceOffsetX, sourceOffsetZ,
+                                                     s0, s1, s3,
+                                                     t1i, t2i, t3i);
+                        t0[indx] = sycl::fmin(t0[indx], tUpd);
+                    });
+                });
+                // Update
+                auto eUpdate = q.submit([&](sycl::handler &h)
+                {
+                    h.depends_on(eFiniteDifference);
+                    h.parallel_for(sycl::range{nNodesInLevel},
+                                   [=](sycl::id<1> indx)
+                    {
+                        int it0 = sweepLevelIndexToIndex<E>(level, indx + i0,
+                                                            nGridX, nGridZ);
+                        tTimes[it0] = t0[indx];
+
+                    });
+                });
+                q.wait();
+            }
+        }
+        else
+        {
+            for (int level = 0; level < mLevels; ++level)
+            {
+                getLevelStartStopIndices(mGridX, mGridZ, level, &i0, &i1);
+                for (int indx = i0; indx < i1; ++indx)
+                {
+                    sweepLevelIndexToGrid<E>(level, indx,
+                                             mGridX, mGridZ,
+                                             &ix, &iz);
+
+                }   
+            }
+        }
+        //q.wait();
+        free(t0, q);
+        free(t1, q);
+        free(t2, q);
+        free(t3, q);
+        free(s0, q);
+        free(s1, q);
+        free(s3, q);
+        q.memcpy(travelTimes, tTimes, nGrid*sizeof(T));
+        q.wait();
+        free(tTimes, q);
+    }
 /*
     /// Performs the fast sweeping method on a grid
     void updateFSM(const T *slowness, T *travelTimes)
@@ -483,7 +624,7 @@ std::cout << std::setprecision(17) << "nonuniform: " << ix << " " << iz << " " <
     int mFactoredEikonalSolverRadius = 0;
     /// Algorithm type
     EikonalXX::SolverAlgorithm mAlgorithm
-        = EikonalXX::SolverAlgorithm::LEVEL_SET_METHOD;
+        = EikonalXX::SolverAlgorithm::LevelSetMethod;
     /// Is this a uniform grid?
     bool mUniformGrid = false;
 };
@@ -862,13 +1003,13 @@ template class Solver2DSweep3<double>;
 template class Solver2DSweep3<float>;
 */
 
-template class Solver2DSweep<double, EikonalXX::SweepNumber2D::SWEEP1>;
-template class Solver2DSweep<double, EikonalXX::SweepNumber2D::SWEEP2>;
-template class Solver2DSweep<double, EikonalXX::SweepNumber2D::SWEEP3>;
-template class Solver2DSweep<double, EikonalXX::SweepNumber2D::SWEEP4>;
-template class Solver2DSweep<float, EikonalXX::SweepNumber2D::SWEEP1>;
-template class Solver2DSweep<float, EikonalXX::SweepNumber2D::SWEEP2>;
-template class Solver2DSweep<float, EikonalXX::SweepNumber2D::SWEEP3>;
-template class Solver2DSweep<float, EikonalXX::SweepNumber2D::SWEEP4>;
+template class Solver2DSweep<double, EikonalXX::SweepNumber2D::Sweep1>;
+template class Solver2DSweep<double, EikonalXX::SweepNumber2D::Sweep2>;
+template class Solver2DSweep<double, EikonalXX::SweepNumber2D::Sweep3>;
+template class Solver2DSweep<double, EikonalXX::SweepNumber2D::Sweep4>;
+template class Solver2DSweep<float, EikonalXX::SweepNumber2D::Sweep1>;
+template class Solver2DSweep<float, EikonalXX::SweepNumber2D::Sweep2>;
+template class Solver2DSweep<float, EikonalXX::SweepNumber2D::Sweep3>;
+template class Solver2DSweep<float, EikonalXX::SweepNumber2D::Sweep4>;
 }
 #endif

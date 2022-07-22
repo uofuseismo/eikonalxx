@@ -13,6 +13,7 @@ endif()
 
 find_package(GTest REQUIRED)
 find_package(Boost COMPONENTS graph)
+find_package(spdlog REQUIRED)
 set(FindTBB_DIR ${CMAKE_SOURCE_DIR}/CMakeModules)
 find_package(FindTBB REQUIRED)
 
@@ -46,7 +47,7 @@ set(LIBSRC
 
 set(BUILD_SHARED_LIBS YES)
 add_library(eikonalxx ${LIBSRC})
-target_link_libraries(eikonalxx PRIVATE sycl ${TBB_LIBRARY} stdc++fs)
+target_link_libraries(eikonalxx PRIVATE sycl spdlog::spdlog ${TBB_LIBRARY} stdc++fs)
 if (${Boost_FOUND})
    target_compile_definitions(eikonalxx PRIVATE USE_BOOST)
    target_include_directories(eikonalxx PRIVATE ${Boost_INCLUDE_DIRS})
@@ -92,12 +93,22 @@ add_executable(unitTests
                testing/solver3d.cpp
                )
 target_link_libraries(unitTests PRIVATE eikonalxx ${GTEST_BOTH_LIBRARIES} ${TBB_LIBRARY} OpenCL pthread)
-target_include_directories(unitTests PRIVATE ${GTEST_INCLUDE_DIRS})
+target_include_directories(unitTests PRIVATE ${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(unitTests PROPERTIES
+                      CXX_STANDARD 20 
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENSIONS NO)
 add_test(NAME unitTest
          COMMAND unitTests)
+
+add_executable(converge2d
+               testing/converge2d.cpp)
+target_link_libraries(converge2d PRIVATE eikonalxx)
+target_include_directories(converge2d PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(converge2d PROPERTIES
+                      CXX_STANDARD 20
+                      CXX_STANDARD_REQUIRED YES
+                      CXX_EXTENSIONS NO)
 
 ##########################################################################################
 #                                         Installation                                   #

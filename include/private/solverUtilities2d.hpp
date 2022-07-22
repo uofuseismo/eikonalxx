@@ -889,28 +889,28 @@ template<EikonalXX::SweepNumber2D E>
 void getSweepFiniteDifferenceSigns(int *ixShift, int *izShift,
                                    int *signX, int *signZ)
 {
-    if constexpr (E == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::Sweep1)
     {
         *signX = 1;
         *signZ = 1;
         *ixShift =-1;
         *izShift =-1; 
     }
-    else if constexpr (E == SweepNumber2D::SWEEP2)
+    else if constexpr (E == SweepNumber2D::Sweep2)
     {
         *signX =-1;
         *signZ = 1;
         *ixShift = 1;
         *izShift =-1;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::Sweep3)
     {
         *signX = 1;
         *signZ =-1; 
         *ixShift =-1;
         *izShift = 1; 
     }
-    else if constexpr (E == SweepNumber2D::SWEEP4)
+    else if constexpr (E == SweepNumber2D::Sweep4)
     {
         *signX =-1; 
         *signZ =-1; 
@@ -942,7 +942,7 @@ void getLoopLimits(const int nGridX, const int nGridZ,
                    int *ix1, int *iz1,
                    int *ixDir, int *izDir)
 {
-    if constexpr (E == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::Sweep1)
     {
         *ix0 = 1;
         *ix1 = nGridX;
@@ -951,7 +951,7 @@ void getLoopLimits(const int nGridX, const int nGridZ,
         *ixDir = 1;
         *izDir = 1;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP2)
+    else if constexpr (E == SweepNumber2D::Sweep2)
     {
         *ix0 = nGridX - 2;
         *ix1 =-1;
@@ -960,7 +960,7 @@ void getLoopLimits(const int nGridX, const int nGridZ,
         *ixDir =-1;
         *izDir = 1;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::Sweep3)
     {
         *ix0 = 1;
         *ix1 = nGridX;
@@ -969,7 +969,7 @@ void getLoopLimits(const int nGridX, const int nGridZ,
         *ixDir = 1;
         *izDir =-1;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP4)
+    else if constexpr (E == SweepNumber2D::Sweep4)
     {
         *ix0 = nGridX - 2;
         *ix1 =-1;
@@ -1008,7 +1008,7 @@ void getLoopLimits(const int iSrcX, const int iSrcZ,
                    int *ix1, int *iz1,
                    int *ixDir, int *izDir)
 {
-    if constexpr (E == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::Sweep1)
     {
         *ix0 = std::max(iSrcX, 1);
         *ix1 = nGridX;
@@ -1017,7 +1017,7 @@ void getLoopLimits(const int iSrcX, const int iSrcZ,
         *ixDir = 1;
         *izDir = 1;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP2)
+    else if constexpr (E == SweepNumber2D::Sweep2)
     {
         *ix0 = std::min(iSrcX + 1, nGridX - 2);
         *ix1 =-1;
@@ -1026,7 +1026,7 @@ void getLoopLimits(const int iSrcX, const int iSrcZ,
         *ixDir =-1;
         *izDir = 1;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::Sweep3)
     {
         *ix0 = std::max(iSrcX, 1);
         *ix1 = nGridX;
@@ -1035,7 +1035,7 @@ void getLoopLimits(const int iSrcX, const int iSrcZ,
         *ixDir = 1;
         *izDir =-1;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP4)
+    else if constexpr (E == SweepNumber2D::Sweep4)
     {
         *ix0 = std::min(iSrcX + 1, nGridX - 2);
         *ix1 =-1;
@@ -1071,22 +1071,22 @@ void sweepLevelIndexToGrid(const int level,
     // +x and +z 
     int jz = indx;
     int jx = level - jz;
-    if constexpr (E == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::Sweep1)
     {
         *iz = jz;
         *ix = jx;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP2) // -x and +z
+    else if constexpr (E == SweepNumber2D::Sweep2) // -x and +z
     {
         *iz = jz;
         *ix = nx - 1 - jx;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP3) // +x and -z
+    else if constexpr (E == SweepNumber2D::Sweep3) // +x and -z
     {
         *iz = nz - 1 - jz;
         *ix = jx;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP4) // -x and -z
+    else if constexpr (E == SweepNumber2D::Sweep4) // -x and -z
     {
         *iz = nz - 1 - jz;
         *ix = nx - 1 - jx;
@@ -1118,22 +1118,22 @@ void gridSweepToLevelIndex(const int ix,
                            const int nz,
                            int *level, int *indx)
 {
-    if constexpr (E == SweepNumber2D::SWEEP1) // +x, +z
+    if constexpr (E == SweepNumber2D::Sweep1) // +x, +z
     {
         *indx = iz;
         *level = ix + iz;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP2) // -x, +z
+    else if constexpr (E == SweepNumber2D::Sweep2) // -x, +z
     {
         *indx = iz;
         *level = (nx - 1 - ix) + iz;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP3) // +x, -z
+    else if constexpr (E == SweepNumber2D::Sweep3) // +x, -z
     {
         *indx = nz - 1 - iz;
         *level = ix + (nz - 1 - iz);
     }
-    else if constexpr (E == SweepNumber2D::SWEEP4) // -x, -z
+    else if constexpr (E == SweepNumber2D::Sweep4) // -x, -z
     {
         *indx = nz - 1 - iz;
         *level = (nx - ix) + (nz - iz) - 2; // Simplified -1 + -1 = -2
@@ -1188,25 +1188,25 @@ void sweepLevelIndexToTravelTimeIndices(
     int ix, iz;
     sweepLevelIndexToGrid<E>(level, indx, nx, nz, &ix, &iz);
     *it0 = gridToIndex(nx, ix, iz);
-    if constexpr (E == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::Sweep1)
     {
         *it1 = gridToIndex(nx, std::max(0, ix-1), iz); 
         *it2 = gridToIndex(nx, std::max(0, ix-1), std::max(0, iz-1));
         *it3 = gridToIndex(nx, ix,                std::max(0, iz-1)); 
     }
-    else if constexpr (E == SweepNumber2D::SWEEP2)
+    else if constexpr (E == SweepNumber2D::Sweep2)
     {
         *it1 = gridToIndex(nx, std::min(nx-1, ix+1), iz);
         *it2 = gridToIndex(nx, std::min(nx-1, ix+1), std::max(0, iz-1));
         *it3 = gridToIndex(nx, ix,                   std::max(0, iz-1));
     } 
-    else if constexpr (E == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::Sweep3)
     {
         *it1 = gridToIndex(nx, std::max(0, ix-1), iz);
         *it2 = gridToIndex(nx, std::max(0, ix-1), std::min(nz-1, iz+1));
         *it3 = gridToIndex(nx, ix,                std::min(nz-1, iz+1));
     }
-    else if constexpr (E == SweepNumber2D::SWEEP4)
+    else if constexpr (E == SweepNumber2D::Sweep4)
     {
         *it1 = gridToIndex(nx, std::min(nx-1, ix+1), iz);
         *it2 = gridToIndex(nx, std::min(nx-1, ix+1), std::min(nz-1, iz+1));
@@ -1285,7 +1285,7 @@ void gridToSurroundingSlowness(const int ix, const int iz,
     int iCell1X, iCell1Z = 0;
     //int iCell2X, iCell2Z = 0;
     int iCell3X, iCell3Z = 0;
-    if constexpr (E == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::Sweep1)
     {
         iCell0X = sycl::max(0, ix - 1);
         iCell1X = sycl::min(nCellX - 1, iCell0X + 1);
@@ -1299,7 +1299,7 @@ void gridToSurroundingSlowness(const int ix, const int iz,
         iCell1Z = iCell0Z;
         //iCell3Z = iCell2Z;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP2)
+    else if constexpr (E == SweepNumber2D::Sweep2)
     {
         iCell0X = ix;
         iCell1X = sycl::max(0, iCell0X - 1);
@@ -1317,7 +1317,7 @@ void gridToSurroundingSlowness(const int ix, const int iz,
         iCell1Z = iCell0Z;
         //iCell3Z = iCell2Z;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::Sweep3)
     {
         iCell0X = sycl::max(0, ix - 1);
         iCell1X = sycl::min(nCellX - 1, iCell0X + 1);
@@ -1335,7 +1335,7 @@ void gridToSurroundingSlowness(const int ix, const int iz,
         iCell1Z = iCell0Z;
         //iCell3Z = iCell2Z;
     }
-    else if constexpr (E == SweepNumber2D::SWEEP4)
+    else if constexpr (E == SweepNumber2D::Sweep4)
     {
         iCell0X = ix;
         iCell1X = sycl::max(0, iCell0X - 1);
@@ -1385,28 +1385,28 @@ void gridToSurroundingTravelTimes(const int ix, const int iz,
                                   const int nGridX,
                                   int *it0, int *it1, int *it2, int *it3)
 {
-    if constexpr (E == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::Sweep1)
     {
         *it0 = gridToIndex(nGridX, ix,     iz);
         *it1 = gridToIndex(nGridX, ix - 1, iz);
         *it2 = gridToIndex(nGridX, ix - 1, iz - 1);
         *it3 = gridToIndex(nGridX, ix,     iz - 1);
     }
-    else if constexpr (E == SweepNumber2D::SWEEP2)
+    else if constexpr (E == SweepNumber2D::Sweep2)
     {
         *it0 = gridToIndex(nGridX, ix,     iz);
         *it1 = gridToIndex(nGridX, ix + 1, iz);
         *it2 = gridToIndex(nGridX, ix + 1, iz - 1);
         *it3 = gridToIndex(nGridX, ix,     iz - 1);
     }
-    else if constexpr (E == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::Sweep3)
     {
         *it0 = gridToIndex(nGridX, ix,     iz);
         *it1 = gridToIndex(nGridX, ix - 1, iz);
         *it2 = gridToIndex(nGridX, ix - 1, iz + 1);
         *it3 = gridToIndex(nGridX, ix,     iz + 1);
     }
-    else if constexpr (E == SweepNumber2D::SWEEP4) 
+    else if constexpr (E == SweepNumber2D::Sweep4) 
     {
         *it0 = gridToIndex(nGridX, ix,     iz);
         *it1 = gridToIndex(nGridX, ix + 1, iz);
@@ -1503,19 +1503,19 @@ void setPreliminaryUpdateNodes(const size_t nLevels,
                 sweepLevelIndexToGrid<E>(level, indx, nGridX, nGridZ,
                                          &ix, &iz);                
                 int8_t lUpdate = UPDATE_NODE;
-                if constexpr (E == SweepNumber2D::SWEEP1)
+                if constexpr (E == SweepNumber2D::Sweep1)
                 {
                     if (ix == 0 || iz == 0){lUpdate = BOUNDARY_NODE;}
                 }
-                else if constexpr (E == SweepNumber2D::SWEEP2)
+                else if constexpr (E == SweepNumber2D::Sweep2)
                 {
                     if (ix == nGridX - 1 || iz == 0){lUpdate = BOUNDARY_NODE;}
                 }
-                else if constexpr (E == SweepNumber2D::SWEEP3)
+                else if constexpr (E == SweepNumber2D::Sweep3)
                 {
                     if (ix == 0 || iz == nGridZ - 1){lUpdate = BOUNDARY_NODE;}
                 } 
-                else if constexpr (E == SweepNumber2D::SWEEP4)
+                else if constexpr (E == SweepNumber2D::Sweep4)
                 {
                     if (ix == nGridX - 1 || iz == nGridZ - 1)
                     {
@@ -1545,7 +1545,7 @@ void setPreliminaryUpdateNodes(const int nGridX, const int nGridZ,
     auto nGrid = nGridX*nGridZ;
     std::fill(lUpdateNode, lUpdateNode + nGrid, UPDATE_NODE);
     int ix, iz;
-    if constexpr (E == SweepNumber2D::SWEEP1)
+    if constexpr (E == SweepNumber2D::Sweep1)
     {
         iz = 0;
         #pragma omp simd
@@ -1560,7 +1560,7 @@ void setPreliminaryUpdateNodes(const int nGridX, const int nGridZ,
             lUpdateNode[gridToIndex(nGridX, ix, iz)] = BOUNDARY_NODE;
         }
     }
-    else if constexpr (E == SweepNumber2D::SWEEP2)
+    else if constexpr (E == SweepNumber2D::Sweep2)
     {
         iz = 0;
         #pragma omp simd
@@ -1575,7 +1575,7 @@ void setPreliminaryUpdateNodes(const int nGridX, const int nGridZ,
             lUpdateNode[gridToIndex(nGridX, ix, iz)] = BOUNDARY_NODE;
         }
     }
-    else if constexpr (E == SweepNumber2D::SWEEP3)
+    else if constexpr (E == SweepNumber2D::Sweep3)
     {
         iz = nGridZ - 2;
         #pragma omp simd
@@ -1590,7 +1590,7 @@ void setPreliminaryUpdateNodes(const int nGridX, const int nGridZ,
             lUpdateNode[gridToIndex(nGridX, ix, iz)] = BOUNDARY_NODE;
         }
     }
-    else if constexpr (E == SweepNumber2D::SWEEP4)
+    else if constexpr (E == SweepNumber2D::Sweep4)
     {
         iz = nGridZ - 2;
         #pragma omp simd
