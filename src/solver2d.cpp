@@ -1,7 +1,9 @@
 #include <vector>
 #include <string>
 #include <algorithm>
-#include <cassert>
+#ifndef NDEBUG
+  #include <cassert>
+#endif
 #if __has_include(<pstl/execution>)
    #include <pstl/execution>
    #include <pstl/algorithm>

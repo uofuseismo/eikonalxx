@@ -389,12 +389,12 @@ TEST(Solver2D, levelSetIndices)
     {
         auto sweep = static_cast<SweepNumber2D> (is);
         int j = 0;
-        for (int level=0; level<nLevels; ++level)
+        for (int level = 0; level < nLevels; ++level)
         {
             int i0, i1;
             int ix, iz;
             getLevelStartStopIndices(nx, nz, level, &i0, &i1);
-            for (int indx=i0; indx<i1; ++indx)
+            for (int indx = i0; indx < i1; ++indx)
             {
                 if (sweep == SweepNumber2D::SWEEP1)
                 {
@@ -452,7 +452,7 @@ TEST(Solver2D, gridSweepToLevelIndex)
             int i0, i1;
             int ix, iz;
             getLevelStartStopIndices(nx, nz, level, &i0, &i1);
-            for (int indx=i0; indx<i1; ++indx)
+            for (int indx = i0; indx < i1; ++indx)
             {
                 int levelTest, indxTest =-1;
                 if (sweep == SweepNumber2D::SWEEP1)
@@ -505,12 +505,12 @@ TEST(Solver2D, gridSweepToLevelIndex)
     for (int is = 0; is < 4; ++is)
     {
         auto sweep = static_cast<SweepNumber2D> (is);
-        for (int level=0; level<nLevels; ++level)
+        for (int level = 0; level < nLevels; ++level)
         {
             int i0, i1;
             int ix, iz;
             getLevelStartStopIndices(nx, nz, level, &i0, &i1);
-            for (int indx=i0; indx<i1; ++indx)
+            for (int indx = i0; indx < i1; ++indx)
             {
                 int levelTest, indxTest =-1;
                 if (sweep == SweepNumber2D::SWEEP1)
@@ -597,14 +597,13 @@ TEST(Solver2D, sweepToGridTravelTimeIndices)
                               11,12,12,11,   7, 8,13,12,  3, 4, 9, 8,
                                6, 7,12,11,   2, 3, 8, 7,
                                1, 2, 7, 6};
-    auto sweep = SweepNumber2D::SWEEP1;
     int j = 0;
-    for (int level=0; level<nLevels; ++level)
+    for (int level = 0; level < nLevels; ++level)
     {
         int iStart, iEnd;
         int it0, it1, it2, it3;
         getLevelStartStopIndices(nx, nz, level, &iStart, &iEnd);
-        for (int indx=iStart; indx<iEnd; ++indx)
+        for (int indx = iStart; indx < iEnd; ++indx)
         {
             sweepLevelIndexToTravelTimeIndices<SweepNumber2D::SWEEP1>(
                                                level, indx,
@@ -625,14 +624,13 @@ TEST(Solver2D, sweepToGridTravelTimeIndices)
     }
     EXPECT_EQ(j, static_cast<int> (tRef0.size()));
 
-    sweep = SweepNumber2D::SWEEP2;
     j = 0;
-    for (int level=0; level<nLevels; ++level)
+    for (int level = 0; level < nLevels; ++level)
     {
         int iStart, iEnd;
         int it0, it1, it2, it3;
         getLevelStartStopIndices(nx, nz, level, &iStart, &iEnd);
-        for (int indx=iStart; indx<iEnd; ++indx)
+        for (int indx = iStart; indx < iEnd; ++indx)
         {
             sweepLevelIndexToTravelTimeIndices<SweepNumber2D::SWEEP2>(
                                                level, indx,
@@ -651,15 +649,14 @@ TEST(Solver2D, sweepToGridTravelTimeIndices)
     }
     EXPECT_EQ(j, static_cast<int> (tRef1.size()));
 
-    sweep = SweepNumber2D::SWEEP3;
     j = 0;
-    for (int level=0; level<nLevels; ++level)
+    for (int level = 0; level < nLevels; ++level)
     {
         int iStart, iEnd;
         int it0, it1, it2, it3;
         getLevelStartStopIndices(nx, nz, level, &iStart, &iEnd);
 //std::cout << level << std::endl;
-        for (int indx=iStart; indx<iEnd; ++indx)
+        for (int indx = iStart; indx < iEnd; ++indx)
         {
             sweepLevelIndexToTravelTimeIndices<SweepNumber2D::SWEEP3>(
                                                level, indx,
@@ -680,15 +677,14 @@ TEST(Solver2D, sweepToGridTravelTimeIndices)
     }
     EXPECT_EQ(j, static_cast<int> (tRef2.size()));
 
-    sweep = SweepNumber2D::SWEEP4;
     j = 0;
-    for (int level=0; level<nLevels; ++level)
+    for (int level = 0; level < nLevels; ++level)
     {
         int iStart, iEnd;
         int it0, it1, it2, it3;
         getLevelStartStopIndices(nx, nz, level, &iStart, &iEnd);
 //std::cout << level << std::endl;
-        for (int indx=iStart; indx<iEnd; ++indx)
+        for (int indx = iStart; indx < iEnd; ++indx)
         {
             sweepLevelIndexToTravelTimeIndices<SweepNumber2D::SWEEP4>(
                                                level, indx,
@@ -716,7 +712,6 @@ TEST(Solver2D, setVelocityModel)
 {
     int nx = 5;
     int nz = 4;
-    int ngrid = nx*nz;
     int ncx = nx - 1;
     int ncz = nz - 1;
     std::vector<double> slow{1, 2,  3,  4, 
@@ -762,7 +757,7 @@ TEST(Solver2D, setVelocityModel)
                                        5, 5, 1, 1,  2, 1, 1, 2,
                                        1, 1, 1, 1};
                                       
-    auto sweep = SweepNumber2D::SWEEP1;
+    //auto sweep = SweepNumber2D::SWEEP1;
     auto nLevels = computeNumberOfLevels(nx, nz);
     auto levelOffset = makeLevelOffset(nx, nz);
     sweepSlowness.resize(nLevels);
@@ -779,7 +774,7 @@ TEST(Solver2D, setVelocityModel)
     for (int level=0; level<nLevels; ++level)
     {
         auto nNodes = levelOffset[level+1] - levelOffset[level];
-        for (int i=0; i<nNodes; ++i)
+        for (int i = 0; i < nNodes; ++i)
         {
             EXPECT_NEAR(sweepSlowness[level].s0[i],
                         sweepSlowRef1.at(i0),   1.e-10);
@@ -794,16 +789,16 @@ TEST(Solver2D, setVelocityModel)
     }
     EXPECT_EQ(i0, static_cast<int> (sweepSlowRef1.size()));
     
-    sweep = SweepNumber2D::SWEEP2;
+    //sweep = SweepNumber2D::SWEEP2;
     slownessToSweepSlowness<double, SweepNumber2D::SWEEP2>(nLevels,
                                                    nx, nz, ncx, ncz, 
                                                    slow.data(),
                                                    sweepSlowness.data());
     i0 = 0;
-    for (int level=0; level<nLevels; ++level)
+    for (int level = 0; level < nLevels; ++level)
     {
         auto nNodes = levelOffset[level+1] - levelOffset[level];
-        for (int i=0; i<nNodes; ++i)
+        for (int i = 0; i < nNodes; ++i)
         {
             EXPECT_NEAR(sweepSlowness[level].s0[i],
                         sweepSlowRef2.at(i0),   1.e-10);
@@ -818,16 +813,16 @@ TEST(Solver2D, setVelocityModel)
     }
     EXPECT_EQ(i0, static_cast<int> (sweepSlowRef2.size()));
 
-    sweep = SweepNumber2D::SWEEP3;
+    //sweep = SweepNumber2D::SWEEP3;
     slownessToSweepSlowness<double, SweepNumber2D::SWEEP3>(nLevels,
                                                    nx, nz, ncx, ncz, 
                                                    slow.data(),
                                                    sweepSlowness.data());
     i0 = 0;
-    for (int level=0; level<nLevels; ++level)
+    for (int level = 0; level < nLevels; ++level)
     {
         auto nNodes = levelOffset[level+1] - levelOffset[level];
-        for (int i=0; i<nNodes; ++i)
+        for (int i = 0; i < nNodes; ++i)
         {
             EXPECT_NEAR(sweepSlowness[level].s0[i],
                         sweepSlowRef3.at(i0),   1.e-10);
@@ -842,7 +837,7 @@ TEST(Solver2D, setVelocityModel)
     }
     EXPECT_EQ(i0, static_cast<int> (sweepSlowRef3.size()));
 
-    sweep = SweepNumber2D::SWEEP4;
+    //sweep = SweepNumber2D::SWEEP4;
     slownessToSweepSlowness<double, SweepNumber2D::SWEEP4>(nLevels,
                                                    nx, nz, ncx, ncz, 
                                                    slow.data(),
@@ -851,7 +846,7 @@ TEST(Solver2D, setVelocityModel)
     for (int level=0; level<nLevels; ++level)
     {
         auto nNodes = levelOffset[level+1] - levelOffset[level];
-        for (int i=0; i<nNodes; ++i)
+        for (int i = 0; i < nNodes; ++i)
         {
             EXPECT_NEAR(sweepSlowness[level].s0[i],
                         sweepSlowRef4.at(i0),   1.e-10);
@@ -867,23 +862,22 @@ TEST(Solver2D, setVelocityModel)
     EXPECT_EQ(i0, static_cast<int> (sweepSlowRef4.size()));
 
     // Do a more involved test 
-    sweep = SweepNumber2D::SWEEP1;
+    //sweep = SweepNumber2D::SWEEP1;
     nx = 242;
     nz = 323;
-    ngrid = nx*nz;
     ncx = nx - 1;
     ncz = nz - 1;
     sweepSlowness.clear(); //resize(4*ngrid, 0);
     nLevels = computeNumberOfLevels(nx, nz);
     levelOffset = makeLevelOffset(nx, nz);
     sweepSlowness.resize(nLevels);
-    for (int level=0; level<nLevels; ++level)
+    for (int level = 0; level < nLevels; ++level)
     {
         auto nNodes = levelOffset[level+1] - levelOffset[level];
         sweepSlowness[level].allocate(nNodes);
     }
     slow.resize(ncx*ncz, 0);
-    for (int iz=0; iz<ncz; ++iz)
+    for (int iz = 0; iz < ncz; ++iz)
     {
         for (int ix=0; ix<ncx; ++ix)
         {
@@ -892,7 +886,7 @@ TEST(Solver2D, setVelocityModel)
     }
     for (int is = 0; is < 4; ++is)
     {
-        sweep = static_cast<SweepNumber2D> (is);
+        auto sweep = static_cast<SweepNumber2D> (is);
         if (is == 0)
         {
             slownessToSweepSlowness<double, SweepNumber2D::SWEEP1>(nLevels,
@@ -922,12 +916,12 @@ TEST(Solver2D, setVelocityModel)
                                                           sweepSlowness.data());
         }
         int i0, i1, ix, iz;
-        int iCell0X, iCell1X, iCell2X, iCell3X = 0;
+        int iCell0X, iCell1X, iCell3X = 0;
         int iCell0Z, iCell1Z, iCell2Z, iCell3Z = 0;
-        for (int level=0; level<nLevels; ++level)
+        for (int level = 0; level < nLevels; ++level)
         {
             getLevelStartStopIndices(nx, nz, level, &i0, &i1);
-            for (int indx=i0; indx<i1; ++indx)
+            for (int indx = i0; indx < i1; ++indx)
             {
                 // Get the neighbors surrounding the grid point
                 if (sweep == SweepNumber2D::SWEEP1)
@@ -937,7 +931,7 @@ TEST(Solver2D, setVelocityModel)
                     iCell0X = std::max(0, ix - 1);
                     iCell1X = std::min(ncx - 1, iCell0X + 1);
                     if (ix == 0){iCell1X = 0;}
-                    iCell2X = iCell1X;
+                    //iCell2X = iCell1X;
                     iCell3X = iCell0X;
                     iCell0Z = std::max(0, iz - 1);
                     iCell1Z = iCell0Z;
@@ -956,7 +950,7 @@ TEST(Solver2D, setVelocityModel)
                         iCell0X = ix - 1;
                         iCell1X = ix - 1;
                     }
-                    iCell2X = iCell1X;
+                    //iCell2X = iCell1X;
                     iCell3X = iCell0X;
 
                     iCell0Z = sycl::max(0, iz - 1);
@@ -972,7 +966,7 @@ TEST(Solver2D, setVelocityModel)
                     iCell0X = sycl::max(0, ix - 1);
                     iCell1X = sycl::min(ncx - 1, iCell0X + 1);
                     if (ix == 0){iCell1X = 0;}
-                    iCell2X = iCell1X;
+                    //iCell2X = iCell1X;
                     iCell3X = iCell0X;
 
                     iCell0Z = iz;
@@ -996,7 +990,7 @@ TEST(Solver2D, setVelocityModel)
                         iCell0X = ix - 1;
                         iCell1X = ix - 1;
                     }
-                    iCell2X = iCell1X;
+                    //iCell2X = iCell1X;
                     iCell3X = iCell0X;
 
                     iCell0Z = iz;
@@ -1302,7 +1296,7 @@ TEST(Solver2D, Increment)
             vIncrement.at(indx) = ic;//10*(indx + 1) + 1;
         }
     }
-    getchar();
+    //getchar();
     Model2D<double> vModel;
     vModel.initialize(geometry);
     vModel.setNodalVelocities(vIncrement.size(), vIncrement.data(),

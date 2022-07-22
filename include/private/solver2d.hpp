@@ -292,7 +292,6 @@ std::cout << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travel
                     t1 = travelTimes[it1];
                     t2 = travelTimes[it2];
                     t3 = travelTimes[it3];
-
 /*
 if (ix == 14 && iz == 12)
 {
@@ -300,8 +299,7 @@ if (ix == 14 && iz == 12)
  std::cout << s0 << " " << s1 << " " << s3 << std::endl;
  std::cout << t0 << " " << t1 << " " << t2 << " " << t3 << std::endl;
 }
-*/
- 
+*/ 
                     tUpd = finiteDifference(mFactoredEikonalSolverRadius,
                                             huge,
                                             mDx, mDz,
@@ -315,7 +313,7 @@ if (ix == 14 && iz == 12)
                                             mSourceOffsetX, mSourceOffsetZ,
                                             s0, s1, s3, 
                                             t1, t2, t3);
-std::cout << "nonuniform: " << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl;
+std::cout << std::setprecision(17) << "nonuniform: " << ix << " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl;
 //if (ix == 14 && iz == 12){getchar();}
                     // Update?
                     //if (mUpdateNode[it0] == UPDATE_NODE)

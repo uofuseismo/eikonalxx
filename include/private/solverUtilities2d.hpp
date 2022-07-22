@@ -499,7 +499,6 @@ T finiteDifference(const int factoredEikonalRadius,
     T sz = sinTheta*s0;
     T hxs0 = dx*s0;
     T hzs0 = dz*s0;
-//std::cout << "eps " << factoredEikonalRadius << std::endl;
     // Cartesian
     if (std::abs(iSrcX - ix) > factoredEikonalRadius ||
         std::abs(iSrcZ - iz) > factoredEikonalRadius)
@@ -530,7 +529,7 @@ T finiteDifference(const int factoredEikonalRadius,
         T detc = hxs0*hxs0 + hzs0*hzs0 - dtCross*dtCross;
         T t0Update3 = huge; 
         if (dTx >= 0 && dTz >= 0 && detc > 0 &&
-            t1 < t3 + dz*s0 && t3 < t1 + dx*s0)
+            t1 < t3 + hzs0 && t3 < t1 + hxs0)
         {
             // Note for the first term:
             // (tx*dz^2 + tz*dx^2)/(dx^2 + dz^2)
@@ -550,7 +549,7 @@ T finiteDifference(const int factoredEikonalRadius,
     {
         T t0Update3 = huge;
         // Verify wave is moving in right direction and can reach
-        if (dTx >= 0 && dTz >= 0 && t1 < t3 + hxs0 && t3 < t1 + hzs0) 
+        if (dTx >= 0 && dTz >= 0 && t1 < t3 + hzs0 && t3 < t1 + hxs0) 
         {
             T dt0dx, dt0dz, t0;
             computeAnalyticalTravelTime(ix, iz, dx, dz,
