@@ -47,7 +47,7 @@ set(LIBSRC
 
 set(BUILD_SHARED_LIBS YES)
 add_library(eikonalxx ${LIBSRC})
-target_link_libraries(eikonalxx PRIVATE sycl spdlog::spdlog ${TBB_LIBRARY} stdc++fs)
+target_link_libraries(eikonalxx PRIVATE sycl ${TBB_LIBRARY} stdc++fs)
 if (${Boost_FOUND})
    target_compile_definitions(eikonalxx PRIVATE USE_BOOST)
    target_include_directories(eikonalxx PRIVATE ${Boost_INCLUDE_DIRS})
