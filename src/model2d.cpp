@@ -28,7 +28,7 @@ T getMin(const int n, const T x[])
 {
     T vmin = 0;
 //#ifdef ONE_API
-//    sycl::queue queue{sycl::cpu_selector{}};
+//    sycl::queue queue{sycl::cpu_selector_v};
 //    auto policy = dpstd::execution::make_device_policy<class Min>(queue);
 //    vmin = *std::min_element(policy, x, x + n);
 //    queue.wait();
@@ -121,8 +121,8 @@ std::vector<T> interpolate2d(const size_t nGridX, const size_t nGridZ,
     });
     q.wait();
     // Release memory
-    free(velDevice, q);
-    free(slowDevice, q);
+    sycl::free(velDevice, q);
+    sycl::free(slowDevice, q);
     return slow;
 }
 
