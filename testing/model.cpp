@@ -137,7 +137,7 @@ TEST(TestModel, model2d)
     // Set nodal model which requires interpolation
     auto slowRef = nodalToCell(nx, nz, velocities);
     EXPECT_NO_THROW(model.setNodalVelocities(nGrid, velocities.data(),
-                                             EikonalXX::Ordering2D::NATURAL));
+                                             EikonalXX::Ordering2D::Natural));
     EXPECT_TRUE(model.haveVelocities());
     auto slowness = model.getSlowness();
     EXPECT_EQ(slowness.size(), slowRef.size());
@@ -153,7 +153,7 @@ TEST(TestModel, model2d)
 
     // Set the cell-based model which requires no interpolation
     EXPECT_NO_THROW(model.setCellularVelocities(nCell, vCell.data(),
-                                              EikonalXX::Ordering2D::NATURAL)); 
+                                              EikonalXX::Ordering2D::Natural)); 
     EXPECT_TRUE(model.haveVelocities());
     slowness = model.getSlowness();
     errmax = infinityNorm(sCellRef, slowness);
@@ -223,7 +223,7 @@ TEST(TestModel, model3d)
     // Set nodal model which requires interpolation
     auto slowRef = nodalToCell(nx, ny, nz, velocities);
     EXPECT_NO_THROW(model.setNodalVelocities(nGrid, velocities.data(),
-                                             EikonalXX::Ordering3D::NATURAL));
+                                             EikonalXX::Ordering3D::Natural));
     EXPECT_TRUE(model.haveVelocities());
     auto slowness = model.getSlowness();
     EXPECT_EQ(slowness.size(), slowRef.size());
@@ -239,7 +239,7 @@ TEST(TestModel, model3d)
 
     // Set the cell-based model which requires no interpolation
     EXPECT_NO_THROW(model.setCellularVelocities(nCell, vCell.data(),
-                                              EikonalXX::Ordering3D::NATURAL)); 
+                                              EikonalXX::Ordering3D::Natural)); 
     EXPECT_TRUE(model.haveVelocities());
     slowness = model.getSlowness();
     errmax = infinityNorm(sCellRef, slowness);

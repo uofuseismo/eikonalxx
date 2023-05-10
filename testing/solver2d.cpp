@@ -1220,7 +1220,7 @@ TEST(Solver2D, solveHomogeneous)
     Model2D<double> vModel;
     vModel.initialize(geometry);
     vModel.setNodalVelocities(vConstant.size(), vConstant.data(),
-                              EikonalXX::Ordering2D::NATURAL);
+                              EikonalXX::Ordering2D::Natural);
 
     // Set the source
     Source2D source;
@@ -1263,17 +1263,17 @@ TEST(Solver2D, solveHomogeneous)
 
 TEST(Solver2D, Increment)
 {
-    int nx = 21;
-    int nz = 20;
-    double dx = 100; 
-    double dz = 100.05;
-    double x0 = 1; 
-    double z0 = 2; 
-    double xSrc = x0 + dx*(nx/2.) + dx/4.;
-    double zSrc = z0 + dz*(nz/2.);
-    int nSweeps = 0; 
-    int nEps = 3; 
-    auto solverAlgorithm = EikonalXX::SolverAlgorithm::FastSweepingMethod;
+    int nx{21};
+    int nz{20};
+    double dx{100};
+    double dz{100.05};
+    double x0{1};
+    double z0{2};
+    double xSrc{x0 + dx*(nx/2.) + dx/4.};
+    double zSrc{z0 + dz*(nz/2.)};
+    int nSweeps{0};
+    int nEps{3}; 
+    const auto solverAlgorithm{EikonalXX::SolverAlgorithm::FastSweepingMethod};
 
     // Initialize the geometry
     Geometry2D geometry;
@@ -1300,7 +1300,7 @@ TEST(Solver2D, Increment)
     Model2D<double> vModel;
     vModel.initialize(geometry);
     vModel.setNodalVelocities(vIncrement.size(), vIncrement.data(),
-                              EikonalXX::Ordering2D::NATURAL);
+                              EikonalXX::Ordering2D::Natural);
 
     // Set the source
     Source2D source;

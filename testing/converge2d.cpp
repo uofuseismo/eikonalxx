@@ -109,7 +109,7 @@ void homogeneousTest(const double dx)
     EikonalXX::Model2D<double> model;
     model.initialize(geometry);
     model.setNodalVelocities(velocities.size(), velocities.data(),
-                             EikonalXX::Ordering2D::NATURAL);
+                             EikonalXX::Ordering2D::Natural);
 
     EikonalXX::Source2D source;
     source.setGeometry(geometry);

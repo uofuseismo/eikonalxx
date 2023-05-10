@@ -739,7 +739,7 @@ return;
     Model3D<double> vModel;
     vModel.initialize(geometry);
     vModel.setNodalVelocities(vConstant.size(), vConstant.data(),
-                              EikonalXX::Ordering3D::NATURAL);
+                              EikonalXX::Ordering3D::Natural);
 
     // Set the source
     Source3D source;

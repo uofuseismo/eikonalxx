@@ -58,7 +58,7 @@ public:
     template<typename T>
     void writeNodalDataset(const std::string &name,
                            const T *data,
-                           Ordering3D ordering = Ordering3D::NATURAL) const;
+                           Ordering3D ordering = Ordering3D::Natural) const;
     /// @brief Writes a cell-based dataset.
     /// @brief Writes a nodal dataset.
     /// @param[in] name      The name of the cellular dataset.  Note, all blank
@@ -72,7 +72,7 @@ public:
     template<typename T>
     void writeCellularDataset(const std::string &fname,
                               const T *data,
-                              Ordering3D ordering = Ordering3D::NATURAL) const;
+                              Ordering3D ordering = Ordering3D::Natural) const;
     /// @}
 
     /// @name Step 3: Close the file

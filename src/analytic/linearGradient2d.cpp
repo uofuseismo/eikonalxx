@@ -375,7 +375,7 @@ void LinearGradient2D<T>::writeVTK(const std::string &fileName,
     IO::VTKRectilinearGrid2D vtkWriter;
     constexpr bool writeBinary = true;
     vtkWriter.open(fileName, pImpl->mGeometry, title, writeBinary); 
-    vtkWriter.writeNodalDataset(title, tPtr, EikonalXX::Ordering2D::NATURAL);
+    vtkWriter.writeNodalDataset(title, tPtr, EikonalXX::Ordering2D::Natural);
     vtkWriter.close();
 }
 

@@ -75,7 +75,7 @@ std::vector<T> interpolate2d(const size_t nGridX, const size_t nGridZ,
     auto eInterpolate = q.submit([&](sycl::handler &h)
     {
         h.depends_on(eCopyVelocity);
-        if (ordering == EikonalXX::Ordering2D::NATURAL)
+        if (ordering == EikonalXX::Ordering2D::Natural)
         {
             h.parallel_for(sycl::nd_range{global, local},
                            [=](sycl::nd_item<2> it)
@@ -306,7 +306,7 @@ void Model2D<T>::setCellularVelocities(const int nCellIn,
 
     pImpl->mSlowness.resize(nCell, 0);
     const T one = 1;
-    if (ordering == EikonalXX::Ordering2D::NATURAL)
+    if (ordering == EikonalXX::Ordering2D::Natural)
     {
 #ifdef USE_PSTL
         std::transform(std::execution::unseq,
@@ -402,7 +402,7 @@ void Model2D<T>::writeVTK(const std::string &fileName,
     constexpr bool writeBinary = true;
     vtkWriter.open(fileName, pImpl->mGeometry, title, writeBinary); 
     vtkWriter.writeCellularDataset(title, v.data(),
-                                   EikonalXX::Ordering2D::NATURAL);
+                                   EikonalXX::Ordering2D::Natural);
     vtkWriter.close();
 }
 

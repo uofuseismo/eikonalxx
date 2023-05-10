@@ -16,7 +16,7 @@ void solve2d(const size_t nGridX, const size_t nGridZ,
              const double vel,
              std::vector<T> *travelTimes)
 {
-    sycl::queue q{sycl::cpu_selector{},
+    sycl::queue q{sycl::cpu_selector_v,
                   sycl::property::queue::in_order()};
     auto workGroupSize = q.get_device().get_info<sycl::info::device::max_work_group_size> (); 
     workGroupSize = static_cast<size_t> (std::sqrt(workGroupSize));
@@ -326,7 +326,7 @@ void Homogeneous2D<T>::writeVTK(const std::string &fileName,
     IO::VTKRectilinearGrid2D vtkWriter;
     constexpr bool writeBinary = true;
     vtkWriter.open(fileName, pImpl->mGeometry, title, writeBinary); 
-    vtkWriter.writeNodalDataset(title, tPtr, EikonalXX::Ordering2D::NATURAL);
+    vtkWriter.writeNodalDataset(title, tPtr, EikonalXX::Ordering2D::Natural);
     vtkWriter.close();
 }
 

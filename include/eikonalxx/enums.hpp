@@ -6,7 +6,7 @@ namespace EikonalXX
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 enum class Ordering2D
 {
-    NATURAL = 0, /*! This is the natural ordering in which x is the fastest
+    Natural = 0, /*! This is the natural ordering in which x is the fastest
                      changing dimension and z is the slowest changing dimension.
                      Necessarily, the leading dimension is nx. */
     ZX = 0,      /*! This is the natural ordering in which x is the fastest
@@ -22,7 +22,7 @@ enum class Ordering2D
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 enum class Ordering3D
 {
-    NATURAL = 0, /*! This is the natural ordering in which x is the fastest,
+    Natural = 0, /*! This is the natural ordering in which x is the fastest,
                      changing dimension, y is the intermediate dimension,
                      and z is the slowest changing dimension.
                      Necessarily, the first leading dimension is nx and ny

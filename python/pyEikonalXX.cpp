@@ -19,7 +19,7 @@ PYBIND11_MODULE(pyEikonalXX, m)
     PEikonalXX::initializeModel2D(m);
 
     pybind11::enum_<EikonalXX::Ordering2D> (m, "Ordering2D")
-        .value("natural", EikonalXX::Ordering2D::NATURAL,
+        .value("natural", EikonalXX::Ordering2D::Natural,
                "The natural grid ordering in 2D.")
         .value("zx", EikonalXX::Ordering2D::ZX,
                "The natural grid ordering in 2D where x is the fastest changing dimension and z the slowest changing dimension.")
@@ -27,7 +27,7 @@ PYBIND11_MODULE(pyEikonalXX, m)
                "The transpose grid ordering in 2D where x is the slowest changing dimension and z the fastest changing dimension.");
 
     pybind11::enum_<EikonalXX::Ordering3D> (m, "Ordering3D")
-        .value("natural", EikonalXX::Ordering3D::NATURAL,
+        .value("natural", EikonalXX::Ordering3D::Natural,
                "The natural grid ordering in 3D.")
         .value("zyx", EikonalXX::Ordering3D::ZYX,
                "The natural grid ordering in 3D where x is the fastest changing dimension, y the intermediate dimension, and z the slowest changing dimension.")

@@ -187,7 +187,7 @@ void VTKRectilinearGrid3D::writeNodalDataset(
     if (pImpl->mWriteBinary)
     {
         std::vector<char> cData(nGrid*4);
-        if (ordering == EikonalXX::Ordering3D::NATURAL)
+        if (ordering == EikonalXX::Ordering3D::Natural)
         {
             pack(nGrid, data, cData.data());
         }
@@ -248,7 +248,7 @@ void VTKRectilinearGrid3D::writeCellularDataset(
     if (pImpl->mWriteBinary)
     { 
         std::vector<char> cData(nCell*4);
-        if (ordering == EikonalXX::Ordering3D::NATURAL)
+        if (ordering == EikonalXX::Ordering3D::Natural)
         {
             pack(nCell, data, cData.data());
         }

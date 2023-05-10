@@ -79,7 +79,7 @@ std::vector<T> interpolate3d(const size_t nGridX,
     auto eInterpolate = q.submit([&](sycl::handler &h)
     {
         h.depends_on(eCopyVelocity);
-        if (ordering == EikonalXX::Ordering3D::NATURAL)
+        if (ordering == EikonalXX::Ordering3D::Natural)
         {
             h.parallel_for(sycl::nd_range{global, local},
                            [=](sycl::nd_item<3> it)
@@ -340,7 +340,7 @@ void Model3D<T>::setCellularVelocities(const int nCellIn,
 
     pImpl->mSlowness.resize(nCell, 0);
     const T one = 1;
-    if (ordering == EikonalXX::Ordering3D::NATURAL)
+    if (ordering == EikonalXX::Ordering3D::Natural)
     {
 #ifdef USE_PSTL
         std::transform(std::execution::unseq,
@@ -441,7 +441,7 @@ void Model3D<T>::writeVTK(const std::string &fileName,
     constexpr bool writeBinary = true;
     vtkWriter.open(fileName, pImpl->mGeometry, title, writeBinary); 
     vtkWriter.writeCellularDataset(title, v.data(),
-                                   EikonalXX::Ordering3D::NATURAL);
+                                   EikonalXX::Ordering3D::Natural);
     vtkWriter.close();
 }
 
