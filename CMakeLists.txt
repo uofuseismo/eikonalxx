@@ -44,6 +44,7 @@ set(LIBSRC
     src/analytic/homogeneous2d.cpp src/analytic/homogeneous3d.cpp
     src/analytic/linearGradient2d.cpp src/analytic/linearGradient3d.cpp
     src/ray/point2d.cpp src/ray/point3d.cpp
+    src/ray/segment2d.cpp src/ray/segment3d.cpp
     src/io/vtkRectilinearGrid2d.cpp src/io/vtkRectilinearGrid3d.cpp)
 
 set(BUILD_SHARED_LIBS YES)
