@@ -1232,7 +1232,7 @@ TEST(Solver2D, solveHomogeneous)
     SolverOptions options;
     options.setNumberOfSweeps(nSweeps);
     options.setFactoredEikonalEquationSolverRadius(nEps);
-    options.setVerbosity(Verbosity::DEBUG);
+    options.setVerbosity(Verbosity::Debug);
     options.setAlgorithm(solverAlgorithm);
     // Initialize 
     Solver2D<double> solver;
@@ -1312,7 +1312,7 @@ TEST(Solver2D, Increment)
     SolverOptions options;
     options.setNumberOfSweeps(nSweeps);
     options.setFactoredEikonalEquationSolverRadius(nEps);
-    options.setVerbosity(Verbosity::DEBUG);
+    options.setVerbosity(Verbosity::Debug);
     options.setAlgorithm(solverAlgorithm);
     // Initialize 
     Solver2D<double> solver;

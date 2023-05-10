@@ -717,7 +717,7 @@ nEps = 2;//500; //500;
 
 return;
     SolverOptions options;
-    options.setVerbosity(Verbosity::DEBUG);
+    options.setVerbosity(Verbosity::Debug);
     options.setNumberOfSweeps(nSweeps);
     options.setFactoredEikonalEquationSolverRadius(nEps);
     options.setAlgorithm(solverAlgorithm);

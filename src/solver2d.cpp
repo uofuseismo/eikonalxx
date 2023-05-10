@@ -36,19 +36,19 @@ public:
     /// Sets the log level
     void setLogLevel(const Verbosity verbosity)
     {
-        if (verbosity == Verbosity::DEBUG)
+        if (verbosity == Verbosity::Debug)
         {
             //mLogger->set_level(spdlog::level::debug);
         }
-        else if (verbosity == Verbosity::INFO)
+        else if (verbosity == Verbosity::Info)
         {
             //mLogger->set_level(spdlog::level::info);
         } 
-        else if (verbosity == Verbosity::WARNING)
+        else if (verbosity == Verbosity::Warning)
         {
             //mLogger->set_level(spdlog::level::warn);
         }
-        else if (verbosity == Verbosity::ERROR)
+        else if (verbosity == Verbosity::Error)
         {
             //mLogger->set_level(spdlog::level::err);
         }
@@ -57,7 +57,7 @@ public:
     void initializeTravelTimes()
     {
         auto verbosity = mOptions.getVerbosity();
-        bool ldebug = (verbosity == Verbosity::DEBUG);
+        bool ldebug = (verbosity == Verbosity::Debug);
         //mLogger->debug("Initializing travel times near source.");
         int nGridX = mGeometry.getNumberOfGridPointsInX();
         const auto sPtr = mVelocityModel.getSlownessPointer();
@@ -270,7 +270,7 @@ void Solver2D<T>::setSource(const Source2D &source)
     pImpl->mSourceCell = source.getCell();
     pImpl->mSource = source;
     pImpl->mHaveSource = true;
-    if (pImpl->mOptions.getVerbosity() == Verbosity::DEBUG)
+    if (pImpl->mOptions.getVerbosity() == Verbosity::Debug)
     {
         std::cout << pImpl->mSource << std::endl;
     } 
@@ -305,7 +305,7 @@ void Solver2D<T>::setSource(const std::pair<double, double> &sourceLocation)
                                   + "," + std::to_string(zmax) + "]");
     } 
     // Tell user what is about to happen
-    if (pImpl->mOptions.getVerbosity() >= Verbosity::INFO)
+    if (pImpl->mOptions.getVerbosity() >= Verbosity::Info)
     {
         std::cout << "Setting source location (x,z)=(" << sourceLocation.first
                   << "," << sourceLocation.second << ")" << std::endl;
@@ -541,7 +541,7 @@ void Solver2D<T>::solve()
     {
         const auto sweepSlownessPtr = pImpl->getSweepSlownessPointer(sweep);
         const auto updateNodePtr = pImpl->getUpdateNodePointer(sweep);
-        if (pImpl->mOptions.getVerbosity() == Verbosity::DEBUG)
+        if (pImpl->mOptions.getVerbosity() == Verbosity::Debug)
         {
             timer.start();
             std::cout << "Performing initialization sweep: "
@@ -658,7 +658,7 @@ void Solver2D<T>::solve()
     // Perform Gauss-Seidel iterations 
     for (int k=0; k<nSweeps; ++k)
     {
-        if (pImpl->mOptions.getVerbosity() == Verbosity::DEBUG)
+        if (pImpl->mOptions.getVerbosity() == Verbosity::Debug)
         {
             timer.start();
             std::cout << "Beginning iteration: " << k + 1 << std::endl;
@@ -757,7 +757,7 @@ void Solver2D<T>::solve()
                 q.wait();
             } // Loop on levels
         } // Loop on sweep directions
-        if (pImpl->mOptions.getVerbosity() == Verbosity::DEBUG)
+        if (pImpl->mOptions.getVerbosity() == Verbosity::Debug)
         {
             timer.end();
             std::cout << "Iteration took: " << timer.getDuration()

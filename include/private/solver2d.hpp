@@ -72,7 +72,7 @@ public:
         const std::vector<std::pair<int, int>> &sourceNodes,
         const EikonalXX::Verbosity verbosity)
     {
-        auto ldebug = (verbosity == EikonalXX::Verbosity::DEBUG);
+        auto ldebug = (verbosity == EikonalXX::Verbosity::Debug);
         if (mAlgorithm == EikonalXX::SolverAlgorithm::LevelSetMethod)
         {
             auto updateNodePtr = mUpdateNode.data();

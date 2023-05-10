@@ -20,7 +20,7 @@ public:
     void initializeTravelTimes()
     {
         auto verbosity = mOptions.getVerbosity();
-        bool ldebug = (verbosity == Verbosity::DEBUG);
+        bool ldebug = (verbosity == Verbosity::Debug);
         if (ldebug)
         {
             std::cout << "Initializing travel times near source" << std::endl;
@@ -212,7 +212,7 @@ void Solver3D<T>::setVelocityModel(const Model3D<T> &velocityModel)
         throw std::invalid_argument(
             "Velocity model's geometry does not match the solver's geometry");
     }
-    if (pImpl->mOptions.getVerbosity() >= Verbosity::INFO)
+    if (pImpl->mOptions.getVerbosity() >= Verbosity::Info)
     {
         std::cout << "Setting velocity model..." << std::endl;
     }
@@ -295,7 +295,7 @@ void Solver3D<T>::setSource(
                                   + "," + std::to_string(zmax) + "]");
     }
     // Tell user what is about to happen
-    if (pImpl->mOptions.getVerbosity() >= Verbosity::INFO)
+    if (pImpl->mOptions.getVerbosity() >= Verbosity::Info)
     {
         std::cout << "Setting source location (x,y,z)=("
                   << std::get<0> (sourceLocation) << ","
@@ -333,7 +333,7 @@ void Solver3D<T>::setSource(const Source3D &source)
     pImpl->mSourceCell = source.getCell();
     pImpl->mSource = source;
     pImpl->mHaveSource = true;
-    if (pImpl->mOptions.getVerbosity() == Verbosity::DEBUG)
+    if (pImpl->mOptions.getVerbosity() == Verbosity::Debug)
     {
         std::cout << pImpl->mSource << std::endl;
     }
@@ -377,7 +377,7 @@ void Solver3D<T>::solve()
     timer.start();
     pImpl->initializeTravelTimes();
     timer.end();
-    if (verbosity == Verbosity::DEBUG)
+    if (verbosity == Verbosity::Debug)
     {
         std::cout << "Travel time field initialization time: "
                   << timer.getDuration() << " (s)" << std::endl;
@@ -417,7 +417,7 @@ void Solver3D<T>::solve()
     constexpr bool noInitialize = false;
     if (algorithm == SolverAlgorithm::FastSweepingMethod)
     {
-        if (verbosity == Verbosity::DEBUG)
+        if (verbosity == Verbosity::Debug)
         {
             std::cout << "Initializing fast sweeping method..." << std::endl;
         }
@@ -453,7 +453,7 @@ return;
     }
     else // Perform level set method on device
     {
-        if (verbosity == Verbosity::DEBUG)
+        if (verbosity == Verbosity::Debug)
         {
             std::cout << "Selecting queue..." << std::endl;
         }

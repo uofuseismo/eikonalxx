@@ -82,10 +82,10 @@ enum class SweepNumber3D
  */
 enum class Verbosity
 {
-    ERROR = 0,   /*!< Only errors are displayed. */
-    WARNING = 1, /*!< Errors and warnings. */
-    INFO = 2,    /*!< General information. */
-    DEBUG = 3    /*!< Fine-grained debugging information. */ 
+    Error,   /*!< Only errors are displayed. */
+    Warning, /*!< Errors and warnings. */
+    Info,    /*!< General information. */
+    Debug    /*!< Fine-grained debugging information. */ 
 };
 
 }

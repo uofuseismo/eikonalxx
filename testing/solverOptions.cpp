@@ -10,11 +10,11 @@ using namespace EikonalXX;
 TEST(SolverOptions, solverOptions)
 {
     SolverOptions options;
-    double tol = 1.e-3;
-    Verbosity verbosity = Verbosity::INFO;
-    int nSweeps = 12;
-    int epsilon = 6;
-    auto algorithm = SolverAlgorithm::FastSweepingMethod;
+    const double tol{1.e-3};
+    const Verbosity verbosity{Verbosity::Info};
+    const int nSweeps{12};
+    const int epsilon{6};
+    const SolverAlgorithm algorithm{SolverAlgorithm::FastSweepingMethod};
 
     options.setConvergenceTolerance(tol);
     options.setNumberOfSweeps(nSweeps);
