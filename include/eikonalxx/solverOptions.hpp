@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_SOLVEROPTIONS_HPP
-#define EIKONALXX_SOLVEROPTIONS_HPP
+#ifndef EIKONALXX_SOLVER_OPTIONS_HPP
+#define EIKONALXX_SOLVER_OPTIONS_HPP
 #include <ostream>
 #include <memory>
 #include "eikonalxx/enums.hpp"

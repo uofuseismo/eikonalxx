@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_ANALYTIC_HOMOGENEOUS3D_HPP
-#define EIKONALXX_ANALYTIC_HOMOGENEOUS3D_HPP
+#ifndef EIKONALXX_ANALYTIC_HOMOGENEOUS_3D_HPP
+#define EIKONALXX_ANALYTIC_HOMOGENEOUS_3D_HPP
 #include <memory>
 #include <vector>
 #include "eikonalxx/abstractBaseClass/solver3d.hpp"

@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_ANALYTIC_LINEARGRADIENT2D_HPP
-#define EIKONALXX_ANALYTIC_LINEARGRADIENT2D_HPP
+#ifndef EIKONALXX_ANALYTIC_LINEAR_GRADIENT_2D_HPP
+#define EIKONALXX_ANALYTIC_LINEAR_GRADIENT_2D_HPP
 #include <memory>
 #include <vector>
 #include "eikonalxx/abstractBaseClass/solver2d.hpp"

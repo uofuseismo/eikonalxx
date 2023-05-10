@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_GRAPH3D_HPP
-#define EIKONALXX_GRAPH3D_HPP
+#ifndef EIKONALXX_GRAPH_3D_HPP
+#define EIKONALXX_GRAPH_3D_HPP
 #include <memory>
 #include "eikonalxx/enums.hpp"
 namespace EikonalXX

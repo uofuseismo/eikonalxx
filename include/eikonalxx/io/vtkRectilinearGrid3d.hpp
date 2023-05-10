@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_IO_VTKRECTILINEARGRID3D_HPP
-#define EIKONALXX_IO_VTKRECTILINEARGRID3D_HPP
+#ifndef EIKONALXX_IO_VTK_RECTILINEAR_GRID_3D_HPP
+#define EIKONALXX_IO_VTK_RECTILINEAR_GRID_3D_HPP
 #include <string>
 #include <memory>
 #include "eikonalxx/enums.hpp"

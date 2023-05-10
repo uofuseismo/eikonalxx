@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_STATION2D_HPP
-#define EIKONALXX_STATION2D_HPP
+#ifndef EIKONALXX_STATION_2D_HPP
+#define EIKONALXX_STATION_2D_HPP
 #include <ostream>
 #include <memory>
 namespace EikonalXX

@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_ANALYTIC_HOMOGENEOUS2D_HPP
-#define EIKONALXX_ANALYTIC_HOMOGENEOUS2D_HPP
+#ifndef EIKONALXX_ANALYTIC_HOMOGENEOUS_2D_HPP
+#define EIKONALXX_ANALYTIC_HOMOGENEOUS_2D_HPP
 #include <memory>
 #include <vector>
 #include "eikonalxx/abstractBaseClass/solver2d.hpp"

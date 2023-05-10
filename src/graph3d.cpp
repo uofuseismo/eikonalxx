@@ -40,17 +40,17 @@ public:
     /// mLevelStartPointer.
     std::vector<int> mNodeInLevelToZGridPoint;
     /// Number of grid points in (x,y,z)
-    int mNx = 0;
-    int mNy = 0;
-    int mNz = 0;
+    int mNx{0};
+    int mNy{0};
+    int mNz{0};
     /// Number of grid points (= mNx*mNy*mNz)
-    int mGrid = 0;
+    int mGrid{0};
     /// Number of levels
-    int mNumberOfLevels = 0;
+    int mNumberOfLevels{0};
     /// Maximum size of a level
-    int mMaxLevelSize = 0;
+    int mMaxLevelSize{0};
     /// Class initialized?
-    bool mInitialized = false;
+    bool mInitialized{false};
 };
 
 /// C'tor
@@ -171,9 +171,9 @@ void Graph3D<E>::initialize(const int nx, const int ny, const int nz)
                 for (int ix = i1; ix <= i2; ++ix)
                 {
                     int jx, jy, jz;
-                    permuteGrid<E>(ix, iy, iz, nx, ny, nz, &jx, &jy, &jz);
+                    ::permuteGrid<E>(ix, iy, iz, nx, ny, nz, &jx, &jy, &jz);
                     nodeInLevelToIndexPtr[offset + nNodesInLevel]
-                        = gridToIndex(nx, ny, jx, jy, jz);
+                        = ::gridToIndex(nx, ny, jx, jy, jz);
                     indexToLevelPtr[offset + nNodesInLevel] = level;
                     nNodesInLevel = nNodesInLevel + 1; 
                 }

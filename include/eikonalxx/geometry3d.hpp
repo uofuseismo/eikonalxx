@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_GEOMETRY3D_HPP
-#define EIKONALXX_GEOMETRY3D_HPP
+#ifndef EIKONALXX_GEOMETRY_3D_HPP
+#define EIKONALXX_GEOMETRY_3D_HPP
 #include <memory>
 namespace EikonalXX
 {

@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_MODEL2D_HPP
-#define EIKONALXX_MODEL2D_HPP
+#ifndef EIKONALXX_MODEL_2D_HPP
+#define EIKONALXX_MODEL_2D_HPP
 #include <memory>
 #include <vector>
 #include "eikonalxx/enums.hpp"

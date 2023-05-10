@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_SOURCE3D_HPP
-#define EIKONALXX_SOURCE3D_HPP
+#ifndef EIKONALXX_SOURCE_3D_HPP
+#define EIKONALXX_SOURCE_3D_HPP
 #include <ostream>
 #include <memory>
 namespace EikonalXX

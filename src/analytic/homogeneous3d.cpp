@@ -49,7 +49,7 @@ void solve3d(const size_t nGridX, const size_t nGridY, const size_t nGridZ,
             size_t ix = it.get_global_id(0);
             size_t iy = it.get_global_id(1);
             size_t iz = it.get_global_id(2);
-            auto idst = gridToIndex(nGridX, nGridY, ix, iy, iz);
+            auto idst = ::gridToIndex(nGridX, nGridY, ix, iy, iz);
             T delX = xShiftedSource - ix*hx;
             T delY = yShiftedSource - iy*hy;
             T delZ = zShiftedSource - iz*hz;
@@ -70,7 +70,7 @@ void solve3d(const size_t nGridX, const size_t nGridY, const size_t nGridZ,
     }); 
     q.wait();
     // Release memory
-    free(travelTimesDevice, q);
+    sycl::free(travelTimesDevice, q);
 }
 }
 
@@ -83,10 +83,10 @@ public:
     EikonalXX::Geometry3D mGeometry;
     EikonalXX::Source3D mSource;
     std::vector<T> mTravelTimeField; 
-    double mVelocity = 0;
-    bool mHaveTravelTimeField = false;
-    bool mHaveSource = false;
-    bool mInitialized = false; 
+    double mVelocity{0};
+    bool mHaveTravelTimeField{false};
+    bool mHaveSource{false};
+    bool mInitialized{false};
 };
 
 
@@ -323,11 +323,11 @@ void Homogeneous3D<T>::solve()
     auto ySrcOffset = pImpl->mSource.getOffsetInY();
     auto zSrcOffset = pImpl->mSource.getOffsetInZ();
     // Solve it
-    solve3d(nx, ny, nz,
-            xSrcOffset, ySrcOffset, zSrcOffset,
-            dx, dy, dz,
-            pImpl->mVelocity,
-            &pImpl->mTravelTimeField);
+    ::solve3d(nx, ny, nz,
+              xSrcOffset, ySrcOffset, zSrcOffset,
+              dx, dy, dz,
+              pImpl->mVelocity,
+              &pImpl->mTravelTimeField);
     pImpl->mHaveTravelTimeField = true;
 }
 

@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_SOLVER2D_HPP
-#define EIKONALXX_SOLVER2D_HPP
+#ifndef EIKONALXX_SOLVER_2D_HPP
+#define EIKONALXX_SOLVER_2D_HPP
 #include <memory>
 #include <vector>
 #include "eikonalxx/abstractBaseClass/solver2d.hpp"

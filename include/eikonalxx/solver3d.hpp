@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_SOLVER3D_HPP
-#define EIKONALXX_SOLVER3D_HPP
+#ifndef EIKONALXX_SOLVER_3D_HPP
+#define EIKONALXX_SOLVER_3D_HPP
 #include <memory>
 #include <vector>
 #include "eikonalxx/abstractBaseClass/solver3d.hpp"

@@ -43,7 +43,7 @@ void solve2d(const size_t nGridX, const size_t nGridZ,
         {
             size_t ix = it.get_global_id(0);
             size_t iz = it.get_global_id(1);
-            auto idst = gridToIndex(nGridX, ix, iz);
+            auto idst = ::gridToIndex(nGridX, ix, iz);
             T delX = xShiftedSource - ix*hx;
             T delZ = zShiftedSource - iz*hz;
             travelTimesDevice[idst] = sycl::hypot(delX, delZ)*slowness;
@@ -62,7 +62,7 @@ void solve2d(const size_t nGridX, const size_t nGridZ,
     }); 
     q.wait();
     // Release memory
-    free(travelTimesDevice, q);
+    sycl::free(travelTimesDevice, q);
 }
 }
 
@@ -75,10 +75,10 @@ public:
     EikonalXX::Geometry2D mGeometry;
     EikonalXX::Source2D mSource;
     std::vector<T> mTravelTimeField; 
-    double mVelocity = 0;
-    bool mHaveTravelTimeField = false;
-    bool mHaveSource = false;
-    bool mInitialized = false; 
+    double mVelocity{0};
+    bool mHaveTravelTimeField{false};
+    bool mHaveSource{false};
+    bool mInitialized{false}; 
 };
 
 
@@ -285,8 +285,8 @@ void Homogeneous2D<T>::solve()
     auto xSrcOffset = pImpl->mSource.getOffsetInX();
     auto zSrcOffset = pImpl->mSource.getOffsetInZ();
     // Solve it
-    solve2d(nx, nz, xSrcOffset, zSrcOffset, dx, dz, pImpl->mVelocity,
-            &pImpl->mTravelTimeField);
+    ::solve2d(nx, nz, xSrcOffset, zSrcOffset, dx, dz, pImpl->mVelocity,
+              &pImpl->mTravelTimeField);
     pImpl->mHaveTravelTimeField = true;
 }
 
