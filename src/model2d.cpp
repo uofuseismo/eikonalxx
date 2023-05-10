@@ -48,7 +48,7 @@ std::vector<T> interpolate2d(const size_t nGridX, const size_t nGridZ,
                              const EikonalXX::Ordering2D ordering)
 {
     std::vector<T> slow;
-    sycl::queue q{sycl::cpu_selector{},
+    sycl::queue q{sycl::cpu_selector_v,
                   sycl::property::queue::in_order()};
     auto workGroupSize = q.get_device().get_info<sycl::info::device::max_work_group_size> ();
     workGroupSize = static_cast<size_t> (std::sqrt(workGroupSize));

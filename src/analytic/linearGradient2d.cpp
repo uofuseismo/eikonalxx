@@ -28,7 +28,7 @@ void solve2d(const size_t nGridX, const size_t nGridZ,
              const double velTop, const double velBottom,
              std::vector<T> *travelTimes)
 {
-    sycl::queue q{sycl::cpu_selector{},
+    sycl::queue q{sycl::cpu_selector_v,
                   sycl::property::queue::in_order()};
     auto workGroupSize = q.get_device().get_info<sycl::info::device::max_work_group_size> (); 
     workGroupSize = static_cast<size_t> (std::sqrt(workGroupSize));
@@ -310,7 +310,7 @@ void LinearGradient2D<T>::setVelocityModel(
 template<class T>
 bool LinearGradient2D<T>::haveVelocityModel() const noexcept
 {
-    return (pImpl->mVelocity.first > 0) & (pImpl->mVelocity.second >  0);
+    return (pImpl->mVelocity.first > 0 && pImpl->mVelocity.second > 0);
 }
 
 /// Solve the eikonal equation

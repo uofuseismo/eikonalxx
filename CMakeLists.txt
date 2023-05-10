@@ -14,7 +14,7 @@ endif()
 find_package(GTest REQUIRED)
 find_package(Boost COMPONENTS graph)
 find_package(spdlog REQUIRED)
-set(FindTBB_DIR ${CMAKE_SOURCE_DIR}/CMakeModules)
+set(FindTBB_DIR ${CMAKE_SOURCE_DIR}/cmake)
 find_package(FindTBB REQUIRED)
 
 configure_file(${CMAKE_SOURCE_DIR}/include/private/version.hpp.in
@@ -114,28 +114,68 @@ set_target_properties(converge2d PROPERTIES
 #                                         Installation                                   #
 ##########################################################################################
 include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+    cmake/EikonalXXConfig.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+    VERSION "${version}"
+    COMPATIBILITY AnyNewerVersion
+)
 if (WRAP_PYTHON)
    install(TARGETS eikonalxx pyEikonalXX
+           EXPORT ${PROJECT_NAME}-targets
            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-           PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+           PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+           COMPONENT Runtime)
 else()
    install(TARGETS eikonalxx
+           EXPORT ${PROJECT_NAME}-targets
            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-           PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+           PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+           COMPONENT Runtime)
 endif()
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/eikonalxx
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+export(EXPORT ${PROJECT_NAME}-targets
+       FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake")
+install(EXPORT ${PROJECT_NAME}-targets
+        FILE ${PROJECT_NAME}Targets.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 ##########################################################################################
 #                                     CPACK Packaging                                    #
 ##########################################################################################
-set(CPACK_PACKAGE_NAME "EikonalXX")
-set(CPACK_PACKAGE_VENDOR "UUSS")
-set(CPACK_PACKAGE_CONTACT "bbaker@seis.utah.edu")
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_PACKAGE_VENDOR "University of Utah Seismograph Stations")
+set(CPACK_PACKAGE_CONTACT "ben.baker@utah.edu")
 set(CPACK_PACKAGE_LICENSE "MIT")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A library for solving the eikonal equation.")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
+set(CPACK_VERBATIM_VARIABLES YES)
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_COMPONENTS_ALL libraries headers)
+if (WIN32)
+    set(CPACK_GENERATOR ZIP WIX)
+elseif (APPLE)
+    set(CPACK_GENERATOR TGZ productbuild)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(CPACK_GENERATOR TGZ RPM)
+else()
+    set(CPACK_GENERATOR TGZ)
+endif()
+set(CPACK_SOURCE_IGNORE_FILES
+  /\\.git/
+  \\.swp
+  \\.orig
+  /CMakeLists\\.txt\\.user
+  /private/
+)
+include(CPack) # Put this last!

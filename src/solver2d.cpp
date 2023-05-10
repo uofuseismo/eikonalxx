@@ -1,9 +1,10 @@
 #include <vector>
+#include <limits>
 #include <string>
-#include <spdlog/sinks/stdout_sinks.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 #include <algorithm>
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
+//#include <spdlog/sinks/stdout_sinks.h>
+//#include <spdlog/sinks/stdout_color_sinks.h>
 #ifndef NDEBUG
   #include <cassert>
 #endif
@@ -26,30 +27,30 @@ template<class T>
 class Solver2D<T>::Solver2DImpl
 {
 public:
-    Solver2DImpl() :
-        mStdOutSink(std::make_shared<spdlog::sinks::stdout_color_sink_mt> ()),
-        mLogger(std::make_shared<spdlog::logger> ("stdout", mStdOutSink))
+    Solver2DImpl() //:
+        //mStdOutSink(std::make_shared<spdlog::sinks::stdout_color_sink_mt> ())//,
+        //mLogger(std::make_shared<spdlog::logger> ("stdout", mStdOutSink))
     {
-        mLogger->set_level(spdlog::level::err);
+        //mLogger->set_level(spdlog::level::err);
     } 
     /// Sets the log level
     void setLogLevel(const Verbosity verbosity)
     {
         if (verbosity == Verbosity::DEBUG)
         {
-            mLogger->set_level(spdlog::level::debug);
+            //mLogger->set_level(spdlog::level::debug);
         }
         else if (verbosity == Verbosity::INFO)
         {
-            mLogger->set_level(spdlog::level::info);
+            //mLogger->set_level(spdlog::level::info);
         } 
         else if (verbosity == Verbosity::WARNING)
         {
-            mLogger->set_level(spdlog::level::warn);
+            //mLogger->set_level(spdlog::level::warn);
         }
         else if (verbosity == Verbosity::ERROR)
         {
-            mLogger->set_level(spdlog::level::err);
+            //mLogger->set_level(spdlog::level::err);
         }
     }
     /// Initialize travel times and set travel times around source
@@ -57,7 +58,7 @@ public:
     {
         auto verbosity = mOptions.getVerbosity();
         bool ldebug = (verbosity == Verbosity::DEBUG);
-        mLogger->debug("Initializing travel times near source.");
+        //mLogger->debug("Initializing travel times near source.");
         int nGridX = mGeometry.getNumberOfGridPointsInX();
         const auto sPtr = mVelocityModel.getSlownessPointer();
         auto sourceSlowness = static_cast<T> (sPtr[mSourceCell]);
@@ -99,8 +100,8 @@ public:
         mSolverSweep4.initializeUpdateNodes(sourceNodes, verbosity);
     }
     /// The logger
-    std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> mStdOutSink{nullptr};
-    std::shared_ptr<spdlog::logger> mLogger{nullptr};
+    //std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> mStdOutSink{nullptr};
+    //std::shared_ptr<spdlog::logger> mLogger{nullptr};
     /// The velocity model
     Model2D<T> mVelocityModel;
     /// The model geometry
@@ -208,24 +209,24 @@ void Solver2D<T>::initialize(const SolverOptions &options,
     pImpl->mTravelTimeField.resize(pImpl->mGeometry.getNumberOfGridPoints(), 0);
     pImpl->mInitialized = true;
     // Print some debug info
-    pImpl->mLogger->debug("Number of grid points in x: "
-                        + std::to_string(pImpl->mSolverSweep1.mGridX)); 
-    pImpl->mLogger->debug("Number of grid points in z: "
-                        + std::to_string(pImpl->mSolverSweep1.mGridZ));
+    //pImpl->mLogger->debug("Number of grid points in x: "
+    //                    + std::to_string(pImpl->mSolverSweep1.mGridX)); 
+    //pImpl->mLogger->debug("Number of grid points in z: "
+    //                    + std::to_string(pImpl->mSolverSweep1.mGridZ));
     if (pImpl->mSolverSweep1.mUniformGrid)
     {
-        pImpl->mLogger->debug("Uniform grid spacing of: "
-                            + std::to_string(pImpl->mSolverSweep1.mDx)
-                            + " (m)");
+        //pImpl->mLogger->debug("Uniform grid spacing of: "
+        //                     + std::to_string(pImpl->mSolverSweep1.mDx)
+        //                    + " (m)");
     }
     else
     {
-        pImpl->mLogger->debug("Grid spacing in x: "
-                            + std::to_string(pImpl->mSolverSweep1.mDx)
-                            + " (m)"); 
-        pImpl->mLogger->debug("Grid spacing in z: "
-                            + std::to_string(pImpl->mSolverSweep1.mDx)
-                            + " (m)"); 
+        //pImpl->mLogger->debug("Grid spacing in x: "
+        //                    + std::to_string(pImpl->mSolverSweep1.mDx)
+        //                    + " (m)"); 
+        //pImpl->mLogger->debug("Grid spacing in z: "
+        //                    + std::to_string(pImpl->mSolverSweep1.mDx)
+        //                    + " (m)"); 
     }
 }
 
@@ -354,7 +355,7 @@ void Solver2D<T>::setVelocityModel(const Model2D<T> &velocityModel)
         throw std::invalid_argument(
             "Velocity model's geometry does not match the solver's geometry");
     }
-    pImpl->mLogger->debug("Setting velocity model...");
+    //pImpl->mLogger->debug("Setting velocity model...");
     // Copy the velocity model
     pImpl->mVelocityModel = velocityModel;
     // Set the velocity models for each sweep
@@ -402,8 +403,8 @@ void Solver2D<T>::solve()
     timer.start();
     pImpl->initializeTravelTimes();
     timer.end();
-    pImpl->mLogger->debug("Travel time field initialization time: "
-                        + std::to_string(timer.getDuration()) + " (s)");
+    //pImpl->mLogger->debug("Travel time field initialization time: "
+    //                    + std::to_string(timer.getDuration()) + " (s)");
     // Set source information on solver
     int iSrcX = pImpl->mSource.getCellInX();
     int iSrcZ = pImpl->mSource.getCellInZ();
@@ -432,7 +433,7 @@ void Solver2D<T>::solve()
     double initializationTime = 0;
     // Perform initialization sweeps
     T *__restrict__ tTimesPtr = pImpl->mTravelTimeField.data();
-    pImpl->mLogger->debug("Initializing fast sweeping method...");
+    //pImpl->mLogger->debug("Initializing fast sweeping method...");
     timer.start(); 
     pImpl->mSolverSweep1.updateFSM(slownessPtr, tTimesPtr, initialize);
 //std::cout << "---------------------------------------------------------------" << std::endl;
@@ -442,8 +443,8 @@ void Solver2D<T>::solve()
     pImpl->mSolverSweep3.updateFSM(slownessPtr, tTimesPtr, initialize);
 //std::cout << "---------------------------------------------------------------" << std::endl;
     pImpl->mSolverSweep4.updateFSM(slownessPtr, tTimesPtr, initialize);
-    pImpl->mLogger->debug("Initialization time: "
-                        + std::to_string(timer.getDuration()) + " (s)");
+    //pImpl->mLogger->debug("Initialization time: "
+    //                    + std::to_string(timer.getDuration()) + " (s)");
     timer.end();
     initializationTime = timer.getDuration();
 
@@ -462,8 +463,8 @@ void Solver2D<T>::solve()
     }
     else // Perform level set method on device
     {
-        pImpl->mLogger->debug("Selecting queue...");
-        sycl::queue q{sycl::cpu_selector()};
+        //pImpl->mLogger->debug("Selecting queue...");
+        sycl::queue q{sycl::cpu_selector_v};
         q.wait();
         // Refinment sweeps
         timer.start(); 
@@ -478,11 +479,11 @@ void Solver2D<T>::solve()
     }
     timer.end();
     auto updateDuration = timer.getDuration();
-    pImpl->mLogger->debug("Update time: "
-                        + std::to_string(updateDuration) + " (s)");
-    pImpl->mLogger->debug("Total time: "
-                        + std::to_string(updateDuration
-                                       + initializationTime) + " (s)");
+    //pImpl->mLogger->debug("Update time: "
+    //                    + std::to_string(updateDuration) + " (s)");
+    //pImpl->mLogger->debug("Total time: "
+    //                    + std::to_string(updateDuration
+    //                                   + initializationTime) + " (s)");
     pImpl->mHaveTravelTimeField = true;
 
 /*

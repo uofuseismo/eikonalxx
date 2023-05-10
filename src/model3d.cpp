@@ -50,7 +50,7 @@ std::vector<T> interpolate3d(const size_t nGridX,
                              const EikonalXX::Ordering3D ordering)
 {
     std::vector<T> slow;
-    sycl::queue q{sycl::cpu_selector{},
+    sycl::queue q{sycl::cpu_selector_v,
                   sycl::property::queue::in_order()};
     auto workGroupSize = q.get_device().get_info<sycl::info::device::max_work_group_size> ();
     workGroupSize = static_cast<size_t> (std::cbrt(workGroupSize));
