@@ -43,6 +43,7 @@ set(LIBSRC
     src/station2d.cpp src/station3d.cpp
     src/analytic/homogeneous2d.cpp src/analytic/homogeneous3d.cpp
     src/analytic/linearGradient2d.cpp src/analytic/linearGradient3d.cpp
+    src/ray/point2d.cpp src/ray/point3d.cpp
     src/io/vtkRectilinearGrid2d.cpp src/io/vtkRectilinearGrid3d.cpp)
 
 set(BUILD_SHARED_LIBS YES)
@@ -91,6 +92,7 @@ add_executable(unitTests
                testing/analytic.cpp
                testing/solver2d.cpp
                testing/solver3d.cpp
+               testing/ray.cpp
                )
 target_link_libraries(unitTests PRIVATE eikonalxx ${GTEST_BOTH_LIBRARIES} ${TBB_LIBRARY} OpenCL pthread)
 target_include_directories(unitTests PRIVATE ${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include)
