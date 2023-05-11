@@ -19,12 +19,14 @@ class Solver2D : public EikonalXX::AbstractBaseClass::ISolver2D<T>
 public:
     /// @name Constructors
     /// @{
+
     /// @brief Constructor.
     Solver2D();
     /// @}
 
     /// @name Step 1: Initialization
     /// @{
+
     /// @brief Initializes the class.
     /// @param[in] options   Contains the solver options.
     /// @param[in] geometry  Defines the model geometry. 
@@ -46,6 +48,7 @@ public:
 
     /// @name Step 2: Velocity Model
     /// @{
+
     /// @brief Sets the velocity model.
     /// @param[in] velocityModel  The velocity model.
     /// @throws std::runtime_error if the class is not initialized.
@@ -63,6 +66,7 @@ public:
 
     /// @name Step 3: Source
     /// @{
+
     /// @brief Sets the source location.
     /// @param[in] source   A class defining the source.
     /// @throws std::invalid_argument if the source location in x and z
@@ -87,6 +91,7 @@ public:
 
     /// @name Step 4: Solve
     /// @{
+
     /// @brief Solves the eikonal equation for the given source/velocity model.
     /// @throws std::runtime_error if the source or velocity model is not set.
     /// @sa \c isInitialized(), \c haveVelocityModel(), \c haveSource()
@@ -95,6 +100,7 @@ public:
 
     /// @name Step 5: Results
     /// @{
+
     /// @result The travel times from the source to all nodes in the model in
     ///         in seconds.  This uses the natural ordering.
     /// @note This has dimension getGeometry.getNumberOfGridPoints().
@@ -111,10 +117,14 @@ public:
     [[nodiscard]] bool haveTravelTimeField() const noexcept override;
     /// @}
 
+    /// @name Destructors
+    /// @{
+
+    /// @brief Releases memory and resets the class.
+    void clear() noexcept;
     /// @brief Destructor.
     ~Solver2D();
-    /// @brief Resets the class and restores defaults.
-    void clear() noexcept;
+    /// @}
 
     // Remove some functionality.
     Solver2D(const Solver2D &solver) = delete;

@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include "eikonalxx/ray/path2d.hpp"
+#include "eikonalxx/ray/path3d.hpp"
 #include "eikonalxx/ray/point2d.hpp"
 #include "eikonalxx/ray/point3d.hpp"
 #include "eikonalxx/ray/segment2d.hpp"
@@ -147,5 +149,142 @@ TEST(Ray, Segment3D)
     EXPECT_FALSE(segment.haveVelocity());
     EXPECT_FALSE(segment.haveVelocityModelCellIndex());
 }
+
+TEST(Ray, Path2D)
+{
+    const std::vector<double> xs{0,   100, 200, 300, 400};
+    const std::vector<double> zs{150, 250, 300, 320, 333};
+    const std::vector<double> vels{500, 600, 700, 800};
+    std::vector<Ray::Segment2D> segments;
+    double travelTime = 0;
+    double length = 0;
+    for (int i = 0; i < static_cast<int> (xs.size()) - 1; ++i)
+    {
+        Ray::Point2D point0, point1;
+        auto dx = xs[i + 1] - xs[i];
+        auto dz = zs[i + 1] - zs[i];
+        travelTime = travelTime + std::sqrt(dx*dx + dz*dz)/vels[i];
+        length = length + std::sqrt(dx*dx + dz*dz);
+        point0.setPositionInX(xs[i]);
+        point0.setPositionInZ(zs[i]); 
+        point1.setPositionInX(xs[i + 1]);
+        point1.setPositionInZ(zs[i + 1]);
+        Ray::Segment2D segment;
+        segment.setStartAndEndPoint(std::pair {point0, point1});
+        EXPECT_NO_THROW(segment.setVelocity(vels.at(i)));
+        segments.push_back(std::move(segment));
+    }
+ 
+    Ray::Path2D path; 
+    path.open();
+    EXPECT_TRUE(path.isOpen());
+    for (const auto &s : segments)
+    {
+        EXPECT_NO_THROW(path.append(s));
+    }
+    EXPECT_NO_THROW(path.close());
+    EXPECT_FALSE(path.isOpen());
+    EXPECT_EQ(path.size(), segments.size()); 
+    EXPECT_NEAR(path.getTravelTime(), travelTime, 1.e-10);
+    EXPECT_NEAR(path.getLength(), length, 1.e-7);
+
+    EXPECT_NO_THROW(path.set(segments));
+    path.clear();
+    EXPECT_FALSE(path.isOpen());
+    EXPECT_NO_THROW(path.set(segments));
+    EXPECT_FALSE(path.isOpen());
+
+    Ray::Path2D copy(path);
+    EXPECT_NEAR(copy.getTravelTime(), travelTime, 1.e-10);
+    EXPECT_NEAR(copy.getLength(), length, 1.e-7);
+    int is = 0;
+    for (const auto &s : copy)
+    {
+        EXPECT_NEAR(s.getStartPoint().getPositionInX(), 
+                    segments[is].getStartPoint().getPositionInX(), 1.e-15);
+        EXPECT_NEAR(s.getStartPoint().getPositionInZ(),
+                    segments[is].getStartPoint().getPositionInZ(), 1.e-15);
+        EXPECT_NEAR(s.getEndPoint().getPositionInX(),
+                    segments[is].getEndPoint().getPositionInX(), 1.e-15);
+        EXPECT_NEAR(s.getEndPoint().getPositionInZ(), 
+                    segments[is].getEndPoint().getPositionInZ(), 1.e-15);
+        EXPECT_NEAR(s.getVelocity(),
+                    segments[is].getVelocity(), 1.e-15);
+        is = is + 1;
+    }
+}
+
+TEST(Ray, Path3D)
+{
+    const std::vector<double> xs{0,   100, 200, 300, 400};
+    const std::vector<double> ys{24,   32,  84,  96, 101};
+    const std::vector<double> zs{150, 250, 300, 320, 333};
+    const std::vector<double> vels{500, 600, 700, 800};
+    std::vector<Ray::Segment3D> segments;
+    double travelTime = 0;
+    double length = 0;
+    for (int i = 0; i < static_cast<int> (xs.size()) - 1; ++i)
+    {   
+        Ray::Point3D point0, point1;
+        auto dx = xs[i + 1] - xs[i];
+        auto dy = ys[i + 1] - ys[i];
+        auto dz = zs[i + 1] - zs[i];
+        travelTime = travelTime + std::sqrt(dx*dx + dy*dy + dz*dz)/vels[i];
+        length = length + std::sqrt(dx*dx + dy*dy + dz*dz);
+        point0.setPositionInX(xs[i]);
+        point0.setPositionInY(ys[i]); 
+        point0.setPositionInZ(zs[i]); 
+        point1.setPositionInX(xs[i + 1]);
+        point1.setPositionInY(ys[i + 1]);
+        point1.setPositionInZ(zs[i + 1]);
+        Ray::Segment3D segment;
+        segment.setStartAndEndPoint(std::pair {point0, point1});
+        EXPECT_NO_THROW(segment.setVelocity(vels.at(i)));
+        segments.push_back(std::move(segment));
+    } 
+
+    Ray::Path3D path;
+    path.open();
+    EXPECT_TRUE(path.isOpen());
+    for (const auto &s : segments)
+    {
+        EXPECT_NO_THROW(path.append(s));
+    }
+    EXPECT_NO_THROW(path.close());
+    EXPECT_FALSE(path.isOpen());
+    EXPECT_EQ(path.size(), segments.size());
+    EXPECT_NEAR(path.getTravelTime(), travelTime, 1.e-10);
+    EXPECT_NEAR(path.getLength(), length, 1.e-7);
+
+    EXPECT_NO_THROW(path.set(segments));
+    path.clear();
+    EXPECT_FALSE(path.isOpen());
+    EXPECT_NO_THROW(path.set(segments));
+    EXPECT_FALSE(path.isOpen());
+
+    Ray::Path3D copy(path);
+    EXPECT_NEAR(copy.getTravelTime(), travelTime, 1.e-10);
+    EXPECT_NEAR(copy.getLength(), length, 1.e-7);
+    int is = 0;
+    for (const auto &s : copy)
+    {
+        EXPECT_NEAR(s.getStartPoint().getPositionInX(),
+                    segments[is].getStartPoint().getPositionInX(), 1.e-15);
+        EXPECT_NEAR(s.getStartPoint().getPositionInY(),
+                    segments[is].getStartPoint().getPositionInY(), 1.e-15);
+        EXPECT_NEAR(s.getStartPoint().getPositionInZ(),
+                    segments[is].getStartPoint().getPositionInZ(), 1.e-15);
+        EXPECT_NEAR(s.getEndPoint().getPositionInX(),
+                    segments[is].getEndPoint().getPositionInX(), 1.e-15);
+        EXPECT_NEAR(s.getEndPoint().getPositionInY(),
+                    segments[is].getEndPoint().getPositionInY(), 1.e-15);
+        EXPECT_NEAR(s.getEndPoint().getPositionInZ(),
+                    segments[is].getEndPoint().getPositionInZ(), 1.e-15);
+        EXPECT_NEAR(s.getVelocity(),
+                    segments[is].getVelocity(), 1.e-15);
+        is = is + 1;
+    }
+}
+
 
 }

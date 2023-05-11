@@ -1,21 +1,9 @@
 #include <cmath>
 #include "eikonalxx/ray/segment3d.hpp"
 #include "eikonalxx/ray/point3d.hpp"
+#include "length.hpp"
 
 using namespace EikonalXX::Ray;
-
-namespace
-{
-
-double computeLength(const Point3D &a, const Point3D &b)
-{
-    auto dx = b.getPositionInX() - a.getPositionInX();
-    auto dy = b.getPositionInY() - a.getPositionInY();
-    auto dz = b.getPositionInZ() - a.getPositionInZ();
-    return std::sqrt(dx*dx + dy*dy + dz*dz);
-}
-
-}
 
 class Segment3D::Segment3DImpl
 {

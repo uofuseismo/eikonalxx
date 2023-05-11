@@ -43,6 +43,7 @@ set(LIBSRC
     src/station2d.cpp src/station3d.cpp
     src/analytic/homogeneous2d.cpp src/analytic/homogeneous3d.cpp
     src/analytic/linearGradient2d.cpp src/analytic/linearGradient3d.cpp
+    src/ray/path2d.cpp src/ray/path3d.cpp
     src/ray/point2d.cpp src/ray/point3d.cpp
     src/ray/segment2d.cpp src/ray/segment3d.cpp
     src/io/vtkRectilinearGrid2d.cpp src/io/vtkRectilinearGrid3d.cpp)

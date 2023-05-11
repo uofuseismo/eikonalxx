@@ -1,20 +1,9 @@
 #include <cmath>
 #include "eikonalxx/ray/segment2d.hpp"
 #include "eikonalxx/ray/point2d.hpp"
+#include "length.hpp"
 
 using namespace EikonalXX::Ray;
-
-namespace
-{
-
-double computeLength(const Point2D &a, const Point2D &b)
-{
-    auto dx = b.getPositionInX() - a.getPositionInX();
-    auto dz = b.getPositionInZ() - a.getPositionInZ();
-    return std::hypot(dx, dz);
-}
-
-}
 
 class Segment2D::Segment2DImpl
 {
