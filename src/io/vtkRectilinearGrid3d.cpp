@@ -8,6 +8,9 @@
 #include <cstdint>
 #include "eikonalxx/io/vtkRectilinearGrid3d.hpp"
 #include "eikonalxx/geometry3d.hpp"
+#include "eikonalxx/ray/path2d.hpp"
+#include "eikonalxx/ray/segment2d.hpp"
+#include "eikonalxx/ray/point2d.hpp"
 #include "private/grid.hpp"
 #include "private/pack.hpp"
 
@@ -18,8 +21,8 @@ class VTKRectilinearGrid3D::VTKRectilinearGrid3DImpl
 public:
     std::fstream mFile;
     EikonalXX::Geometry3D mGeometry;
-    bool mHaveGeometry = false;
-    bool mWriteBinary = true;
+    bool mHaveGeometry{false};
+    bool mWriteBinary{true};
 };
 
 /// C'tor

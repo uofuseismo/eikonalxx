@@ -115,6 +115,33 @@ public:
     /// @result True indicates that \c solve() has been called and the travel
     ///         time field is available.
     [[nodiscard]] bool haveTravelTimeField() const noexcept override;
+
+    /// @result The gradient of the travel time field in x in seconds/meter.
+    ///         This uses the natural ordering.
+    /// @note This has dimension getGeometry.getNumberOfGridPoints().
+    /// @sa \c Ordering2D, \c haveTravelTimeGradientField(), \c getGeometry()
+    [[nodiscard]] std::vector<T> getTravelTimeGradientFieldInX() const override;
+    /// @result A reference to the gradient of the travel time field in x
+    ///         in seconds/meter.  This uses the natural ordering and
+    ///         has dimension [getGeometry.getNumberOfGridPoints()].
+    /// @throws std::runtime_error if \c haveTravelTimeGradientField() is false.
+    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
+    [[nodiscard]] const T *getTravelTimeGradientFieldInXPointer() const override;
+
+    /// @result The gradient of the travel time field in z in seconds/meter.
+    ///         This uses the natural ordering.
+    /// @note This has dimension getGeometry.getNumberOfGridPoints().
+    /// @sa \c Ordering2D, \c haveTravelGradientTimeField(), \c getGeometry()
+    [[nodiscard]] std::vector<T> getTravelTimeGradientFieldInZ() const override;
+    /// @result A reference to the gradient of the travel time field in z
+    ///         in seconds/meter.  This uses the natural ordering and
+    ///         has dimension [getGeometry.getNumberOfGridPoints()].
+    /// @throws std::runtime_error if \c haveTravelTimeGradientField() is false.
+    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
+    [[nodiscard]] const T *getTravelTimeGradientFieldInZPointer() const override;
+
+    /// @result True indicates the travel time field's gradient was computed.
+    [[nodiscard]] bool haveTravelTimeGradientField() const noexcept override;
     /// @}
 
     /// @name Destructors
@@ -123,7 +150,7 @@ public:
     /// @brief Releases memory and resets the class.
     void clear() noexcept;
     /// @brief Destructor.
-    ~Solver2D();
+    ~Solver2D() override;
     /// @}
 
     // Remove some functionality.

@@ -125,8 +125,12 @@ public:
     EikonalXX::Geometry3D mGeometry;
     EikonalXX::Source3D mSource;
     std::vector<T> mTravelTimeField; 
+    std::vector<T> mTravelTimeGradientInXField;
+    std::vector<T> mTravelTimeGradientInYField;
+    std::vector<T> mTravelTimeGradientInZField;
     std::pair<double, double> mVelocity{0, 0};
     bool mHaveTravelTimeField{false};
+    bool mHaveTravelTimeGradientField{false};
     bool mHaveSource{false};
     bool mInitialized{false};
 };
@@ -160,8 +164,12 @@ void LinearGradient3D<T>::clear() noexcept
     pImpl->mGeometry.clear();
     pImpl->mSource.clear();
     pImpl->mTravelTimeField.clear();
+    pImpl->mTravelTimeGradientInXField.clear();
+    pImpl->mTravelTimeGradientInYField.clear();
+    pImpl->mTravelTimeGradientInZField.clear();
     pImpl->mVelocity = std::pair<double, double> {0, 0};
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     pImpl->mHaveSource = false;
     pImpl->mInitialized = false;
 }
@@ -238,6 +246,7 @@ void LinearGradient3D<T>::setSource(const EikonalXX::Source3D &source)
 {
     pImpl->mHaveSource = false;
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     if (!source.haveLocationInX())
     {
@@ -262,6 +271,7 @@ void LinearGradient3D<T>::setSource(
 {
     pImpl->mHaveSource = false; 
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     auto dx = pImpl->mGeometry.getGridSpacingInX();
     auto dy = pImpl->mGeometry.getGridSpacingInY();
@@ -332,6 +342,8 @@ void LinearGradient3D<T>::setVelocityModel(
     const std::pair<double, double> &velocity)
 {
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
+    pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (velocity.first <= 0)
     {
         throw std::invalid_argument("velocity.first = "
@@ -408,6 +420,73 @@ const T* LinearGradient3D<T>::getTravelTimeFieldPointer() const
         throw std::runtime_error("Travel time field not yet computed");
     }
     return pImpl->mTravelTimeField.data();
+}
+
+/// Have gradient fields?
+template<class T>
+bool LinearGradient3D<T>::haveTravelTimeGradientField() const noexcept
+{
+    return pImpl->mHaveTravelTimeGradientField;
+}
+
+template<class T>
+std::vector<T> LinearGradient3D<T>::getTravelTimeGradientFieldInX() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInXField;
+}
+
+template<class T>
+const T* LinearGradient3D<T>::getTravelTimeGradientFieldInXPointer() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInXField.data();
+}
+
+template<class T>
+std::vector<T> LinearGradient3D<T>::getTravelTimeGradientFieldInY() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInYField;
+}
+
+template<class T>
+const T* LinearGradient3D<T>::getTravelTimeGradientFieldInYPointer() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInYField.data();
+}
+
+template<class T>
+std::vector<T> LinearGradient3D<T>::getTravelTimeGradientFieldInZ() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInZField;
+}
+
+template<class T>
+const T* LinearGradient3D<T>::getTravelTimeGradientFieldInZPointer() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInZField.data();
 }
 
 /// Write the travel time field

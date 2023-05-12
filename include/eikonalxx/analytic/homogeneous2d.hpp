@@ -99,6 +99,9 @@ public:
     /// @throws std::runtime_error if the source or velocity model is not set.
     /// @sa \c isInitialized(), \c haveVelocityModel(), \c haveSource()
     void solve();
+    /// @brief Computes the gradient travel time field.
+    /// @throws std::runtime_error if the source or velocity model is not set.
+    void computeTravelTimeGradientField();
     /// @}
 
     /// @name Step 5: Results
@@ -119,14 +122,46 @@ public:
     ///         time field is available.
     [[nodiscard]] bool haveTravelTimeField() const noexcept override;
 
+    /// @result The gradient of the travel time field in x in seconds/meter.
+    ///         This uses the natural ordering.
+    /// @note This has dimension getGeometry.getNumberOfGridPoints().
+    /// @sa \c Ordering2D, \c haveTravelTimeField(), \c getGeometry()
+    [[nodiscard]] std::vector<T> getTravelTimeGradientFieldInX() const override;
+    /// @result A reference to the gradient of the travel time field in x
+    ///         in seconds/meter.  This uses the natural ordering and
+    ///         has dimension [getGeometry.getNumberOfGridPoints()].
+    /// @throws std::runtime_error if \c haveTravelTimeGradientField() is false.
+    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
+    [[nodiscard]] const T *getTravelTimeGradientFieldInXPointer() const override;
+
+    /// @result The gradient of the travel time field in z in seconds/meter.
+    ///         This uses the natural ordering.
+    /// @note This has dimension getGeometry.getNumberOfGridPoints().
+    /// @sa \c Ordering2D, \c haveTravelTimeField(), \c getGeometry()
+    [[nodiscard]] std::vector<T> getTravelTimeGradientFieldInZ() const override;
+    /// @result A reference to the gradient of the travel time field in z
+    ///         in seconds/meter.  This uses the natural ordering and
+    ///         has dimension [getGeometry.getNumberOfGridPoints()].
+    /// @throws std::runtime_error if \c haveTravelTimeGradientField() is false.
+    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
+    [[nodiscard]] const T *getTravelTimeGradientFieldInZPointer() const override;
+
+    /// @result True indicates the travel time field's gradient was computed.
+    [[nodiscard]] bool haveTravelTimeGradientField() const noexcept override;
+
     /// @brief Writes the travel time field to VTK.
     /// @param[in] fileName  The name of the VTK file.
     /// @param[in] title     The dataset's title.
+    /// @param[in] writeGradient  If true then also write the gradient of the
+    ///                           travel time field.
     /// @throws std::runtime_error if \c haveTravelTimeField() is false.
+    ///         Additionally, this throws if writeGradient is true and
+    ///         \c haveGradientTravelTimefield() is false.
     /// @throws std::invalid_argument if there is an error while opening the
     ///         output file.
     void writeVTK(const std::string &fileName,
-                  const std::string &title = "homogeneous_analytic_traveltime_field") const;
+                  const std::string &title = "homogeneous_analytic_traveltime_field",
+                  bool writeGradient = false) const;
     /// @}
 
     /// @name Destructors
@@ -135,7 +170,7 @@ public:
     /// @brief Releases all memory and resets the class.
     void clear() noexcept;
     /// @brief Destructor.
-    ~Homogeneous2D();
+    ~Homogeneous2D() override;
     /// @}
 private:
     class Homogeneous2DImpl;

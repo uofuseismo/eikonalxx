@@ -117,6 +117,9 @@ public:
     Solver2DSweep<T, SweepNumber2D::Sweep4> mSolverSweep4;
     /// The travel time field.
     std::vector<T> mTravelTimeField;
+    /// The gradient of the travel time field.
+    std::vector<T> mTravelTimeGradientInXField;
+    std::vector<T> mTravelTimeGradientInZField;
     /// The source location
     //std::pair<double, double> mSourceLocation{0, 0};
     /// The shifted source location in (x,z).  This is useful to the solver.
@@ -126,17 +129,19 @@ public:
     /// The source cell index in z.
     //int mSourceCellZ = 0;
     /// The source cell - this is used to extract the slowness at the source.
-    int mSourceCell = 0;
+    int mSourceCell{0};
     /// Initialized?
-    bool mInitialized = false;
+    bool mInitialized{false};
     /// Have velocity model?
-    bool mHaveVelocityModel = false;
+    bool mHaveVelocityModel{false};
     /// Have travel time field?
-    bool mHaveTravelTimeField = false;
+    bool mHaveTravelTimeField{false};
+    /// Have the gradient of travel time field?
+    bool mHaveTravelTimeGradientField{false};
     /// Uniform grid?
-    bool mUniformGrid = false;
+    bool mUniformGrid{false};
     /// Have the source?
-    bool mHaveSource = false;
+    bool mHaveSource{false};
 };
 
 /// C'tor
@@ -163,6 +168,8 @@ void Solver2D<T>::clear() noexcept
     pImpl->mSolverSweep3.clear();
     pImpl->mSolverSweep4.clear();
     pImpl->mTravelTimeField.clear();
+    pImpl->mTravelTimeGradientInXField.clear();
+    pImpl->mTravelTimeGradientInZField.clear();
     //pImpl->mSourceLocation = std::make_pair<double, double> (0, 0);
     //pImpl->mShiftedSource = std::make_pair<T, T> (0, 0);
     //pImpl->mSourceCellX = 0;
@@ -171,6 +178,7 @@ void Solver2D<T>::clear() noexcept
     pImpl->mHaveVelocityModel = false;
     pImpl->mHaveSource = false;
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     pImpl->mUniformGrid = false;
     pImpl->mInitialized = false;
 }
@@ -258,6 +266,7 @@ void Solver2D<T>::setSource(const Source2D &source)
 {
     pImpl->mHaveSource = false;
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     if (!source.haveLocationInX())
     {
@@ -281,6 +290,7 @@ void Solver2D<T>::setSource(const std::pair<double, double> &sourceLocation)
 {
     pImpl->mHaveSource = false;
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     auto dx = pImpl->mGeometry.getGridSpacingInX(); 
     auto dz = pImpl->mGeometry.getGridSpacingInZ();
@@ -342,6 +352,7 @@ void Solver2D<T>::setVelocityModel(const Model2D<T> &velocityModel)
 {
     pImpl->mHaveVelocityModel = false;
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (!isInitialized())
     {
         throw std::runtime_error("Class not initialized");
@@ -389,6 +400,7 @@ template<class T>
 void Solver2D<T>::solve()
 {
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     if (!haveVelocityModel())
     {
@@ -807,6 +819,53 @@ template<class T>
 bool Solver2D<T>::haveTravelTimeField() const noexcept
 {
     return pImpl->mHaveTravelTimeField;
+}
+
+/// Have gradient fields?
+template<class T>
+bool Solver2D<T>::haveTravelTimeGradientField() const noexcept
+{
+    return pImpl->mHaveTravelTimeGradientField;
+}
+
+template<class T>
+std::vector<T> Solver2D<T>::getTravelTimeGradientFieldInX() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInXField;
+}
+
+template<class T>
+const T* Solver2D<T>::getTravelTimeGradientFieldInXPointer() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInXField.data();
+}
+
+template<class T>
+std::vector<T> Solver2D<T>::getTravelTimeGradientFieldInZ() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInZField;
+}
+
+template<class T>
+const T* Solver2D<T>::getTravelTimeGradientFieldInZPointer() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInZField.data();
 }
 
 ///--------------------------------------------------------------------------///

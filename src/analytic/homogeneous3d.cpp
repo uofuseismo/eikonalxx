@@ -83,8 +83,12 @@ public:
     EikonalXX::Geometry3D mGeometry;
     EikonalXX::Source3D mSource;
     std::vector<T> mTravelTimeField; 
+    std::vector<T> mTravelTimeGradientInXField;
+    std::vector<T> mTravelTimeGradientInYField;
+    std::vector<T> mTravelTimeGradientInZField;
     double mVelocity{0};
     bool mHaveTravelTimeField{false};
+    bool mHaveTravelTimeGradientField{false};
     bool mHaveSource{false};
     bool mInitialized{false};
 };
@@ -118,8 +122,12 @@ void Homogeneous3D<T>::clear() noexcept
     pImpl->mGeometry.clear();
     pImpl->mSource.clear();
     pImpl->mTravelTimeField.clear();
+    pImpl->mTravelTimeGradientInXField.clear();
+    pImpl->mTravelTimeGradientInYField.clear();
+    pImpl->mTravelTimeGradientInZField.clear();
     pImpl->mVelocity = 0;
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     pImpl->mHaveSource = false;
     pImpl->mInitialized = false;
 }
@@ -287,6 +295,8 @@ template<class T>
 void Homogeneous3D<T>::setVelocityModel(const double velocity)
 {
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
+    pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (velocity <= 0)
     {
         throw std::invalid_argument("Velocity = " + std::to_string(velocity)
@@ -356,6 +366,73 @@ const T* Homogeneous3D<T>::getTravelTimeFieldPointer() const
         throw std::runtime_error("Travel time field not yet computed");
     }
     return pImpl->mTravelTimeField.data();
+}
+
+/// Have gradient fields?
+template<class T>
+bool Homogeneous3D<T>::haveTravelTimeGradientField() const noexcept
+{
+    return pImpl->mHaveTravelTimeGradientField;
+}
+
+template<class T>
+std::vector<T> Homogeneous3D<T>::getTravelTimeGradientFieldInX() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInXField;
+}
+
+template<class T>
+const T* Homogeneous3D<T>::getTravelTimeGradientFieldInXPointer() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInXField.data();
+}
+
+template<class T>
+std::vector<T> Homogeneous3D<T>::getTravelTimeGradientFieldInY() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInYField;
+}
+
+template<class T>
+const T* Homogeneous3D<T>::getTravelTimeGradientFieldInYPointer() const
+{
+    if (!haveTravelTimeGradientField())
+    {   
+         throw std::runtime_error("Travel time gradient field not computed");
+    }   
+    return pImpl->mTravelTimeGradientInYField.data();
+}
+
+template<class T>
+std::vector<T> Homogeneous3D<T>::getTravelTimeGradientFieldInZ() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInZField;
+}
+
+template<class T>
+const T* Homogeneous3D<T>::getTravelTimeGradientFieldInZPointer() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInZField.data();
 }
 
 /// Write the travel time field

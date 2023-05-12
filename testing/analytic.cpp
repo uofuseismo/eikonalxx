@@ -57,7 +57,7 @@ TEST(Analytic, Homogeneous2D)
         }
     } 
     EXPECT_NEAR(dtMax, 0, 1.e-15);
-}     
+}
 
 TEST(Analytic, Homogeneous3D)
 {

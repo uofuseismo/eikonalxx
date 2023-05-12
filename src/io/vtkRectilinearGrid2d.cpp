@@ -7,6 +7,9 @@
 #include <cstdint>
 #include "eikonalxx/io/vtkRectilinearGrid2d.hpp"
 #include "eikonalxx/geometry2d.hpp"
+#include "eikonalxx/ray/path2d.hpp"
+#include "eikonalxx/ray/segment2d.hpp"
+#include "eikonalxx/ray/point2d.hpp"
 #include "private/pack.hpp"
 #include "private/grid.hpp"
 
@@ -17,8 +20,8 @@ class VTKRectilinearGrid2D::VTKRectilinearGrid2DImpl
 public:
     std::fstream mFile;
     EikonalXX::Geometry2D mGeometry;
-    bool mHaveGeometry = false;
-    bool mWriteBinary = true;
+    bool mHaveGeometry{false};
+    bool mWriteBinary{true};
 };
 
 /// C'tor

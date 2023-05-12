@@ -19,6 +19,7 @@ class Homogeneous3D : public EikonalXX::AbstractBaseClass::ISolver3D<T>
 public:
     /// @name Constructor
     /// @{
+
     /// @brief Constructor.
     Homogeneous3D(); 
     /// @brief Copy constructor.
@@ -29,6 +30,7 @@ public:
 
     /// @name Operators
     /// @{
+
     /// @brief Copy assignment.
     /// @param[in] solver  The 3D homogeneous analytic solver to copy to this.
     /// @result A deep copy of the input solver.
@@ -41,9 +43,9 @@ public:
     Homogeneous3D& operator=(Homogeneous3D &&solver) noexcept;
     /// @}
 
-    /// @}
     /// @name Step 1: Initialization
     /// @{
+
     /// @brief Initializes the class.
     void initialize(const EikonalXX::Geometry3D &geometry);
     /// @result True indicates that the class is initialized.
@@ -55,6 +57,7 @@ public:
     
     /// @name Step 2: Velocity Model
     /// @{
+
     /// @brief Sets the constant velocity model.
     /// @param[in] velocity   The velocity in m/s.
     /// @throws std::invalid_argument if velocity is not positive.
@@ -65,6 +68,7 @@ public:
 
     /// @name Step 3: Source
     /// @{
+
     /// @brief Sets the source location.
     /// @param[in] source   A class defining the source.
     /// @throws std::invalid_argument if the source location in x and z
@@ -91,6 +95,7 @@ public:
 
     /// @name Step 4: Solve
     /// @{
+
     /// @brief Solves the eikonal equation for the given source/velocity model.
     /// @throws std::runtime_error if the source or velocity model is not set.
     /// @sa \c isInitialized(), \c haveVelocityModel(), \c haveSource()
@@ -99,20 +104,61 @@ public:
 
     /// @name Step 5: Results
     /// @{
+
     /// @result The travel times from the source to all nodes in the model in
     ///         in seconds.  This uses the natural ordering.
     /// @note This has dimension getGeometry.getNumberOfGridPoints().
     /// @sa \c Ordering3D, \c haveTravelTimeField(), \c getGeometry()
-    [[nodiscard]] std::vector<T> getTravelTimeField() const;
+    [[nodiscard]] std::vector<T> getTravelTimeField() const override;
     /// @result A pointer to the travel time field at all nodes in the model
     ///         in seconds.   This uses the natural ordering and
     ///         has dimension [getGeometry.getNumberOfGridPoints()].
     /// @throws std::runtime_error if \c haveTravelTimeField() is false.
     /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering3D
-    [[nodiscard]] const T* getTravelTimeFieldPointer() const;
+    [[nodiscard]] const T* getTravelTimeFieldPointer() const override;
     /// @result True indicates that \c solve() has been called and the travel
     ///         time field is available.
-    [[nodiscard]] bool haveTravelTimeField() const noexcept;
+    [[nodiscard]] bool haveTravelTimeField() const noexcept override;
+
+    /// @result The gradient of the travel time field in x in seconds/meter.
+    ///         This uses the natural ordering.
+    /// @note This has dimension getGeometry.getNumberOfGridPoints().
+    /// @sa \c Ordering2D, \c haveTravelTimeField(), \c getGeometry()
+    [[nodiscard]] std::vector<T> getTravelTimeGradientFieldInX() const override;
+    /// @result A reference to the gradient of the travel time field in x
+    ///         in seconds/meter.  This uses the natural ordering and
+    ///         has dimension [getGeometry.getNumberOfGridPoints()].
+    /// @throws std::runtime_error if \c haveTravelTimeGradientField() is false.
+    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
+    [[nodiscard]] const T *getTravelTimeGradientFieldInXPointer() const override;
+
+    /// @result The gradient of the travel time field in y in seconds/meter.
+    ///         This uses the natural ordering.
+    /// @note This has dimension getGeometry.getNumberOfGridPoints().
+    /// @sa \c Ordering2D, \c haveTravelTimeField(), \c getGeometry()
+    [[nodiscard]] std::vector<T> getTravelTimeGradientFieldInY() const override;
+    /// @result A reference to the gradient of the travel time field in y
+    ///         in seconds/meter.  This uses the natural ordering and
+    ///         has dimension [getGeometry.getNumberOfGridPoints()].
+    /// @throws std::runtime_error if \c haveTravelTimeGradientField() is false.
+    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
+    [[nodiscard]] const T *getTravelTimeGradientFieldInYPointer() const override;
+
+    /// @result The gradient of the travel time field in z in seconds/meter.
+    ///         This uses the natural ordering.
+    /// @note This has dimension getGeometry.getNumberOfGridPoints().
+    /// @sa \c Ordering2D, \c haveTravelTimeField(), \c getGeometry()
+    [[nodiscard]] std::vector<T> getTravelTimeGradientFieldInZ() const override;
+    /// @result A reference to the gradient of the travel time field in z
+    ///         in seconds/meter.  This uses the natural ordering and
+    ///         has dimension [getGeometry.getNumberOfGridPoints()].
+    /// @throws std::runtime_error if \c haveTravelTimeGradientField() is false.
+    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
+    [[nodiscard]] const T *getTravelTimeGradientFieldInZPointer() const override;
+
+    /// @result True indicates the travel time field's gradient was computed.
+    [[nodiscard]] bool haveTravelTimeGradientField() const noexcept override;
+
     /// @brief Writes the travel time field to VTK.
     /// @param[in] fileName  The name of the VTK file.
     /// @param[in] title     The dataset's title.
@@ -125,10 +171,11 @@ public:
 
     /// @name Destructors
     /// @{
+
     /// @brief Releases all memory and resets the class.
     void clear() noexcept;
     /// @brief Destructor.
-    ~Homogeneous3D();
+    ~Homogeneous3D() override;
     /// @}
 private:
     class Homogeneous3DImpl;

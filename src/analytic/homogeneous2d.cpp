@@ -9,7 +9,7 @@
 namespace
 {
 /// Solves the eikonal equation in a 2D homogeneous medium.
-template<class T>
+template<typename T>
 void solve2d(const size_t nGridX, const size_t nGridZ,
              const double xSrcOffset, const double zSrcOffset,
              const double dx, const double dz,
@@ -64,6 +64,78 @@ void solve2d(const size_t nGridX, const size_t nGridZ,
     // Release memory
     sycl::free(travelTimesDevice, q);
 }
+
+template<typename T>
+void gradient2d(const size_t nGridX, const size_t nGridZ,
+                const double xSrcOffset, const double zSrcOffset,
+                const double dx, const double dz, 
+                const double vel,
+                std::vector<T> *gradientInX,
+                std::vector<T> *gradientInZ)
+{
+    sycl::queue q{sycl::cpu_selector_v,
+                  sycl::property::queue::in_order()};
+    auto workGroupSize = q.get_device().get_info<sycl::info::device::max_work_group_size> (); 
+    workGroupSize = static_cast<size_t> (std::sqrt(workGroupSize));
+    // Figure out sizes and allocate space 
+    auto nGrid = nGridX*nGridZ;
+    auto xGradientDevice = sycl::malloc_device<T> (nGrid, q); 
+    auto zGradientDevice = sycl::malloc_device<T> (nGrid, q);
+    // Determine ranges (with tiling)
+    sycl::range global{nGridX, nGridZ};
+    auto nTileX = std::min(workGroupSize, nGridX);
+    auto nTileZ = std::min(workGroupSize, nGridZ);
+    sycl::range local{nTileX, nTileZ};
+    // Simplify some geometric terms
+    auto xShiftedSource = static_cast<T> (xSrcOffset);
+    auto zShiftedSource = static_cast<T> (zSrcOffset);
+    auto hx = static_cast<T> (dx);
+    auto hz = static_cast<T> (dz);
+    auto slowness = static_cast<T> (1./vel); // Do division here
+    // Compute L2 distance from the source to each point in grid
+    // and scale by slowness.
+    auto eGradient = q.submit([&](sycl::handler &h) 
+    {
+        h.parallel_for(sycl::nd_range{global, local},
+                       [=](sycl::nd_item<2> it) 
+        {
+            size_t ix = it.get_global_id(0);
+            size_t iz = it.get_global_id(1);
+            auto idst = ::gridToIndex(nGridX, ix, iz);
+            T delX = xShiftedSource - ix*hx;
+            T delZ = zShiftedSource - iz*hz;
+            // Let this thing safely go to zero 
+            T distance = std::max(std::numeric_limits<T>::epsilon(),
+                                  sycl::hypot(delX, delZ));
+            T invDistanceSlowness = slowness/distance;
+            // Analytic expression for gradient
+            xGradientDevice[idst] = delX*invDistanceSlowness;
+            zGradientDevice[idst] = delZ*invDistanceSlowness;
+        });
+    });
+    // Return slowness field to host
+    if (gradientInX->size() != nGrid)
+    {
+        gradientInX->resize(nGrid, 0); 
+    }
+    if (gradientInZ->size() != nGrid)
+    {
+        gradientInZ->resize(nGrid, 0);
+    }
+    auto xGradientPtr = gradientInX->data();
+    auto zGradientPtr = gradientInZ->data();
+    q.submit([&](sycl::handler &h) 
+    {
+        h.depends_on(eGradient);
+        h.memcpy(xGradientPtr, xGradientDevice, nGrid*sizeof(T));
+        h.memcpy(zGradientPtr, zGradientDevice, nGrid*sizeof(T));
+    }); 
+    q.wait();
+    // Release memory
+    sycl::free(xGradientDevice, q); 
+    sycl::free(zGradientDevice, q);
+}
+
 }
 
 using namespace EikonalXX::Analytic;
@@ -75,8 +147,11 @@ public:
     EikonalXX::Geometry2D mGeometry;
     EikonalXX::Source2D mSource;
     std::vector<T> mTravelTimeField; 
+    std::vector<T> mTravelTimeGradientInXField;
+    std::vector<T> mTravelTimeGradientInZField;
     double mVelocity{0};
     bool mHaveTravelTimeField{false};
+    bool mHaveTravelTimeGradientField{false};
     bool mHaveSource{false};
     bool mInitialized{false}; 
 };
@@ -110,8 +185,11 @@ void Homogeneous2D<T>::clear() noexcept
     pImpl->mGeometry.clear();
     pImpl->mSource.clear();
     pImpl->mTravelTimeField.clear();
+    pImpl->mTravelTimeGradientInXField.clear();
+    pImpl->mTravelTimeGradientInZField.clear();
     pImpl->mVelocity = 0;
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     pImpl->mHaveSource = false;
     pImpl->mInitialized = false;
 }
@@ -178,6 +256,7 @@ void Homogeneous2D<T>::setSource(const EikonalXX::Source2D &source)
 {
     pImpl->mHaveSource = false;
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     if (!source.haveLocationInX())
     {   
@@ -198,6 +277,7 @@ void Homogeneous2D<T>::setSource(
 {
     pImpl->mHaveSource = false; 
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     auto dx = pImpl->mGeometry.getGridSpacingInX();
     auto dz = pImpl->mGeometry.getGridSpacingInZ();
@@ -252,6 +332,8 @@ template<class T>
 void Homogeneous2D<T>::setVelocityModel(const double velocity)
 {
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
+    pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (velocity <= 0)
     {
         throw std::invalid_argument("Velocity = " + std::to_string(velocity)
@@ -285,9 +367,37 @@ void Homogeneous2D<T>::solve()
     auto xSrcOffset = pImpl->mSource.getOffsetInX();
     auto zSrcOffset = pImpl->mSource.getOffsetInZ();
     // Solve it
-    ::solve2d(nx, nz, xSrcOffset, zSrcOffset, dx, dz, pImpl->mVelocity,
+    ::solve2d(nx, nz,
+              xSrcOffset, zSrcOffset,
+              dx, dz,
+              pImpl->mVelocity,
               &pImpl->mTravelTimeField);
     pImpl->mHaveTravelTimeField = true;
+}
+
+template<class T>
+void Homogeneous2D<T>::computeTravelTimeGradientField()
+{
+    if (!isInitialized()){throw std::runtime_error("Class not initialized");}
+    if (!haveSource()){throw std::runtime_error("Source not yet set");}
+    if (!haveVelocityModel())
+    {
+        throw std::runtime_error("Velocity model not set");
+    }
+    auto nx = static_cast<size_t> (pImpl->mGeometry.getNumberOfGridPointsInX());
+    auto nz = static_cast<size_t> (pImpl->mGeometry.getNumberOfGridPointsInZ());
+    auto dx = pImpl->mGeometry.getGridSpacingInX();
+    auto dz = pImpl->mGeometry.getGridSpacingInZ();
+    auto xSrcOffset = pImpl->mSource.getOffsetInX();
+    auto zSrcOffset = pImpl->mSource.getOffsetInZ();
+    // Compute gradient
+    ::gradient2d(nx, nz,
+                 xSrcOffset, zSrcOffset,
+                 dx, dz,
+                 pImpl->mVelocity,
+                 &pImpl->mTravelTimeGradientInXField,
+                 &pImpl->mTravelTimeGradientInZField);
+    pImpl->mHaveTravelTimeGradientField = true; 
 }
 
 /// Have travel time field?
@@ -317,12 +427,66 @@ const T* Homogeneous2D<T>::getTravelTimeFieldPointer() const
     return pImpl->mTravelTimeField.data();
 }
 
+/// Have gradient fields?
+template<class T>
+bool Homogeneous2D<T>::haveTravelTimeGradientField() const noexcept
+{
+    return pImpl->mHaveTravelTimeGradientField;
+}
+
+template<class T>
+std::vector<T> Homogeneous2D<T>::getTravelTimeGradientFieldInX() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInXField;
+}
+
+template<class T>
+const T* Homogeneous2D<T>::getTravelTimeGradientFieldInXPointer() const
+{
+    if (!haveTravelTimeGradientField())
+    {   
+         throw std::runtime_error("Travel time gradient field not computed");
+    }   
+    return pImpl->mTravelTimeGradientInXField.data();
+}
+
+template<class T>
+std::vector<T> Homogeneous2D<T>::getTravelTimeGradientFieldInZ() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInZField;
+}
+
+template<class T>
+const T* Homogeneous2D<T>::getTravelTimeGradientFieldInZPointer() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInZField.data();
+}
+
+
 /// Write the travel time field
 template<class T>
 void Homogeneous2D<T>::writeVTK(const std::string &fileName,
-                                const std::string &title) const
+                                const std::string &title,
+                                const bool writeGradient) const
 {
+    T *gradientPtrInX = nullptr;
+    T *gradientPtrInZ = nullptr;
     auto tPtr = getTravelTimeFieldPointer(); // Throws
+    if (writeGradient)
+    {
+    }
     IO::VTKRectilinearGrid2D vtkWriter;
     constexpr bool writeBinary = true;
     vtkWriter.open(fileName, pImpl->mGeometry, title, writeBinary); 

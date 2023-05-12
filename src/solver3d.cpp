@@ -93,12 +93,16 @@ public:
     Geometry3D mGeometry;
     Source3D mSource;
     SolverOptions mOptions;
-    std::vector<T> mTravelTimeField; 
-    int mSourceCell = 0;
-    bool mHaveTravelTimeField = false;
-    bool mHaveVelocityModel = false;
-    bool mHaveSource = false;
-    bool mInitialized = false;
+    std::vector<T> mTravelTimeField;
+    std::vector<T> mTravelTimeGradientInXField;
+    std::vector<T> mTravelTimeGradientInYField;
+    std::vector<T> mTravelTimeGradientInZField;
+    int mSourceCell{0};
+    bool mHaveTravelTimeField{false};
+    bool mHaveTravelTimeGradientField{false};
+    bool mHaveVelocityModel{false};
+    bool mHaveSource{false};
+    bool mInitialized{false};
 };
 
 /// C'tor 
@@ -130,8 +134,12 @@ void Solver3D<T>::clear() noexcept
     pImpl->mGeometry.clear();
     pImpl->mOptions.clear();
     pImpl->mTravelTimeField.clear();
+    pImpl->mTravelTimeGradientInXField.clear();
+    pImpl->mTravelTimeGradientInYField.clear();
+    pImpl->mTravelTimeGradientInZField.clear();
     pImpl->mSourceCell = 0;
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     pImpl->mHaveVelocityModel = false;
     pImpl->mHaveSource = false;
     pImpl->mInitialized = false;
@@ -199,6 +207,7 @@ void Solver3D<T>::setVelocityModel(const Model3D<T> &velocityModel)
 {
     pImpl->mHaveVelocityModel = false;
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (!isInitialized())
     {
         throw std::runtime_error("Class not initialized");
@@ -257,6 +266,7 @@ void Solver3D<T>::setSource(
 {
     pImpl->mHaveSource = false;
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     auto dx = pImpl->mGeometry.getGridSpacingInX();
     auto dy = pImpl->mGeometry.getGridSpacingInY();
@@ -317,6 +327,7 @@ void Solver3D<T>::setSource(const Source3D &source)
 {
     pImpl->mHaveSource = false;
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     if (!source.haveLocationInX())
     {
@@ -362,6 +373,7 @@ template<class T>
 void Solver3D<T>::solve()
 {
     pImpl->mHaveTravelTimeField = false;
+    pImpl->mHaveTravelTimeGradientField = false;
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
     if (!haveVelocityModel())
     {
@@ -482,6 +494,73 @@ const T* Solver3D<T>::getTravelTimeFieldPointer() const
         throw std::runtime_error("Travel time field not yet computed");
     }
     return pImpl->mTravelTimeField.data();
+}
+
+/// Have gradient fields?
+template<class T>
+bool Solver3D<T>::haveTravelTimeGradientField() const noexcept
+{
+    return pImpl->mHaveTravelTimeGradientField;
+}
+
+template<class T>
+std::vector<T> Solver3D<T>::getTravelTimeGradientFieldInX() const
+{
+    if (!haveTravelTimeGradientField())
+    {   
+         throw std::runtime_error("Travel time gradient field not computed");
+    }   
+    return pImpl->mTravelTimeGradientInXField;
+}
+
+template<class T>
+const T* Solver3D<T>::getTravelTimeGradientFieldInXPointer() const
+{
+    if (!haveTravelTimeGradientField())
+    {   
+         throw std::runtime_error("Travel time gradient field not computed");
+    }   
+    return pImpl->mTravelTimeGradientInXField.data();
+}
+
+template<class T>
+std::vector<T> Solver3D<T>::getTravelTimeGradientFieldInY() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInYField;
+}
+
+template<class T>
+const T* Solver3D<T>::getTravelTimeGradientFieldInYPointer() const
+{
+    if (!haveTravelTimeGradientField())
+    {
+         throw std::runtime_error("Travel time gradient field not computed");
+    }
+    return pImpl->mTravelTimeGradientInYField.data();
+}
+
+template<class T>
+std::vector<T> Solver3D<T>::getTravelTimeGradientFieldInZ() const
+{
+    if (!haveTravelTimeGradientField())
+    {   
+         throw std::runtime_error("Travel time gradient field not computed");
+    }   
+    return pImpl->mTravelTimeGradientInZField;
+}
+
+template<class T>
+const T* Solver3D<T>::getTravelTimeGradientFieldInZPointer() const
+{
+    if (!haveTravelTimeGradientField())
+    {   
+         throw std::runtime_error("Travel time gradient field not computed");
+    }   
+    return pImpl->mTravelTimeGradientInZField.data();
 }
 
 /// Have travel time field?
