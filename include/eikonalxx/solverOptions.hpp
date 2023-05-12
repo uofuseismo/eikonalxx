@@ -35,7 +35,7 @@ public:
     /// @result A deep copy of the options class.
     SolverOptions& operator=(const SolverOptions &options);
     /// @brief Move assignment operator.
-    /// @apram[in,out] options  The options class whose memory will be moved
+    /// @param[in,out] options  The options class whose memory will be moved
     ///                         to this.  On exit, options's behavior is
     ///                         undefined.
     /// @result The memory from options moved to this.

@@ -18,6 +18,7 @@ class Model3D
 public:
     /// @name Constructors
     /// @{
+
     /// @brief Default constructor.
     Model3D();
     /// @brief Copy constructor.
@@ -31,6 +32,7 @@ public:
 
     /// @name Operators
     /// @{
+
     /// @brief Copy assignment.
     /// @param[in] model  The model to copy to this.
     /// @result A deep copy of model to this.
@@ -39,14 +41,6 @@ public:
     /// @param[in,out] model  The memory on model to move to this.
     /// @result The memory from model moved to this.
     Model3D& operator=(Model3D &&model) noexcept;
-    /// @}
-
-    /// @name Destructors
-    /// @{
-    /// @brief Destructor.
-    ~Model3D();
-    /// @brief Resets the class and releases all memory.
-    void clear() noexcept;
     /// @}
 
     /// @brief Initializes the class.
@@ -61,6 +55,7 @@ public:
 
     /// @name Grid Geometry Information
     /// @{
+
     /// @result The number of grid points.
     /// @throws std::runtime_error if \c isInitialized() is false.
     [[nodiscard]] int getNumberOfGridPoints() const; 
@@ -74,6 +69,7 @@ public:
 
     /// @name Velocity and Slowness Models
     /// @{
+
     /// @brief Sets a nodal velocity model.
     /// @param[in] nGrid  The number of grid points where
     ///                   nGrid = nGridZ*nGridY*nGridX.
@@ -135,6 +131,15 @@ public:
     /// @throws std::runtime_error if \c haveVelocities() is false.
     [[nodiscard]] std::vector<T> getVelocities() const;
     /// @}  
+
+    /// @name Destructors
+    /// @{
+
+    /// @brief Resets the class and releases all memory.
+    void clear() noexcept;
+    /// @brief Destructor.
+    ~Model3D();
+    /// @}
 private:
     class Model3DImpl;
     std::unique_ptr<Model3DImpl> pImpl;

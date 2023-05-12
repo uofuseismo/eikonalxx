@@ -13,6 +13,7 @@ class Station2D
 public:
     /// @name Constructors
     /// @{
+
     /// @brief Constructor.
     Station2D();
     /// @brief Copy constructor.
@@ -28,6 +29,7 @@ public:
 
     /// @name Operators
     /// @{
+
     /// @brief Copy assignment operator.
     /// @param[in] station  The station location to copy to this.
     /// @result A deep copy of the input station.
@@ -41,6 +43,7 @@ public:
 
     /// @name Initialization
     /// @{
+
     /// @brief Sets the model geometry.
     /// @param[in] geometry   The model geometry.  At the very least the grid
     ///                       spacing and number of grid points must be set.
@@ -53,6 +56,7 @@ public:
 
     /// @name Name
     /// @{
+
     /// @brief Sets the station's name.
     /// @param[in] name  The name of the station.
     void setName(const std::string &name) noexcept;
@@ -62,6 +66,7 @@ public:
 
     /// @name X Location
     /// @{
+
     /// @param[in] x   The station location in x in meters.
     /// @throws std::runtime_error if \c haveGeometry() is false.
     /// @throws std::invalid_argument if the x position is not in the model.
@@ -81,6 +86,7 @@ public:
 
     /// @name Z Location
     /// @{
+
     /// @param[in] z    The station location in z in meters.
     /// @throws std::runtime_error if \c haveGeometry() is false.
     /// @throws std::invalid_argument if the z position is not in the model.
@@ -105,6 +111,7 @@ public:
 
     /// @name Cell
     /// @{
+
     /// @result The cell index containing the station. 
     /// @throws std::runtime_error if \c haveLocationInX() or
     ///         \c haveLocationInZ(), is false.
@@ -113,6 +120,7 @@ public:
 
     /// @name Destructor
     /// @{
+
     /// @brief Destructor.
     ~Station2D();
     /// @brief Releases memory and resets the class.

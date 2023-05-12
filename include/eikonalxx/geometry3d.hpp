@@ -11,6 +11,7 @@ class Geometry3D
 public:
     /// @name Constructors
     /// @{
+
     /// @brief Constructor.
     Geometry3D();
     /// @brief Copy constructor.
@@ -26,6 +27,7 @@ public:
 
     /// @name Operators
     /// @{
+
     /// @brief Copy assignment operator.
     /// @param[in] geometry   The geometry class to copy to this.
     /// @result A deep copy of the geometry class.
@@ -40,6 +42,7 @@ public:
 
     /// @name Properties in x direction
     /// @{
+
     /// @brief Sets the number of grid points in x.
     /// @param[in] nx  The number of grid points in x.  This must be at least 3.
     /// @throws std::invalid_argument if nx is too small.
@@ -75,6 +78,7 @@ public:
 
     /// @name Properties in y direction
     /// @{
+
     /// @brief Sets the number of grid points in y.
     /// @param[in] ny  The number of grid points in y.  This must be at least 3.
     /// @throws std::invalid_argument if ny is too small.
@@ -110,8 +114,9 @@ public:
 
     /// @name Properties in z direction
     /// @{
+
     /// @brief Sets the number of grid points in z.
-    /// @param[in] nx  The number of grid points in z.  This must be at least 3.
+    /// @param[in] nz  The number of grid points in z.  This must be at least 3.
     /// @throws std::invalid_argument if nz is too small.
     /// @note This is required by the solver.
     void setNumberOfGridPointsInZ(int nz);
@@ -156,10 +161,11 @@ public:
 
     /// @name Destructors
     /// @{
-    /// @brief Destructor.
-    ~Geometry3D();
+
     /// @brief Resets the class.
     void clear() noexcept;
+    /// @brief Destructor.
+    ~Geometry3D();
     /// @} 
 private:
     class Geometry3DImpl;

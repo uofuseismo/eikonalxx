@@ -73,15 +73,22 @@ void gradient2d(const size_t nGridX, const size_t nGridZ,
                 std::vector<T> *gradientInX,
                 std::vector<T> *gradientInZ)
 {
+    const T epsilon = std::numeric_limits<T>::epsilon();
     sycl::queue q{sycl::cpu_selector_v,
                   sycl::property::queue::in_order()};
-    auto workGroupSize = q.get_device().get_info<sycl::info::device::max_work_group_size> (); 
+    auto workGroupSize = q.get_device().get_info<sycl::info::device::max_work_group_size> ();
     workGroupSize = static_cast<size_t> (std::sqrt(workGroupSize));
-    // Figure out sizes and allocate space 
+    // Set memory on the host
     auto nGrid = nGridX*nGridZ;
-    auto xGradientDevice = sycl::malloc_device<T> (nGrid, q); 
-    auto zGradientDevice = sycl::malloc_device<T> (nGrid, q);
-    // Determine ranges (with tiling)
+    if (gradientInX->size() != nGrid)
+    {
+        gradientInX->resize(nGrid, 0);
+    }
+    if (gradientInZ->size() != nGrid)
+    {
+        gradientInZ->resize(nGrid, 0);
+    }
+    // Determine ranges
     sycl::range global{nGridX, nGridZ};
     auto nTileX = std::min(workGroupSize, nGridX);
     auto nTileZ = std::min(workGroupSize, nGridZ);
@@ -92,10 +99,19 @@ void gradient2d(const size_t nGridX, const size_t nGridZ,
     auto hx = static_cast<T> (dx);
     auto hz = static_cast<T> (dz);
     auto slowness = static_cast<T> (1./vel); // Do division here
-    // Compute L2 distance from the source to each point in grid
-    // and scale by slowness.
+    // When this goes out of scope the data should be copied back to the host
+    {
+    // Create the buffers
+    sycl::buffer<T> gradientBufferX(*gradientInX);
+    sycl::buffer<T> gradientBufferZ(*gradientInZ);
+    // Tabulate the gradient which involves taking the derivative of a 
+    // distance function and scaling by the slowness
     auto eGradient = q.submit([&](sycl::handler &h) 
     {
+        sycl::accessor gradientInXAccessor(gradientBufferX, h,
+                                           sycl::write_only, sycl::no_init);
+        sycl::accessor gradientInZAccessor(gradientBufferZ, h,
+                                           sycl::write_only, sycl::no_init);
         h.parallel_for(sycl::nd_range{global, local},
                        [=](sycl::nd_item<2> it) 
         {
@@ -105,35 +121,15 @@ void gradient2d(const size_t nGridX, const size_t nGridZ,
             T delX = xShiftedSource - ix*hx;
             T delZ = zShiftedSource - iz*hz;
             // Let this thing safely go to zero 
-            T distance = std::max(std::numeric_limits<T>::epsilon(),
-                                  sycl::hypot(delX, delZ));
+            T distance = sycl::fmax(epsilon, sycl::hypot(delX, delZ));
             T invDistanceSlowness = slowness/distance;
             // Analytic expression for gradient
-            xGradientDevice[idst] = delX*invDistanceSlowness;
-            zGradientDevice[idst] = delZ*invDistanceSlowness;
+            gradientInXAccessor[idst] = delX*invDistanceSlowness;
+            gradientInZAccessor[idst] = delZ*invDistanceSlowness;
         });
     });
-    // Return slowness field to host
-    if (gradientInX->size() != nGrid)
-    {
-        gradientInX->resize(nGrid, 0); 
     }
-    if (gradientInZ->size() != nGrid)
-    {
-        gradientInZ->resize(nGrid, 0);
-    }
-    auto xGradientPtr = gradientInX->data();
-    auto zGradientPtr = gradientInZ->data();
-    q.submit([&](sycl::handler &h) 
-    {
-        h.depends_on(eGradient);
-        h.memcpy(xGradientPtr, xGradientDevice, nGrid*sizeof(T));
-        h.memcpy(zGradientPtr, zGradientDevice, nGrid*sizeof(T));
-    }); 
     q.wait();
-    // Release memory
-    sycl::free(xGradientDevice, q); 
-    sycl::free(zGradientDevice, q);
 }
 
 }

@@ -130,15 +130,15 @@ struct SweepSlowness2D
     }
     /// The slowness (s/m) in the home cell.
     /// This is an array whose dimension is at least [nNodes].
-    T *__attribute__((aligned(64))) s0 = nullptr;
+    T *__attribute__((aligned(64))) s0{nullptr};
     /// The slowness (s/m) in the cell to the right or left of the home cell.
     /// This is an array whose dimension is at least [nNodes].
-    T *__attribute__((aligned(64))) s1 = nullptr;
+    T *__attribute__((aligned(64))) s1{nullptr};
     /// The slowness (s/m) in the cell above or below the home cell.
     /// This is an array whose dimension is at least [nNodes].
-    T *__attribute__((aligned(64))) s3 = nullptr;
+    T *__attribute__((aligned(64))) s3{nullptr};
     /// The number of nodes in the sweep.
-    int nNodes = 0;
+    int nNodes{0};
 };
 
 ///--------------------------------------------------------------------------///
@@ -369,8 +369,8 @@ T finiteDifference(const int factoredEikonalRadius,
     T sx = M_SQRT1_2*s0;
     T sz = M_SQRT1_2*s0;
     // Cartesian
-    if (std::abs(iSrcX - ix) > factoredEikonalRadius ||
-        std::abs(iSrcZ - iz) > factoredEikonalRadius)
+    if (sycl::abs(iSrcX - ix) > factoredEikonalRadius ||
+        sycl::abs(iSrcZ - iz) > factoredEikonalRadius)
     {
         // Two-point operators (Podvin and Lecomte, 1991)
         T t0a = huge;
@@ -500,8 +500,8 @@ T finiteDifference(const int factoredEikonalRadius,
     T hxs0 = dx*s0;
     T hzs0 = dz*s0;
     // Cartesian
-    if (std::abs(iSrcX - ix) > factoredEikonalRadius ||
-        std::abs(iSrcZ - iz) > factoredEikonalRadius)
+    if (sycl::abs(iSrcX - ix) > factoredEikonalRadius ||
+        sycl::abs(iSrcZ - iz) > factoredEikonalRadius)
     {
         // Two three-point operators (Podvin and Lecomte, 1991)
         T t0a = huge;

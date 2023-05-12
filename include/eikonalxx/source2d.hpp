@@ -13,6 +13,7 @@ class Source2D
 public:
     /// @name Constructors
     /// @{
+
     /// @brief Constructor.
     Source2D();
     /// @brief Copy constructor.
@@ -28,6 +29,7 @@ public:
 
     /// @name Operators
     /// @{
+
     /// @brief Copy assignment operator.
     /// @param[in] source  The source location to copy to this.
     /// @result A deep copy of the input source.
@@ -41,6 +43,7 @@ public:
 
     /// @name Initialization
     /// @{
+
     /// @brief Sets the model geometry.
     /// @param[in] geometry   The model geometry.  At the very least the grid
     ///                       spacing and number of grid points must be set.
@@ -53,6 +56,7 @@ public:
 
     /// @name X Location
     /// @{
+
     /// @param[in] x   The source location in x in meters.
     /// @throws std::runtime_error if \c haveGeometry() is false.
     /// @throws std::invalid_argument if the x position is not in the model.
@@ -72,6 +76,7 @@ public:
 
     /// @name Z Location
     /// @{
+
     /// @param[in] z    The source location in z in meters.
     /// @throws std::runtime_error if \c haveGeometry() is false.
     /// @throws std::invalid_argument if the z position is not in the model.
@@ -96,6 +101,7 @@ public:
 
     /// @name Cell
     /// @{
+
     /// @result The cell index containing the source. 
     /// @throws std::runtime_error if \c haveLocationInX() or
     ///         \c haveLocationInZ(), is false.
@@ -104,10 +110,11 @@ public:
 
     /// @name Destructor
     /// @{
-    /// @brief Destructor.
-    ~Source2D();
+
     /// @brief Releases memory and resets the class.
     void clear() noexcept;
+    /// @brief Destructor.
+    ~Source2D();
     /// @}
 private:
     class Source2DImpl;

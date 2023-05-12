@@ -94,10 +94,13 @@ add_executable(unitTests
                testing/analytic.cpp
                testing/solver2d.cpp
                testing/solver3d.cpp
+               testing/gradient.cpp
                testing/ray.cpp
                )
 target_link_libraries(unitTests PRIVATE eikonalxx ${GTEST_BOTH_LIBRARIES} ${TBB_LIBRARY} OpenCL pthread)
-target_include_directories(unitTests PRIVATE ${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(unitTests PRIVATE ${GTEST_INCLUDE_DIRS}
+                                             ${CMAKE_SOURCE_DIR}/include
+                                             ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(unitTests PROPERTIES
                       CXX_STANDARD 20 
                       CXX_STANDARD_REQUIRED YES

@@ -219,7 +219,7 @@ std::cout.precision(16);
                         t7 = travelTimes[it7];
 //std::cout << t1 << " " << t2 << " " << t3 << " " << t3 << " " << t4 << " " << t5 << " " << t6 << " " << t7 << std::endl;
                         // Finite difference
-                        tUpd = finiteDifference(mFactoredEikonalSolverRadius,
+                        tUpd = ::finiteDifference(mFactoredEikonalSolverRadius,
                                  huge,
                                  h, 
                                  mSourceSlowness,
@@ -292,7 +292,7 @@ std::cout.precision(16);
                         t6 = travelTimes[it6];
                         t7 = travelTimes[it7];
 
-                        tUpd = finiteDifference(
+                        tUpd = ::finiteDifference(
                                  mFactoredEikonalSolverRadius,
                                  huge,
                                  mDx, mDy, mDz,

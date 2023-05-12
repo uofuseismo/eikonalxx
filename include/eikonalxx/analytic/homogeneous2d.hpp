@@ -30,6 +30,7 @@ public:
 
     /// @name Operators
     /// @{
+
     /// @brief Copy assignment.
     /// @param[in] solver  The 2D homogeneous analytic solver to copy to this.
     /// @result A deep copy of the input solver.

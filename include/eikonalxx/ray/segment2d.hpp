@@ -4,7 +4,7 @@
 namespace EikonalXX::Ray
 {
 class Point2D;
-/// @class Segment2D "raySegment2d.hpp" "eikonalxx/ray/segment2d.hpp"
+/// @class Segment2D "segment2d.hpp" "eikonalxx/ray/segment2d.hpp"
 /// @brief Defines a ray segment in a 2D model.  A segment is a line between
 ///        a start and end point.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.

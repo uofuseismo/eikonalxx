@@ -13,17 +13,14 @@ class VTKRectilinearGrid2D
 public:
     /// @name Constructors
     /// @{
+
     /// @brief Constructor.
     VTKRectilinearGrid2D();
     /// @}
 
-    /// @name Destructors
-    /// @{
-    ~VTKRectilinearGrid2D();
-    /// @}
-    
     /// @name Step 1: Open the VTK file 
     /// @{
+
     /// @brief Opens a VTK file for writing.
     /// @param[in] fileName     The name of the VTK file to write to.
     /// @param[in] geometry     The 2D geometry.
@@ -46,6 +43,7 @@ public:
 
     /// @name Step 2: Write datasets
     /// @{
+
     /// @brief Writes a nodal dataset.
     /// @param[in] name      The name of the nodal dataset.  Note, all blank
     ///                      spaces will be replaced with underscores.
@@ -70,15 +68,23 @@ public:
     /// @throws std::invalid_argument if the dataset's name is empty or the
     ///         data pointer is NULL.
     template<typename T>
-    void writeCellularDataset(const std::string &fname,
+    void writeCellularDataset(const std::string &name,
                               const T *data,
                               Ordering2D ordering = Ordering2D::Natural) const;
     /// @}
 
     /// @name Step 3: Close the file
     /// @{
+
     /// @brief Closes the file.
     void close() noexcept;
+    /// @}
+
+    /// @name Destructors
+    /// @{
+
+    /// @brief Destructor.
+    ~VTKRectilinearGrid2D();
     /// @}
 
     // Remove some functionality

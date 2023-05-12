@@ -4,7 +4,7 @@
 namespace EikonalXX::Ray
 {
 class Point3D;
-/// @class Segment3D "raySegment3d.hpp" "eikonalxx/ray/segment3d.hpp"
+/// @class Segment3D "segment3d.hpp" "eikonalxx/ray/segment3d.hpp"
 /// @brief Defines a ray segment in a 3D model.  A segment is a line between
 ///        a start and end point.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.

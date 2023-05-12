@@ -293,9 +293,9 @@ constexpr bool doFteik = true;
     T hs01 = h*minS0S1;
     T hs04 = h*minS0S4; 
     // Cartesian
-    if (std::abs(iSrcX - ix) > factoredEikonalRadius ||
-        std::abs(iSrcY - iy) > factoredEikonalRadius ||
-        std::abs(iSrcZ - iz) > factoredEikonalRadius)
+    if (sycl::abs(iSrcX - ix) > factoredEikonalRadius ||
+        sycl::abs(iSrcY - iy) > factoredEikonalRadius ||
+        sycl::abs(iSrcZ - iz) > factoredEikonalRadius)
     {
         // 2D critically refracted operators in XZ, YZ, and XY planes 
         T dtCrossXZ = t1 - t4; // 1/2*(dTdxXZ - dTzXZ)
@@ -598,9 +598,9 @@ constexpr bool doFteik = true;
     T t1d3 = t4 + dz*sycl::fmin(minS0S1, sycl::fmin(s2, s3));
     T t1d = sycl::fmin(sycl::fmin(t1d1, t1d2), t1d3);
     // Cartesian
-    if (std::abs(iSrcX - ix) > factoredEikonalRadius ||
-        std::abs(iSrcY - iy) > factoredEikonalRadius ||
-        std::abs(iSrcZ - iz) > factoredEikonalRadius)
+    if (sycl::abs(iSrcX - ix) > factoredEikonalRadius ||
+        sycl::abs(iSrcY - iy) > factoredEikonalRadius ||
+        sycl::abs(iSrcZ - iz) > factoredEikonalRadius)
     {
         // 2D critically refracted operators in XZ, YZ, and XY planes 
         T dtCrossXZ = t1 - t4; // 1/2*(dTdxXZ - dTzXZ

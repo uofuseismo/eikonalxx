@@ -10,6 +10,7 @@ class Graph3D
 public:
     /// @name Constructors
     /// @{
+
     /// @brief Constructor.
     Graph3D();
     /// @brief Copy constructor.
@@ -23,6 +24,7 @@ public:
 
     /// @name Operators
     /// @{
+
     /// @brief Copy assignment operator.
     /// @param[in] graph   The graph to copy to this.
     /// @result A deep copy of the input graph.
@@ -36,6 +38,7 @@ public:
 
     /// @name Initialization
     /// @{
+
     /// @brief Initializes the graph.
     /// @param[in] nx   The number of grid points in x.
     /// @param[in] ny   The number of grid points in y.
@@ -44,14 +47,6 @@ public:
     void initialize(int nx, int ny, int nz);
     /// @result True indicates that the class is initialized.
     bool isInitialized() const noexcept;
-    /// @}
-
-    /// @name Destructors
-    /// @{
-    /// @brief Destructor.
-    ~Graph3D();
-    /// @brief Releases the memory on the class.
-    void clear() noexcept;
     /// @}
 
     /// @result The number of grid points in the model.
@@ -101,6 +96,15 @@ public:
     ///         [ \c getNumberOfGridPoints() ]. 
     /// @throws std::runtime_error if \c isInitialized() is false.
     [[nodiscard]] const int *getNodeInLevelToZGridPointPointer() const;
+
+    /// @name Destructors
+    /// @{
+
+    /// @brief Releases the memory on the class.
+    void clear() noexcept;
+    /// @brief Destructor.
+    ~Graph3D();
+    /// @}
 private:
     class Graph3DImpl;
     std::unique_ptr<Graph3DImpl> pImpl;

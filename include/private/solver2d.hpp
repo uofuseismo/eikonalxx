@@ -250,17 +250,17 @@ public:
                     t2 = travelTimes[it2];
                     t3 = travelTimes[it3];
                     // Finite difference
-                    tUpd = finiteDifference(mFactoredEikonalSolverRadius,
-                                            huge,
-                                            h, 
-                                            mSourceSlowness,
-                                            ix, iz,
-                                            signX, signZ,
-                                            ixShift, izShift, 
-                                            mSourceIndexX, mSourceIndexZ,
-                                            mSourceOffsetX, mSourceOffsetZ,
-                                            s0, s1, s3,
-                                            t1, t2, t3);
+                    tUpd = ::finiteDifference(mFactoredEikonalSolverRadius,
+                                              huge,
+                                              h, 
+                                              mSourceSlowness,
+                                              ix, iz,
+                                              signX, signZ,
+                                              ixShift, izShift, 
+                                              mSourceIndexX, mSourceIndexZ,
+                                              mSourceOffsetX, mSourceOffsetZ,
+                                              s0, s1, s3,
+                                              t1, t2, t3);
 //std::cout << std::setprecision(17) << ix<< " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl;
                     // Update?
                     //if (mUpdateNode[it0] == UPDATE_NODE)
@@ -299,19 +299,19 @@ if (ix == 14 && iz == 12)
  std::cout << t0 << " " << t1 << " " << t2 << " " << t3 << std::endl;
 }
 */ 
-                    tUpd = finiteDifference(mFactoredEikonalSolverRadius,
-                                            huge,
-                                            mDx, mDz,
-                                            mDxDividedByDz, mDzDividedByDx,
-                                            mCosTheta, mSinTheta,
-                                            mSourceSlowness,
-                                            ix, iz,
-                                            signX, signZ,
-                                            ixShift, izShift, 
-                                            mSourceIndexX, mSourceIndexZ,
-                                            mSourceOffsetX, mSourceOffsetZ,
-                                            s0, s1, s3, 
-                                            t1, t2, t3);
+                    tUpd = ::finiteDifference(mFactoredEikonalSolverRadius,
+                                              huge,
+                                              mDx, mDz,
+                                              mDxDividedByDz, mDzDividedByDx,
+                                              mCosTheta, mSinTheta,
+                                              mSourceSlowness,
+                                              ix, iz,
+                                              signX, signZ,
+                                              ixShift, izShift, 
+                                              mSourceIndexX, mSourceIndexZ,
+                                              mSourceOffsetX, mSourceOffsetZ,
+                                              s0, s1, s3, 
+                                              t1, t2, t3);
 //std::cout << std::setprecision(17) << "nonuniform: " << ix << " " << iz << " " << travelTimes[it0] << " " << std::min(travelTimes[it0], tUpd) << std::endl;
 //if (ix == 14 && iz == 12){getchar();}
                     // Update?
@@ -412,17 +412,17 @@ if (ix == 14 && iz == 12)
                         T t1i = t1[indx];
                         T t2i = t2[indx];
                         T t3i = t3[indx];
-                        T tUpd = finiteDifference<T>(radius,
-                                                     huge,
-                                                     dGrid,
-                                                     sourceSlowness,
-                                                     ix, iz,
-                                                     signX, signZ,
-                                                     ixShift, izShift,
-                                                     sourceIndexX, sourceIndexZ,
-                                                     sourceOffsetX, sourceOffsetZ,
-                                                     s0, s1, s3,
-                                                     t1i, t2i, t3i);
+                        T tUpd = ::finiteDifference<T>(radius,
+                                                       huge,
+                                                       dGrid,
+                                                       sourceSlowness,
+                                                       ix, iz,
+                                                       signX, signZ,
+                                                       ixShift, izShift,
+                                                       sourceIndexX, sourceIndexZ,
+                                                       sourceOffsetX, sourceOffsetZ,
+                                                       s0, s1, s3,
+                                                       t1i, t2i, t3i);
                         t0[indx] = sycl::fmin(t0[indx], tUpd);
                     });
                 });
@@ -511,17 +511,17 @@ if (ix == 14 && iz == 12)
                     ///tUpd = cartesianFiniteDifference(mHuge, h,
                     ///                                 s0, s1, s3,
                     ///                                 t1, t2, t3);
-                    tUpd = finiteDifference(mFactoredEikonalSolverRadius,
-                                            huge,
-                                            h,
-                                            mSourceSlowness,
-                                            ix, iz,
-                                            signX, signZ,
-                                            ixShift, izShift,
-                                            mSourceIndexX, mSourceIndexZ,
-                                            mSourceOffsetX, mSourceOffsetZ,
-                                            s0, s1, s3,
-                                            t1, t2, t3);
+                    tUpd = ::finiteDifference(mFactoredEikonalSolverRadius,
+                                              huge,
+                                              h,
+                                              mSourceSlowness,
+                                              ix, iz,
+                                              signX, signZ,
+                                              ixShift, izShift,
+                                              mSourceIndexX, mSourceIndexZ,
+                                              mSourceOffsetX, mSourceOffsetZ,
+                                              s0, s1, s3,
+                                              t1, t2, t3);
                     // Update?
                     if (mUpdateNode[it0] == UPDATE_NODE)
                     {
@@ -558,19 +558,19 @@ if (ix == 14 && iz == 12)
                     ///                                 s0, s1, s3,
                     ///                                 t1, t2, t3);
 
-                    tUpd = finiteDifference(mFactoredEikonalSolverRadius,
-                                            huge,
-                                            mDx, mDz,
-                                            mDxDividedByDz, mDzDividedByDx,
-                                            mCosTheta, mSinTheta,
-                                            mSourceSlowness,
-                                            ix, iz, 
-                                            signX, signZ,
-                                            ixShift, izShift, 
-                                            mSourceIndexX, mSourceIndexZ,
-                                            mSourceOffsetX, mSourceOffsetZ,
-                                            s0, s1, s3, 
-                                            t1, t2, t3);
+                    tUpd = ::finiteDifference(mFactoredEikonalSolverRadius,
+                                              huge,
+                                              mDx, mDz,
+                                              mDxDividedByDz, mDzDividedByDx,
+                                              mCosTheta, mSinTheta,
+                                              mSourceSlowness,
+                                              ix, iz, 
+                                              signX, signZ,
+                                              ixShift, izShift, 
+                                              mSourceIndexX, mSourceIndexZ,
+                                              mSourceOffsetX, mSourceOffsetZ,
+                                              s0, s1, s3, 
+                                              t1, t2, t3);
                     // Update?
                     if (mUpdateNode[it0] == UPDATE_NODE)
                     {
