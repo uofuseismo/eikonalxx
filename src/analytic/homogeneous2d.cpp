@@ -124,8 +124,8 @@ void gradient2d(const size_t nGridX, const size_t nGridZ,
             T distance = sycl::fmax(epsilon, sycl::hypot(delX, delZ));
             T invDistanceSlowness = slowness/distance;
             // Analytic expression for gradient
-            gradientInXAccessor[idst] = delX*invDistanceSlowness;
-            gradientInZAccessor[idst] = delZ*invDistanceSlowness;
+            gradientInXAccessor[idst] =-delX*invDistanceSlowness;
+            gradientInZAccessor[idst] =-delZ*invDistanceSlowness;
         });
     });
     }

@@ -95,7 +95,7 @@ public:
     /// @throws std::runtime_error if the class is not initialized.
     template<typename U>
     void setCellularVelocities(int nCell, const U velocity[],
-                               EikonalXX::Ordering2D ordering); 
+                               EikonalXX::Ordering2D ordering);
 
     /// @result True indicates the velocity model was set.
     [[nodiscard]] bool haveVelocities() const noexcept;

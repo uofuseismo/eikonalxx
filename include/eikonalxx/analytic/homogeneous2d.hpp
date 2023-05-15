@@ -102,6 +102,7 @@ public:
     void solve();
     /// @brief Computes the gradient travel time field.
     /// @throws std::runtime_error if the source or velocity model is not set.
+    /// @sa \c isInitialized(), \c haveVelocityModel(), \c haveSource()
     void computeTravelTimeGradientField();
     /// @}
 

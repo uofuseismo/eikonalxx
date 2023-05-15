@@ -8,12 +8,12 @@ using namespace EikonalXX;
 class Geometry2D::Geometry2DImpl
 {
 public: 
-    double mDeltaX =-1;
-    double mDeltaZ =-1;
-    double mX0 = 0;
-    double mZ0 = 0;
-    int mGridX =-1;
-    int mGridZ =-1;
+    double mDeltaX{-1};
+    double mDeltaZ{-1};
+    double mX0{0};
+    double mZ0{0};
+    int mGridX{-1};
+    int mGridZ{-1};
 };
 
 /// C'tor

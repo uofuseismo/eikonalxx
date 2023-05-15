@@ -20,6 +20,30 @@ T acoshArgument(const T delX, const T delZ,
     return arg;
 }
 
+// Derivative of acosh(u) is u'/sqrt(u^2 - 1)
+template<typename T>
+void gradAcosh(const T delX, const T delZ,
+               const T vel0, const T slow0, const T absG2,
+               const T vGradInX, const T vGradInZ,
+               T *gradX, T *gradZ)
+{
+    T dist2 = delX*delX + delZ*delZ;
+    T vel = vel0 + vGradInX*delX + vGradInZ*delZ;
+    T vel2 = vel*vel;
+    T dVelDx = vGradInX;
+    T dVelDz = vGradInZ;
+    T slow0absG2 = slow0*absG2; 
+    T halfSlow0absG2 = slow0absG2/2;
+    T u = 1 + (halfSlow0absG2*dist2)/vel;
+    T dudx = slow0absG2*delX/vel
+           - ((halfSlow0absG2*dist2)/vel2)*dVelDx;
+    T dudz = slow0absG2*delZ/vel
+           - ((halfSlow0absG2*dist2)/vel2)*dVelDz;
+    T sqrtu2 = sycl::sqrt(u*u - 1);
+    *gradX = dudx/sqrtu2;
+    *gradZ = dudz/sqrtu2;
+}
+
 /// Solves the eikonal equation in a 2D linear-gradient
 template<class T>
 void solve2d(const size_t nGridX, const size_t nGridZ,
@@ -35,7 +59,7 @@ void solve2d(const size_t nGridX, const size_t nGridZ,
     constexpr T vGradInX = 0;
     T vGradInZ = static_cast<T> ((velBottom - velTop)/((nGridZ - 1)*dz));
     T absG2 = vGradInX*vGradInX + vGradInZ*vGradInZ; 
-    T absG = std::sqrt(absG2);
+    T absG = sycl::sqrt(absG2);
     T vel0 = static_cast<T> (velTop + vGradInZ*zSrcOffset);
     auto slow0 = static_cast<T> (1/vel0);
     // Figure out sizes and allocate space 
@@ -51,8 +75,7 @@ void solve2d(const size_t nGridX, const size_t nGridZ,
     auto zShiftedSource = static_cast<T> (zSrcOffset);
     auto hx = static_cast<T> (dx);
     auto hz = static_cast<T> (dz);
-    // Compute L2 distance from the source to each point in grid
-    // and scale by slowness.
+    // Apply analytic formula
     auto eTravelTimes = q.submit([&](sycl::handler &h) 
     {
         if (std::abs(velTop - velBottom) > 1.e-14)
@@ -100,6 +123,110 @@ void solve2d(const size_t nGridX, const size_t nGridZ,
     // Release memory
     sycl::free(travelTimesDevice, q);
 }
+
+template<typename T>
+void gradient2d(const size_t nGridX, const size_t nGridZ,
+                const double xSrcOffset, const double zSrcOffset,
+                const double dx, const double dz, 
+                const double velTop, const double velBottom,
+                std::vector<T> *gradientInX,
+                std::vector<T> *gradientInZ)
+{
+    const T epsilon = std::numeric_limits<T>::epsilon();
+    sycl::queue q{sycl::cpu_selector_v,
+                  sycl::property::queue::in_order()};
+    auto workGroupSize = q.get_device().get_info<sycl::info::device::max_work_group_size> (); 
+    workGroupSize = static_cast<size_t> (std::sqrt(workGroupSize));
+    // Set memory on the host
+    auto nGrid = nGridX*nGridZ;
+    if (gradientInX->size() != nGrid)
+    {   
+        gradientInX->resize(nGrid, 0); 
+    }   
+    if (gradientInZ->size() != nGrid)
+    {   
+        gradientInZ->resize(nGrid, 0); 
+    }   
+    // Determine ranges
+    sycl::range global{nGridX, nGridZ};
+    auto nTileX = std::min(workGroupSize, nGridX);
+    auto nTileZ = std::min(workGroupSize, nGridZ);
+    sycl::range local{nTileX, nTileZ};
+    // Geometric terms
+    auto xShiftedSource = static_cast<T> (xSrcOffset);
+    auto zShiftedSource = static_cast<T> (zSrcOffset);
+    auto hx = static_cast<T> (dx);
+    auto hz = static_cast<T> (dz);
+    // Analytic expression terms
+    constexpr T vGradInX = 0;
+    T vGradInZ = static_cast<T> ((velBottom - velTop)/((nGridZ - 1)*dz));
+    T absG2 = vGradInX*vGradInX + vGradInZ*vGradInZ;
+    T absG = sycl::sqrt(absG2);
+    T vel0 = static_cast<T> (velTop + vGradInZ*zSrcOffset);
+    auto slow0 = static_cast<T> (1/vel0);
+    // When this goes out of scope the data should be copied back to the host
+    {   
+    // Create the buffers
+    sycl::buffer<T> gradientBufferX(*gradientInX);
+    sycl::buffer<T> gradientBufferZ(*gradientInZ);
+    // Tabulate the gradient which involves taking the derivative of a 
+    // distance function and scaling by the slowness
+    auto eGradient = q.submit([&](sycl::handler &h) 
+    {
+        sycl::accessor gradientInXAccessor(gradientBufferX, h,
+                                           sycl::write_only, sycl::no_init);
+        sycl::accessor gradientInZAccessor(gradientBufferZ, h,
+                                           sycl::write_only, sycl::no_init);
+        if (std::abs(velTop - velBottom) > 1.e-14)
+        {
+            h.parallel_for(sycl::nd_range{global, local},
+                           [=](sycl::nd_item<2> it) 
+            {
+                size_t ix = it.get_global_id(0);
+                size_t iz = it.get_global_id(1);
+                auto idst = ::gridToIndex(nGridX, ix, iz);
+                T delX = ix*hx - xShiftedSource;
+                T delZ = iz*hz - zShiftedSource;
+                // Let this thing safely go to zero
+                T distance = sycl::fmax(epsilon, sycl::hypot(delX, delZ)); 
+                T gx = 0;
+                T gz = 0;
+                gradientInXAccessor[idst] = 0;
+                gradientInZAccessor[idst] = 0;
+                if (distance > epsilon)
+                {
+                    ::gradAcosh(delX, delZ,
+                                vel0, slow0, absG2,
+                                vGradInX, vGradInZ,
+                                &gx, &gz);
+                }
+                gradientInXAccessor[idst] = gx/absG;
+                gradientInZAccessor[idst] = gz/absG;
+            });
+        }
+        else
+        {
+            h.parallel_for(sycl::nd_range{global, local},
+                           [=](sycl::nd_item<2> it) 
+            {
+                size_t ix = it.get_global_id(0);
+                size_t iz = it.get_global_id(1);
+                auto idst = ::gridToIndex(nGridX, ix, iz);
+                T delX = ix*hx - xShiftedSource;
+                T delZ = iz*hz - zShiftedSource;
+                // Let this thing safely go to zero 
+                T distance = sycl::fmax(epsilon, sycl::hypot(delX, delZ));
+                T invDistanceSlowness = slow0/distance;
+                // Analytic expression for gradient
+                gradientInXAccessor[idst] = delX*invDistanceSlowness;
+                gradientInZAccessor[idst] = delZ*invDistanceSlowness;
+            });
+         }
+    }); 
+    }
+    q.wait();
+}
+
 }
 
 using namespace EikonalXX::Analytic;
@@ -347,6 +474,31 @@ void LinearGradient2D<T>::solve()
               pImpl->mVelocity.first, pImpl->mVelocity.second,
               &pImpl->mTravelTimeField);
     pImpl->mHaveTravelTimeField = true;
+}
+
+template<class T>
+void LinearGradient2D<T>::computeTravelTimeGradientField()
+{
+    if (!isInitialized()){throw std::runtime_error("Class not initialized");}
+    if (!haveSource()){throw std::runtime_error("Source not yet set");}
+    if (!haveVelocityModel())
+    {
+        throw std::runtime_error("Velocity model not set");
+    }
+    auto nx = static_cast<size_t> (pImpl->mGeometry.getNumberOfGridPointsInX());
+    auto nz = static_cast<size_t> (pImpl->mGeometry.getNumberOfGridPointsInZ());
+    auto dx = pImpl->mGeometry.getGridSpacingInX();
+    auto dz = pImpl->mGeometry.getGridSpacingInZ();
+    auto xSrcOffset = pImpl->mSource.getOffsetInX();
+    auto zSrcOffset = pImpl->mSource.getOffsetInZ();
+    // Compute gradient
+    ::gradient2d(nx, nz, 
+                 xSrcOffset, zSrcOffset,
+                 dx, dz, 
+                 pImpl->mVelocity.first, pImpl->mVelocity.second,
+                 &pImpl->mTravelTimeGradientInXField,
+                 &pImpl->mTravelTimeGradientInZField);
+    pImpl->mHaveTravelTimeGradientField = true;
 }
 
 /// Have travel time field?

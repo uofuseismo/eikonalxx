@@ -5,7 +5,7 @@
 #define EIKONALXX_MINOR @EikonalXX_VERSION_MINOR@
 #define EIKONALXX_PATCH @EikonalXX_VERSION_PATCH@
 #define EIKONALXX_VERSION "@PROJECT_VERSION@"
-namespace MFLib
+namespace EikonalXX
 {
 /// @class Version version.hpp "eikonalxx/version.hpp"
 /// @brief Defines the library version information.

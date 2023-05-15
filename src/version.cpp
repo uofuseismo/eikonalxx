@@ -1,7 +1,7 @@
 #include <string>
 #include "eikonalxx/version.hpp"
 
-using namespace MFLib;
+using namespace EikonalXX;
 
 int Version::getMajor() noexcept
 {

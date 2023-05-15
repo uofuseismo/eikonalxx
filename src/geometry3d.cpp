@@ -8,15 +8,15 @@ using namespace EikonalXX;
 class Geometry3D::Geometry3DImpl
 {
 public: 
-    double mDeltaX =-1;
-    double mDeltaY =-1;
-    double mDeltaZ =-1;
-    double mX0 = 0;
-    double mY0 = 0;
-    double mZ0 = 0;
-    int mGridX =-1;
-    int mGridY =-1;
-    int mGridZ =-1;
+    double mDeltaX{-1};
+    double mDeltaY{-1};
+    double mDeltaZ{-1};
+    double mX0{0};
+    double mY0{0};
+    double mZ0{0};
+    int mGridX{-1};
+    int mGridY{-1};
+    int mGridZ{-1};
 };
 
 /// C'tor

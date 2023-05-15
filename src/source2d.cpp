@@ -15,21 +15,21 @@ public:
             if (mHaveXLocation && mHaveZLocation)
             {
                 auto nCellX = mGeometry.getNumberOfCellsInX();
-                mCell = gridToIndex(nCellX, mCellX, mCellZ);
+                mCell = ::gridToIndex(nCellX, mCellX, mCellZ);
             }
         }
     }
     Geometry2D mGeometry;
-    double mX = 0; 
-    double mZ = 0;
-    double mXOffset = 0;
-    double mZOffset = 0;
-    int mCellX = 0;
-    int mCellZ = 0;
-    int mCell =-1;
-    bool mHaveXLocation = false;
-    bool mHaveZLocation = false;
-    bool mHaveGeometry = false;
+    double mX{0}; 
+    double mZ{0};
+    double mXOffset{0};
+    double mZOffset{0};
+    int mCellX{0};
+    int mCellZ{0};
+    int mCell{-1};
+    bool mHaveXLocation{false};
+    bool mHaveZLocation{false};
+    bool mHaveGeometry{false};
 };
 
 /// Reset the class
