@@ -4,16 +4,19 @@
 #include <memory>
 namespace EikonalXX
 {
- template<class T> class Solver2D;
+ namespace AbstractBaseClass
+ {
+  template<class T> class ISolver2D;
+ }
+ class Geometry2D;
  class Station2D;
  namespace Ray
  {
-  class RayPath2D;
+  class Path2D;
  }
 }
 namespace EikonalXX::Ray
 {
-template<class T>
 /// @class GradientTracer2D "gradientTracer2d.hpp" "eikonalxx/ray/gradientTrace2d.hpp"
 /// @brief This class computes ray paths by marching up the travel time field's
 ///        gradient from the receiver to the source.   
@@ -55,41 +58,39 @@ public:
     [[nodiscard]] bool haveStations() const noexcept;
     /// @}
 
-    /// @name Step 3: Set Travel Time Fields
-    /// @{
-
-    /// @brief Sets the travel time field.
-    /// @param[in] solver  The solver containing the travel time field.
-    /// @throws std::invalid_argument if there is no source position on the
-    ///         solver, the travel times were not yet computed, or the
-    ///         geometries are inconsistent.
-    /// @throws std::runtime_error if \c isInitialized() is false.
-    void setTravelTimeField(const EikonalXX::Solver2D<T> &solver);
-    /// @result True indicates the travel time field was set.
-    [[nodiscard]] bool haveGradientTravelTimeFields() const noexcept;
-    /// @}
-
-    /// @name Step 4: Perform Ray Tracing
+    /// @name Step 3: Perform Ray Tracing
     /// @{
 
     /// @brief Traces the rays through the travel time field.
-    /// @throws std::runtime_error if \c haveGradientTravelTimeFields()
+    /// @throws std::invalid_argument if \c solver.haveGradientTravelTimeField()
     ///         is false.
-    void trace();
+    /// @throws std::runtime_error if \c haveStations() is false.
+    template<typename T>
+    void trace(const EikonalXX::AbstractBaseClass::ISolver2D<T> &solver);
     /// @}
 
-    /// @name Step 5: Fetch Results
+    /// @name Step 4: Fetch Results
     /// @{
 
     /// @result True indicates the ray paths were trace.
     [[nodiscard]] bool haveRayPaths() const noexcept;
     /// @result The source-to-receiver ray paths for each station.
     /// @throws std::runtime_error if \c haveRayPaths() is false.
-    [[nodiscard]] std::vector<RayPath2D> getRayPaths() const;
+    [[nodiscard]] std::vector<Path2D> getRayPaths() const;
     /// @}
 
     /// @name Operators
     /// @{
+
+    /// @brief Copy assignment.
+    /// @param[in] tracer  The tracer to copy to this.
+    /// @result A deep copy of the input tracer.
+    GradientTracer2D& operator=(const GradientTracer2D &tracer);
+    /// @brief Move assignment.
+    /// @param[in] tracer  The tracer whose memory will be moved to this.
+    ///                    On exit, tracer's behavior is undefined.
+    /// @result the memory from tracer moved to this.
+    GradientTracer2D& operator=(GradientTracer2D &&tracer) noexcept;
     /// @}
 
     /// @name Destructors

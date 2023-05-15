@@ -11,6 +11,16 @@ Source2D::Source2D() :
 {
 }
 
+Source2D::Source2D(const Source2D &source)
+{
+    *this = source;
+}
+
+Source2D::Source2D(Source2D &&source) noexcept
+{
+    *this = std::move(source);
+}
+
 /// Destructor
 Source2D::~Source2D() = default;
 
@@ -119,7 +129,10 @@ z : float
     Note, this can be forced to the free-surface of the geometry
     with source2d.set_z_to_free_surface().
 )""";
-
+    s.def("__copy__", [](const Source2D &self)
+    {
+        return Source2D(self);
+    });
     s.def_property("geometry",
                    &Source2D::getGeometry,
                    &Source2D::setGeometry);
@@ -129,11 +142,34 @@ z : float
     s.def_property("z",
                    &Source2D::getLocationInZ,
                    &Source2D::setLocationInZ);
-
     s.def("set_z_to_free_surface",
           &Source2D::setZToFreeSurface,
           "Sets the source's position in z to the free surface.");
     s.def("clear",
           &Source2D::clear,
           "Resets the class.");
+
+    /// Pickling rules
+    s.def(pybind11::pickle(
+        [](const Source2D &g) { //__getstate__
+            auto x = g.getLocationInX();
+            auto z = g.getLocationInZ();
+            auto geometry = g.getGeometry();
+            return pybind11::make_tuple(x, z, geometry);
+        },
+        [](pybind11::tuple t) { //__setstate__
+            if (t.size() != 3)
+            {
+                throw std::runtime_error("Invalid state!");
+            }
+            auto x = t[0].cast<double> ();
+            auto z = t[1].cast<double> ();
+            auto geometry = t[2].cast<Geometry2D> ();
+            Source2D s;
+            s.setGeometry(geometry);
+            s.setLocationInX(x);
+            s.setLocationInZ(z);
+            return s;
+        }
+    ));
 }

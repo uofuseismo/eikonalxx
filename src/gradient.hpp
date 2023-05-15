@@ -23,6 +23,7 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
                       const T *travelTimeField,
                       std::vector<T> *gradientInX,
                       std::vector<T> *gradientInZ,
+                      sycl::queue &q,
                       const DerivativeType derivativeType = DerivativeType::CentralDifference)
 {
     // Basic size check
@@ -55,9 +56,8 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
         }
     }
     // Queue
-    sycl::queue q{sycl::cpu_selector_v,
-                  sycl::property::queue::in_order()};
-    auto workGroupSize = q.get_device().get_info<sycl::info::device::max_work_group_size> (); 
+    auto workGroupSize
+         = q.get_device().get_info<sycl::info::device::max_work_group_size> ();
     workGroupSize = static_cast<size_t> (std::sqrt(workGroupSize));
     // Space allocation
     auto nGrid = nGridX*nGridZ;
@@ -273,6 +273,28 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
             gradientInZ->at(i2) = static_cast<T> (gradZ11);
         }
     }
+}
+
+
+template<typename T>
+void finiteDifference(const EikonalXX::Geometry2D &geometry,
+                      const EikonalXX::Source2D &source,
+                      const EikonalXX::Model2D<T> &velocityModel,
+                      const T *travelTimeField,
+                      std::vector<T> *gradientInX,
+                      std::vector<T> *gradientInZ,
+                      const DerivativeType derivativeType = DerivativeType::CentralDifference)
+{
+    sycl::queue q{sycl::cpu_selector_v,
+                  sycl::property::queue::in_order()};
+    ::finiteDifference(geometry,
+                       source,
+                       velocityModel,
+                       travelTimeField,
+                       gradientInX,
+                       gradientInZ,
+                       q,
+                       derivativeType);
 }
 
 }

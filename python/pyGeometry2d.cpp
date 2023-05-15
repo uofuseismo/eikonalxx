@@ -154,8 +154,10 @@ z0 : float
     The z origin in meters.  By default this is 0.
 
 )""";
-    
-
+    g.def("__copy__", [](const Geometry2D &self)
+    {   
+        return Geometry2D(self);
+    });
     g.def_property("nx",
                    &Geometry2D::getNumberOfGridPointsInX,
                    &Geometry2D::setNumberOfGridPointsInX);

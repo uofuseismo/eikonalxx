@@ -3,6 +3,7 @@
 #include "include/pyGeometry3d.hpp"
 #include "include/pyModel2d.hpp"
 #include "include/pySource2d.hpp"
+#include "include/pyStation2d.hpp"
 #include "include/pySolverOptions.hpp"
 #include "eikonalxx/enums.hpp"
 #include <pybind11/pybind11.h>
@@ -16,6 +17,7 @@ PYBIND11_MODULE(pyEikonalXX, m)
     PEikonalXX::initializeGeometry3D(m);
     PEikonalXX::initializeSolverOptions(m);
     PEikonalXX::initializeSource2D(m);
+    PEikonalXX::initializeStation2D(m);
     PEikonalXX::initializeModel2D(m);
 
     pybind11::enum_<EikonalXX::Ordering2D> (m, "Ordering2D")

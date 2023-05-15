@@ -15,26 +15,26 @@ public:
             {
                 auto nCellX = mGeometry.getNumberOfCellsInX();
                 auto nCellY = mGeometry.getNumberOfCellsInY();
-                mCell = gridToIndex(nCellX, nCellY, mCellX, mCellY, mCellZ);
+                mCell = ::gridToIndex(nCellX, nCellY, mCellX, mCellY, mCellZ);
             }
         }
     }
     Geometry3D mGeometry;
     std::string mName;
-    double mX = 0; 
-    double mY = 0;
-    double mZ = 0;
-    double mXOffset = 0;
-    double mYOffset = 0;
-    double mZOffset = 0;
-    int mCellX = 0;
-    int mCellY = 0;
-    int mCellZ = 0;
-    int mCell =-1;
-    bool mHaveXLocation = false;
-    bool mHaveYLocation = false;
-    bool mHaveZLocation = false;
-    bool mHaveGeometry = false;
+    double mX{0};
+    double mY{0};
+    double mZ{0};
+    double mXOffset{0};
+    double mYOffset{0};
+    double mZOffset{0};
+    int mCellX{0};
+    int mCellY{0};
+    int mCellZ{0};
+    int mCell{-1};
+    bool mHaveXLocation{false};
+    bool mHaveYLocation{false};
+    bool mHaveZLocation{false};
+    bool mHaveGeometry{false};
 };
 
 /// Reset the class

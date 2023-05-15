@@ -97,6 +97,10 @@ void PEikonalXX::initializeModel2D(pybind11::module &module)
     m.def(pybind11::init<> ());
     m.doc() = "This defines a 2D Cartesian velocity model.";
 
+    m.def("__copy__", [](const Model2D &self)
+    {
+        return Model2D(self);
+    });
     m.def("initialize",
           &Model2D::initialize, 
           "Initializes the class.");
@@ -106,5 +110,4 @@ void PEikonalXX::initializeModel2D(pybind11::module &module)
     m.def("get_geometry",
           &Model2D::getGeometry,
           "Gets the underlying geometry.");
-
 }

@@ -43,6 +43,7 @@ set(LIBSRC
     src/station2d.cpp src/station3d.cpp
     src/analytic/homogeneous2d.cpp src/analytic/homogeneous3d.cpp
     src/analytic/linearGradient2d.cpp src/analytic/linearGradient3d.cpp
+    src/ray/gradientTracer2d.cpp
     src/ray/path2d.cpp src/ray/path3d.cpp
     src/ray/point2d.cpp src/ray/point3d.cpp
     src/ray/segment2d.cpp src/ray/segment3d.cpp
@@ -68,7 +69,8 @@ if (WRAP_PYTHON)
                python/pySolverOptions.cpp
                python/pyGeometry2d.cpp python/pyGeometry3d.cpp
                python/pyModel2d.cpp
-               python/pySource2d.cpp)
+               python/pySource2d.cpp
+               python/pyStation2d.cpp)
    target_link_libraries(pyEikonalXX PRIVATE
                          pybind11::module eikonalxx)
    set_target_properties(pyEikonalXX PROPERTIES
