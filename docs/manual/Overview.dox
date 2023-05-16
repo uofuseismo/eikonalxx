@@ -1,0 +1,12 @@
+/*!
+\mainpage
+
+This is the API documentation for <a href="https://uofuseismo.github.io/eikonalxx/">EikonalXX</a>.  EikonalXX is a data parallel C++ solver for the eikonal equation.
+
+Those looking to build from source should read the \ref TopicInstallation_page install document.
+
+Initial examples demonstrating EikonalXX usage are found at .
+
+The main documentation is organized into \em chapters that detail key concepts and library capabilities.
+
+*/

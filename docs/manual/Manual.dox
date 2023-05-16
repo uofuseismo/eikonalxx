@@ -1,0 +1,28 @@
+namespace EikonalXX
+{
+/*!
+\page index Overview
+
+\defgroup Geometry_chapter Geometry
+\brief This class defines a two-dimensional or three-dimensional geometry.
+\ingroup Geometry_chapter
+
+\defgroup VelocityModel_chapter Velocity Models
+\brief This class defines a seismic velocity model.
+\defgroup VelocityModel_TwoDimensional_chapter Two Dimensions
+\brief This class defines a two-dimensional velocity model.
+\ingroup VelocityModel_chapter
+
+\defgroup Source_chapter Source
+\brief This class defines a source location in the model.
+\ingroup  Source_chapter
+
+\defgroup Solver_chapter Solvers
+\defgroup Solver_BaseClass Abstract Base Class for Solvers
+\brief Some message formats provided by UMPS.
+\ingroup Solver_chapter
+\defgroup Solver_Analytic_chapter Analytic Solution Solvers
+\brief These solvers provide analytic solutions to the eikonal equation.
+\ingroup Solver_chapter
+*/
+}

@@ -1,0 +1,104 @@
+/*!
+\page TopicInstallation_page Installation
+\addindex installation
+\tableofcontents{html,latex}
+\section TopicInstallation_Outline Installation Section Outline
+
+Broadly, this section outlines strategies for compiling the software.  Specifically, the topics in this section are:
+- \link TopicInstall_Building_OS Supported Operating Systems \endlink
+- \link TopicInstall_Building_Prerequisites Software Prerequisites \endlink
+- \link TopicInstall_Building_Compiling Compiling \endlink
+- \link TopicInstall_Documentation Generating the Documentation \endlink
+
+\section TopicInstall_Building Building the Code
+
+This section provides strategies for obtaining and compiling EikonalXX.  The most recent version of the source is available <a href="https://github.com/uofuseismo/eikonalxx">here</a>.
+
+\subsection TopicInstall_Building_OS Supported Operating Systems
+
+Currently, the software has been compiled and tested Ubuntu22 with the Intel DPC++ compiler running on Intel hardware.  Given the nature of the project I doubt this will compile for a wide range of systems. 
+
+\subsection TopicInstall_Building_Prerequisites Prerequisites
+
+The EikonalXX project is interested in exploring performance gains for solving the eikonal equation on a variety of hardware (CPUs, GPUs, FPGAs) all while using one programming model.  For this reason we have adopted DPC++.  To build the core package from source you need to satisfy the following dependencies:
+
+  - C++20
+  - <a href="https://cmake.org/">CMake</a> v3.16 or greater for generation of Makefiles.
+  - <a href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/data-parallel-c-plus-plus.html#gs.yb0qs0">Intel DPC++</a> which provides a DPC++ implementation.
+  - <a href="https://github.com/gabime/spdlog">SpdLog</a> for logging.
+  - <a href="https://github.com/google/googletest">GTest</a> for unit testing.
+
+Additionally, you may want to build the Python wrappers and generate this documentation.  In that case, you will need:
+
+  - <a href="https://github.com/pybind/pybind11">pybind11</a> for generating Python wrappers.
+  - <a href="https://www.doxygen.nl/index.html">Doxygen</a> for generating the documentation.
+
+Strategies for compiling these libraries can be gleaned from this Docker <a href="https://github.com/uofuseismo/eikonalxx/blob/main/scripts/Dockererfile.ubuntu22">file</a>.
+
+After clearing these hurdles you can then download the <a href="https://github.com/uofuseismo/eikonalxx">code</a>.
+
+\subsection TopicInstall_Building_Compiling Compiling
+
+To compile UMPS without Python you may make a script in the root source directory that looks like:
+
+    #!/bin/bash
+    export CXX=dpc++
+    export BUILD_DIR=build
+    if [ -d ${BUILD_DIR} ]; then
+       rm -rf ${BUILD_DIR}
+    fi 
+    mkdir -p ${BUILD_DIR}
+    cd ${BUILD_DIR}
+    cmake .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_CXX_COMPILER=${CXX} \
+    -DCMAKE_CXX_FLAGS="-Wall"
+
+For those wishing to also generate the Python bindings, the following script may be of interest
+
+    #!/bin/bash
+    export CXX=icpx
+    export BUILD_DIR=intel_build
+    if [ -d ${BUILD_DIR} ]; then
+       rm -rf ${BUILD_DIR}
+    fi
+    mkdir -p ${BUILD_DIR}
+    cd ${BUILD_DIR}
+    cmake .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_CXX_COMPILER=${CXX} \
+    -DCMAKE_CXX_FLAGS="-Wall -tbb -fsycl -fsycl-unnamed-lambda" \
+    -Dpybind11_DIR=${HOME}/anaconda3/lib/python3.9/site-packages/pybind11/share/cmake/pybind11 \
+    -DWRAP_PYTHON=ON \
+    -DPYTHON_EXECUTABLE=${HOME}/anaconda3/bin/python \
+    -DPYTHON_LIBRARIES=${HOME}/anaconda3/lib/libpython3.9.so
+
+Upon a successful CMake configuration, you then descend into the appropriate directory, e.g.,
+
+    cd build
+    make
+
+After a successful compilation you can run the tests to ensure it is working
+
+    make test
+
+And install
+
+    make install
+
+Note that installation may require sudo privileges. 
+
+\ingroup TopicInstallation
+
+To generate the <a href="https://www.doxygen.nl/index.html">Doxygen</a> documentation displayed at the UMPS <a href="https://uofuseismo.github.io/eikonalxx/">github pages</a> site, you would descend into the docs path and do the following
+
+    cd docs
+    mkdir docs_build
+    cd docs_build
+    cmake ..
+    make docs
+    firefox html/index.html
+
+As parting note **DO NOT** touch docs/Doxyfile.gh or docs/html directory.  These exist for the benefit of github pages.
+
+*/
