@@ -129,8 +129,7 @@ void gradient2d(const size_t nGridX, const size_t nGridZ,
                 const double xSrcOffset, const double zSrcOffset,
                 const double dx, const double dz, 
                 const double velTop, const double velBottom,
-                std::vector<T> *gradientInX,
-                std::vector<T> *gradientInZ)
+                std::vector<T> *gradient)
 {
     const T epsilon = std::numeric_limits<T>::epsilon();
     sycl::queue q{sycl::cpu_selector_v,
@@ -139,14 +138,7 @@ void gradient2d(const size_t nGridX, const size_t nGridZ,
     workGroupSize = static_cast<size_t> (std::sqrt(workGroupSize));
     // Set memory on the host
     auto nGrid = nGridX*nGridZ;
-    if (gradientInX->size() != nGrid)
-    {   
-        gradientInX->resize(nGrid, 0); 
-    }   
-    if (gradientInZ->size() != nGrid)
-    {   
-        gradientInZ->resize(nGrid, 0); 
-    }   
+    if (gradient->size() != 2*nGrid){gradient->resize(2*nGrid, 0);}
     // Determine ranges
     sycl::range global{nGridX, nGridZ};
     auto nTileX = std::min(workGroupSize, nGridX);
@@ -167,16 +159,13 @@ void gradient2d(const size_t nGridX, const size_t nGridZ,
     // When this goes out of scope the data should be copied back to the host
     {   
     // Create the buffers
-    sycl::buffer<T> gradientBufferX(*gradientInX);
-    sycl::buffer<T> gradientBufferZ(*gradientInZ);
+    sycl::buffer<T> gradientBuffer(*gradient);
     // Tabulate the gradient which involves taking the derivative of a 
     // distance function and scaling by the slowness
     auto eGradient = q.submit([&](sycl::handler &h) 
     {
-        sycl::accessor gradientInXAccessor(gradientBufferX, h,
-                                           sycl::write_only, sycl::no_init);
-        sycl::accessor gradientInZAccessor(gradientBufferZ, h,
-                                           sycl::write_only, sycl::no_init);
+        sycl::accessor gradientAccessor(gradientBuffer, h,
+                                        sycl::write_only, sycl::no_init);
         if (std::abs(velTop - velBottom) > 1.e-14)
         {
             h.parallel_for(sycl::nd_range{global, local},
@@ -184,15 +173,15 @@ void gradient2d(const size_t nGridX, const size_t nGridZ,
             {
                 size_t ix = it.get_global_id(0);
                 size_t iz = it.get_global_id(1);
-                auto idst = ::gridToIndex(nGridX, ix, iz);
+                auto idst = 2*::gridToIndex(nGridX, ix, iz);
                 T delX = ix*hx - xShiftedSource;
                 T delZ = iz*hz - zShiftedSource;
                 // Let this thing safely go to zero
                 T distance = sycl::fmax(epsilon, sycl::hypot(delX, delZ)); 
                 T gx = 0;
                 T gz = 0;
-                gradientInXAccessor[idst] = 0;
-                gradientInZAccessor[idst] = 0;
+                gradientAccessor[idst] = 0;
+                gradientAccessor[idst] = 0;
                 if (distance > epsilon)
                 {
                     ::gradAcosh(delX, delZ,
@@ -200,8 +189,8 @@ void gradient2d(const size_t nGridX, const size_t nGridZ,
                                 vGradInX, vGradInZ,
                                 &gx, &gz);
                 }
-                gradientInXAccessor[idst] = gx/absG;
-                gradientInZAccessor[idst] = gz/absG;
+                gradientAccessor[idst]     = gx/absG;
+                gradientAccessor[idst + 1] = gz/absG;
             });
         }
         else
@@ -211,15 +200,15 @@ void gradient2d(const size_t nGridX, const size_t nGridZ,
             {
                 size_t ix = it.get_global_id(0);
                 size_t iz = it.get_global_id(1);
-                auto idst = ::gridToIndex(nGridX, ix, iz);
+                auto idst = 2*::gridToIndex(nGridX, ix, iz);
                 T delX = ix*hx - xShiftedSource;
                 T delZ = iz*hz - zShiftedSource;
                 // Let this thing safely go to zero 
                 T distance = sycl::fmax(epsilon, sycl::hypot(delX, delZ));
                 T invDistanceSlowness = slow0/distance;
                 // Analytic expression for gradient
-                gradientInXAccessor[idst] = delX*invDistanceSlowness;
-                gradientInZAccessor[idst] = delZ*invDistanceSlowness;
+                gradientAccessor[idst]     = delX*invDistanceSlowness;
+                gradientAccessor[idst + 1] = delZ*invDistanceSlowness;
             });
          }
     }); 
@@ -238,8 +227,7 @@ public:
     EikonalXX::Geometry2D mGeometry;
     EikonalXX::Source2D mSource;
     std::vector<T> mTravelTimeField; 
-    std::vector<T> mTravelTimeGradientInXField;
-    std::vector<T> mTravelTimeGradientInZField;
+    std::vector<T> mTravelTimeGradientField;
     std::pair<double, double> mVelocity{0, 0};
     bool mHaveTravelTimeField{false};
     bool mHaveTravelTimeGradientField{false};
@@ -276,8 +264,7 @@ void LinearGradient2D<T>::clear() noexcept
     pImpl->mGeometry.clear();
     pImpl->mSource.clear();
     pImpl->mTravelTimeField.clear();
-    pImpl->mTravelTimeGradientInXField.clear();
-    pImpl->mTravelTimeGradientInZField.clear();
+    pImpl->mTravelTimeGradientField.clear();
     pImpl->mVelocity = std::pair<double, double> {0, 0};
     pImpl->mHaveTravelTimeField = false;
     pImpl->mHaveTravelTimeGradientField = false;
@@ -496,8 +483,7 @@ void LinearGradient2D<T>::computeTravelTimeGradientField()
                  xSrcOffset, zSrcOffset,
                  dx, dz, 
                  pImpl->mVelocity.first, pImpl->mVelocity.second,
-                 &pImpl->mTravelTimeGradientInXField,
-                 &pImpl->mTravelTimeGradientInZField);
+                 &pImpl->mTravelTimeGradientField);
     pImpl->mHaveTravelTimeGradientField = true;
 }
 
@@ -536,55 +522,44 @@ bool LinearGradient2D<T>::haveTravelTimeGradientField() const noexcept
 }
 
 template<class T>
-std::vector<T> LinearGradient2D<T>::getTravelTimeGradientFieldInX() const
+std::vector<T> LinearGradient2D<T>::getTravelTimeGradientField() const
 {
     if (!haveTravelTimeGradientField())
     {
          throw std::runtime_error("Travel time gradient field not computed");
     }
-    return pImpl->mTravelTimeGradientInXField;
+    return pImpl->mTravelTimeGradientField;
 }
 
 template<class T>
-const T* LinearGradient2D<T>::getTravelTimeGradientFieldInXPointer() const
+const T* LinearGradient2D<T>::getTravelTimeGradientFieldPointer() const
 {
     if (!haveTravelTimeGradientField())
     {
          throw std::runtime_error("Travel time gradient field not computed");
     }
-    return pImpl->mTravelTimeGradientInXField.data();
-}
-
-template<class T>
-std::vector<T> LinearGradient2D<T>::getTravelTimeGradientFieldInZ() const
-{
-    if (!haveTravelTimeGradientField())
-    {
-         throw std::runtime_error("Travel time gradient field not computed");
-    }
-    return pImpl->mTravelTimeGradientInZField;
-}
-
-template<class T>
-const T* LinearGradient2D<T>::getTravelTimeGradientFieldInZPointer() const
-{
-    if (!haveTravelTimeGradientField())
-    {
-         throw std::runtime_error("Travel time gradient field not computed");
-    }
-    return pImpl->mTravelTimeGradientInZField.data();
+    return pImpl->mTravelTimeGradientField.data();
 }
 
 /// Write the travel time field
 template<class T>
 void LinearGradient2D<T>::writeVTK(const std::string &fileName,
-                                const std::string &title) const
+                                   const std::string &title,
+                                   const bool writeGradient) const
 {
     auto tPtr = getTravelTimeFieldPointer(); // Throws
+    const T *gradientPtr = nullptr;
+    if (writeGradient){gradientPtr = getTravelTimeGradientFieldPointer();}
     IO::VTKRectilinearGrid2D vtkWriter;
     constexpr bool writeBinary = true;
     vtkWriter.open(fileName, pImpl->mGeometry, title, writeBinary); 
     vtkWriter.writeNodalDataset(title, tPtr, EikonalXX::Ordering2D::Natural);
+    if (writeGradient)
+    {
+        vtkWriter.writeNodalVectorDataset(title + "_gradient",
+                                          gradientPtr,
+                                          EikonalXX::Ordering2D::Natural);
+    }
     vtkWriter.close();
 }
 

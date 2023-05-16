@@ -12,7 +12,7 @@
 #include "eikonalxx/ray/segment2d.hpp"
 #include "eikonalxx/ray/point2d.hpp"
 #include "private/grid.hpp"
-#include "private/pack.hpp"
+#include "pack.hpp"
 
 using namespace EikonalXX::IO;
 
@@ -23,6 +23,8 @@ public:
     EikonalXX::Geometry3D mGeometry;
     bool mHaveGeometry{false};
     bool mWriteBinary{true};
+    bool mWrotePointData{false};
+    bool mWroteLookupTable{false};
 };
 
 /// C'tor
@@ -88,7 +90,7 @@ void VTKRectilinearGrid3D::open(const std::string &fileName,
     }
     else
     {
-        pImpl->mFile << fillBlanksWithUnderscores(title) << std::endl;
+        pImpl->mFile << ::fillBlanksWithUnderscores(title) << std::endl;
     }
     // (3) Data type
     if (pImpl->mWriteBinary)
@@ -107,21 +109,21 @@ void VTKRectilinearGrid3D::open(const std::string &fileName,
         pImpl->mFile << "X_COORDINATES " << nx << " float" << std::endl;
         std::vector<float> xCoords(nx); 
         for (int i = 0; i < nx; ++i){xCoords[i] = x0 + dx*i;}
-        auto cx = pack(xCoords);
+        auto cx = ::pack(xCoords);
         pImpl->mFile.write(cx.data(), cx.size());
         pImpl->mFile << std::endl;
 
         pImpl->mFile << "Y_COORDINATES " << ny << " float" << std::endl;
         std::vector<float> yCoords(ny);
         for (int i = 0; i < ny; ++i){yCoords[i] = y0 + dy*i;}
-        auto cy = pack(yCoords);
+        auto cy = ::pack(yCoords);
         pImpl->mFile.write(cy.data(), cy.size());
         pImpl->mFile << std::endl;
 
         pImpl->mFile << "Z_COORDINATES " << nz << " float" << std::endl;
         std::vector<float> zCoords(nz);
         for (int i = 0; i < nz; ++i){zCoords[i] = z0 - dz*i;}
-        auto cz = pack(zCoords);
+        auto cz = ::pack(zCoords);
         pImpl->mFile.write(cz.data(), cz.size());
         pImpl->mFile << std::endl;
     }
@@ -160,6 +162,8 @@ void VTKRectilinearGrid3D::close() noexcept
     pImpl->mGeometry.clear();
     pImpl->mHaveGeometry = false;
     pImpl->mWriteBinary = true;
+    pImpl->mWrotePointData = false;
+    pImpl->mWroteLookupTable = false;
 }
 
 /// Write float nodal dataset
@@ -175,24 +179,32 @@ void VTKRectilinearGrid3D::writeNodalDataset(
     }   
     if (data == nullptr){throw std::invalid_argument("data is NULL");}
     auto nGrid = static_cast<size_t> (pImpl->mGeometry.getNumberOfGridPoints());
-    pImpl->mFile << "POINT_DATA " << nGrid << std::endl;
-    constexpr int nComp = 1;
+    if (!pImpl->mWrotePointData)
+    {   
+        pImpl->mFile << "POINT_DATA " << nGrid << std::endl;
+        pImpl->mWrotePointData = true;
+    }
+    constexpr int nComp{1};
     if (name.empty())
     {
         pImpl->mFile << "SCALARS dataset float " << nComp << std::endl;
     }
     else
     {
-        pImpl->mFile << "SCALARS " << fillBlanksWithUnderscores(name)
+        pImpl->mFile << "SCALARS " << ::fillBlanksWithUnderscores(name)
                      << " float " << nComp << std::endl;
     }
-    pImpl->mFile << "LOOKUP_TABLE default" << std::endl;
+    if (!pImpl->mWroteLookupTable)
+    {
+        pImpl->mFile << "LOOKUP_TABLE default" << std::endl;
+        pImpl->mWroteLookupTable = true;
+    }
     if (pImpl->mWriteBinary)
     {
         std::vector<char> cData(nGrid*4);
         if (ordering == EikonalXX::Ordering3D::Natural)
         {
-            pack(nGrid, data, cData.data());
+            ::pack(nGrid, data, cData.data());
         }
         else
         {
@@ -205,9 +217,9 @@ void VTKRectilinearGrid3D::writeNodalDataset(
                 {
                     for (int iz = 0; iz < nz; ++iz)
                     {
-                        auto isrc = gridToIndex(nx, ny, ix, iy, iz);
-                        auto idst = 4*gridToIndex(nz, ny, iz, iy, ix);
-                        pack(data[isrc], &cData[idst]);
+                        auto isrc = ::gridToIndex(nx, ny, ix, iy, iz);
+                        auto idst = 4*::gridToIndex(nz, ny, iz, iy, ix);
+                        ::pack(data[isrc], &cData[idst]);
                     }
                 }
             }
@@ -244,16 +256,20 @@ void VTKRectilinearGrid3D::writeCellularDataset(
     }
     else
     {
-        pImpl->mFile << "SCALARS " << fillBlanksWithUnderscores(name)
+        pImpl->mFile << "SCALARS " << ::fillBlanksWithUnderscores(name)
                      << " float " << nComp << std::endl;
     }
-    pImpl->mFile << "LOOKUP_TABLE default" << std::endl;
+    if (!pImpl->mWroteLookupTable)
+    {
+        pImpl->mFile << "LOOKUP_TABLE default" << std::endl;
+        pImpl->mWroteLookupTable = true;
+    }
     if (pImpl->mWriteBinary)
     { 
         std::vector<char> cData(nCell*4);
         if (ordering == EikonalXX::Ordering3D::Natural)
         {
-            pack(nCell, data, cData.data());
+            ::pack(nCell, data, cData.data());
         }
         else
         {
@@ -266,9 +282,9 @@ void VTKRectilinearGrid3D::writeCellularDataset(
                 {
                     for (int iz = 0; iz < nCellZ; ++iz)
                     {
-                        auto isrc = gridToIndex(nCellX, nCellY, ix, iy, iz);
-                        auto idst = 4*gridToIndex(nCellZ, nCellY, iz, iy, ix);
-                        pack(data[isrc], &cData[idst]);
+                        auto isrc = ::gridToIndex(nCellX, nCellY, ix, iy, iz);
+                        auto idst = 4*::gridToIndex(nCellZ, nCellY, iz, iy, ix);
+                        ::pack(data[isrc], &cData[idst]);
                     }
                 }
             }

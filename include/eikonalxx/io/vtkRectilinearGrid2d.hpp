@@ -60,6 +60,20 @@ public:
     void writeNodalDataset(const std::string &name,
                            const T *data,
                            Ordering2D ordering = Ordering2D::Natural) const;
+    /// @brief Writes a nodal vector-valued dataset.
+    /// @param[in] name         The name of the nodal vector dataset.  Note, all
+    ///                         blank spaces will be replaced with underscores.
+    /// @param[in] data         The nodal dataset to write.  This has dimension
+    ///                         [geometry.getNumberOfGridPoints() x 2]
+    ///                         and is stored in row major format.
+    /// @param[in] ordering     The dataset's ordering.
+    /// @throws std::runtime_error if \c isOpen() is false.
+    /// @throws std::invalid_argument if the dataset's name is empty, the 
+    ///         number of components is invalid, or the data pointer is NULL.
+    template<typename T>
+    void writeNodalVectorDataset(const std::string &name,
+                                 const T *data,
+                                 Ordering2D ordering = Ordering2D::Natural) const;
     /// @brief Writes a cell-based dataset.
     /// @brief Writes a nodal dataset.
     /// @param[in] name      The name of the cellular dataset.  Note, all blank

@@ -11,7 +11,6 @@
 namespace
 {
 
-
 TEST(Gradient, Homogeneous2D)
 {
     EikonalXX::Analytic::Homogeneous2D<double> solver;
@@ -45,35 +44,33 @@ TEST(Gradient, Homogeneous2D)
     // Solve eikonal equation and compute analytic travel time fields
     solver.solve();
     solver.computeTravelTimeGradientField();
-    auto gradReferenceX = solver.getTravelTimeGradientFieldInX();
-    auto gradReferenceZ = solver.getTravelTimeGradientFieldInZ();
+    //solver.writeVTK("debug.vtk", "homogeneous_field", true);
+    auto gradReference = solver.getTravelTimeGradientField();
     // Pass this to the gradient
-    std::vector<double> gradientInX, gradientInZ;
+    std::vector<double> gradient;
     ::finiteDifference(geometry, solver.getSource(), model,
                        solver.getTravelTimeFieldPointer(),
-                       &gradientInX, &gradientInZ,
+                       &gradient,
                        ::DerivativeType::CentralDifference);
 //                      const DerivativeType derivativeType = DerivativeType::CentralDifference)
-    EXPECT_EQ(gradientInX.size(), gradReferenceX.size());
-    EXPECT_EQ(gradientInZ.size(), gradReferenceZ.size());
-    ASSERT_EQ(gradientInX.size(), gradientInZ.size());
-    for (int i = 0; i < static_cast<int> (gradReferenceX.size()); ++i)
+    EXPECT_EQ(gradient.size(), gradReference.size());
+    for (int i = 0; i < nx*nz; ++i)
     {
-        double resx = gradReferenceX[i] - gradientInX[i]; 
-        double resz = gradReferenceZ[i] - gradientInZ[i];
-        EXPECT_NEAR(std::abs(resx), 0, 1.e-4);
-        EXPECT_NEAR(std::abs(resz), 0, 1.e-4);
+        double resx = gradReference[2*i]     - gradient[2*i]; 
+        double resz = gradReference[2*i + 1] - gradient[2*i + 1];
+        EXPECT_NEAR(std::abs(resx), 0, 5.e-5);
+        EXPECT_NEAR(std::abs(resz), 0, 5.e-5);
     }
     /*
     for (int iz = 0; iz < nz; ++iz)
     {
         for (int ix = 0; ix < nx; ++ix)
         {
-            auto index = ::gridToIndex(nx, ix, iz);
-            double res = gradReferenceX[index] - gradientInX[index];
+            auto index = 2*::gridToIndex(nx, ix, iz);
+            double res = gradReference[index] - gradient[index];
             if (std::abs(res) > 1.e-4)
             {   
-                std::cout << ix << " " << iz << " " << gradientInX[index] << " " << gradReferenceX[index] << std::endl;
+                std::cout << ix << " " << iz << " " << gradient[index] << " " << gradReference[index] << std::endl;
             }
         }
     }
@@ -81,11 +78,11 @@ TEST(Gradient, Homogeneous2D)
     {
         for (int ix = 0; ix < nx; ++ix)
         {
-            auto index = ::gridToIndex(nx, ix, iz);
-            double res = gradReferenceZ[index] - gradientInZ[index];
+            auto index = 2*::gridToIndex(nx, ix, iz) + 1;
+            double res = gradReference[index] - gradient[index];
             if (std::abs(res) > 1.e-4)
             {
-                std::cout << ix << " " << iz << " " << gradientInZ[index] << " " << gradReferenceZ[index] << std::endl;
+                std::cout << ix << " " << iz << " " << gradient[index] << " " << gradReference[index] << std::endl;
             }
         }
     }
@@ -138,21 +135,21 @@ TEST(Gradient, LinearGradient2D)
     EXPECT_TRUE(solver.haveVelocityModel());
     EXPECT_NO_THROW(solver.solve());
     solver.computeTravelTimeGradientField();
-    auto gradReferenceX = solver.getTravelTimeGradientFieldInX();
-    auto gradReferenceZ = solver.getTravelTimeGradientFieldInZ();
+    //solver.writeVTK("linearGradient.vtk", "linear_gradient_field", true);
+    auto gradReference = solver.getTravelTimeGradientField();
     // Pass this to the gradient
-    std::vector<double> gradientInX, gradientInZ;
+    std::vector<double> gradient;
     ::finiteDifference(geometry, solver.getSource(), model,
                        solver.getTravelTimeFieldPointer(),
-                       &gradientInX, &gradientInZ,
+                       &gradient,
                        ::DerivativeType::CentralDifference);
     for (int iz = 0; iz < nz; ++iz)
     {
         for (int ix = 0; ix < nx; ++ix)
         {
-            int i = ::gridToIndex(nx, ix, iz);
-            double resx = gradReferenceX[i] - gradientInX[i];
-            double resz = gradReferenceZ[i] - gradientInZ[i];
+            int i = 2*::gridToIndex(nx, ix, iz);
+            double resx = gradReference[i]     - gradient[i];
+            double resz = gradReference[i + 1] - gradient[i + 1];
             EXPECT_NEAR(std::abs(resx), 0, 1.e-4);
             // Near the source the finite difference is results in a 
             // positive number.  This is because the travel time at the grid
@@ -170,33 +167,6 @@ TEST(Gradient, LinearGradient2D)
             }
         }
     }
-/*
-    for (int iz = 0; iz < nz; ++iz)
-    {
-        for (int ix = 0; ix < nx; ++ix)
-        {
-            auto index = ::gridToIndex(nx, ix, iz);
-if (iz == 0){std::cout << ix << " " << gradientInX[index] << " " << gradientInZ[index] << " " << gradReferenceX[index] << " " << gradReferenceZ[index] << std::endl;}
-            double res = gradReferenceX[index] - gradientInX[index];
-            if (std::abs(res) > 1.e-4)
-            {   
-                std::cout << "dT/dx " << ix << " " << iz << " " << gradientInX[index] << " " << gradReferenceX[index] << std::endl;
-            }
-        }
-    }
-    for (int iz = 0; iz < nz; ++iz)
-    {
-        for (int ix = 0; ix < nx; ++ix)
-        {
-            auto index = ::gridToIndex(nx, ix, iz);
-            double res = gradReferenceZ[index] - gradientInZ[index];
-            if (std::abs(res) > 1.e-4)
-            {
-                std::cout << "dT/dz " << ix << " " << iz << " " << gradientInZ[index] << " " << gradReferenceZ[index] << std::endl;
-            }
-        }
-    }
-*/
 }
 
 }

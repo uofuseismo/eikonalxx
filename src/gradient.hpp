@@ -21,8 +21,7 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
                       const EikonalXX::Source2D &source,
                       const EikonalXX::Model2D<T> &velocityModel,
                       const T *travelTimeField,
-                      std::vector<T> *gradientInX,
-                      std::vector<T> *gradientInZ,
+                      std::vector<T> *gradient,
                       sycl::queue &q,
                       const DerivativeType derivativeType = DerivativeType::CentralDifference)
 {
@@ -61,14 +60,7 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
     workGroupSize = static_cast<size_t> (std::sqrt(workGroupSize));
     // Space allocation
     auto nGrid = nGridX*nGridZ;
-    if (gradientInX->size() != nGrid)
-    {
-        gradientInX->resize(nGrid, 0);
-    }
-    if (gradientInZ->size() != nGrid)
-    {
-        gradientInZ->resize(nGrid, 0);
-    }
+    if (gradient->size() != 2*nGrid){gradient->resize(2*nGrid, 0);}
     auto dx = geometry.getGridSpacingInX();
     auto dz = geometry.getGridSpacingInZ();
     auto dxi = static_cast<T> (static_cast<double> (1./dx));
@@ -82,18 +74,15 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
     sycl::range local{nTileX, nTileZ};
     // Create the buffers
     {
-    sycl::buffer<T> gradientBufferX(*gradientInX);
-    sycl::buffer<T> gradientBufferZ(*gradientInZ);
+    sycl::buffer<T> gradientBuffer(*gradient);
     sycl::buffer<T> travelTimeFieldBuffer(travelTimeField, nGrid);
     // Tabulate the appropriate gradient which involves taking the appropriate
     // derivative.  Note, first focus on the volume then clean up the edges
     // and source after the fact.
     auto eGradient = q.submit([&](sycl::handler &h) 
     {
-        sycl::accessor gradientInXAccessor(gradientBufferX, h,
-                                           sycl::write_only, sycl::no_init);
-        sycl::accessor gradientInZAccessor(gradientBufferZ, h,
-                                           sycl::write_only, sycl::no_init);
+        sycl::accessor gradientAccessor(gradientBuffer, h,
+                                        sycl::write_only, sycl::no_init);
         sycl::accessor travelTimeAccessor(travelTimeFieldBuffer, h,
                                           sycl::read_only);
         if (derivativeType == DerivativeType::CentralDifference)
@@ -109,13 +98,14 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
                 if (ix > 0){uxm1 = travelTimeAccessor[index - 1];}
                 T uxp1 = 0;
                 if (ix < nGridX - 1){uxp1 = travelTimeAccessor[index + 1];}
-                gradientInXAccessor[index] = (uxp1 - uxm1)*twodxi;
 
                 T uzm1 = 0;
                 if (iz > 0){uzm1 = travelTimeAccessor[index - nGridX];}
                 T uzp1 = 0;
                 if (iz < nGridZ - 1){uzp1 = travelTimeAccessor[index + nGridX];}
-                gradientInZAccessor[index] = (uzp1 - uzm1)*twodxi;
+
+                gradientAccessor[2*index]     = (uxp1 - uxm1)*twodxi;
+                gradientAccessor[2*index + 1] = (uzp1 - uzm1)*twodzi;
             });
         }
         else if (derivativeType == DerivativeType::ForwardDifference)
@@ -130,15 +120,17 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
                 T u = travelTimeAccessor[index];
                 T uxp1 = 0;
                 if (ix < nGridX - 1){uxp1 = travelTimeAccessor[index + 1];}
-                gradientInXAccessor[index] = (uxp1 - u)*dxi;
 
                 T uzp1 = 0;
                 if (iz < nGridZ - 1){uzp1 = travelTimeAccessor[index + nGridX];}
-                gradientInZAccessor[index] = (uzp1 - u)*dzi;
+
+                gradientAccessor[2*index]     = (uxp1 - u)*dxi;
+                gradientAccessor[2*index + 1] = (uzp1 - u)*dzi;
             });
         }
     });
     } // Buffers go out of scope which transfers data back to host
+    q.wait();
     if (derivativeType == DerivativeType::CentralDifference)
     {
         // Clean it up - backward and forward difference.  The Lagrange
@@ -154,7 +146,7 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
         //   dP_2/dx |x=2h = -u_0/(2h) - 4 u_1/(2h) + 3 u_2/(2h)
         // This is the formula given in Mathews - Numerical Methods for Math,
         // Science, and Engineering
-        T *gradientInXPtr = gradientInX->data(); 
+        T *gradientPtr = gradient->data(); 
         for (size_t iz = 0; iz < nGridZ; ++iz)
         {
             constexpr size_t ix = 0;
@@ -162,15 +154,14 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
             T u = travelTimeField[index]; 
             T uxp1 = travelTimeField[index + 1];
             T uxp2 = travelTimeField[index + 2];
-            gradientInXPtr[index] = (-3*u + 4*uxp1 - uxp2)*twodxi;
+            gradientPtr[2*index] = (-3*u + 4*uxp1 - uxp2)*twodxi;
 
             index = ::gridToIndex(nGridX, nGridX - 1, iz);
             T uxm2 = travelTimeField[index - 2];
             T uxm1 = travelTimeField[index - 1];
             u = travelTimeField[index];
-            gradientInXPtr[index] = ( uxm2 - 4*uxm1 + 3*u)*twodxi;
+            gradientPtr[2*index] = ( uxm2 - 4*uxm1 + 3*u)*twodxi;
         }
-        T *gradientInZPtr = gradientInZ->data();
         for (size_t ix = 0; ix < nGridX; ++ix)
         {
             constexpr size_t iz = 0;
@@ -178,44 +169,43 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
             T u = travelTimeField[index];
             T uzp1 = travelTimeField[index +   nGridX];
             T uzp2 = travelTimeField[index + 2*nGridX];
-            gradientInZPtr[index] = (-3*u + 4*uzp1 - uzp2)*twodzi;
+            gradientPtr[2*index + 1] = (-3*u + 4*uzp1 - uzp2)*twodzi;
 
             index = ::gridToIndex(nGridX, ix, nGridZ - 1);
             T uzm2 = travelTimeField[index - 2*nGridX];
             T uzm1 = travelTimeField[index -   nGridX];
             u = travelTimeField[index];
-            gradientInZPtr[index] = ( uzm2 - 4*uzm1 + 3*u)*twodzi;
+            gradientPtr[2*index + 1] = ( uzm2 - 4*uzm1 + 3*u)*twodzi;
         }
     }
     else if (derivativeType == DerivativeType::ForwardDifference)
     {
-        T *gradientInXPtr = gradientInX->data();
+        T *gradientPtr = gradient->data();
         for (size_t iz = 0; iz < nGridZ; ++iz)
         {
             constexpr size_t ix = 0;
             auto index = ::gridToIndex(nGridX, ix, iz);
             T u = travelTimeField[index];
             T uxp1 = travelTimeField[index + 1];
-            gradientInXPtr[index] = (uxp1 - u)*dxi;
+            gradientPtr[2*index] = (uxp1 - u)*dxi;
 
             index = ::gridToIndex(nGridX, nGridX - 1, iz);
             T uxm1 = travelTimeField[index - 1];
             u = travelTimeField[index];
-            gradientInXPtr[index] = (u - uxm1)*dxi;
+            gradientPtr[2*index] = (u - uxm1)*dxi;
         }
-        T *gradientInZPtr = gradientInZ->data();
         for (size_t ix = 0; ix < nGridX; ++ix)
         {
             constexpr size_t iz = 0;
             auto index = ::gridToIndex(nGridX, ix, iz);
             T u = travelTimeField[index];
             T uzp1 = travelTimeField[index + nGridX];
-            gradientInZPtr[index] = (uzp1 - u)*dzi;
+            gradientPtr[2*index + 1] = (uzp1 - u)*dzi;
 
             index = ::gridToIndex(nGridX, ix, nGridZ - 1);
             T uzm1 = travelTimeField[index - nGridX];
             u = travelTimeField[index];
-            gradientInZPtr[index] = (u - uzm1)*dzi;
+            gradientPtr[2*index + 1] = (u - uzm1)*dzi;
         }
     }
     // Fix the derivatives around the source with a `forward' difference.
@@ -246,6 +236,10 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
 //std::cout << dxs << " " << dzs << " " << xs << " " << zs << std::endl;
     if (std::abs(dxs) > tol || std::abs(dzs) > tol)
     {
+        bool doX = false;
+        if (std::abs(dxs) > tol){doX = true;}
+        bool doZ = false;
+        if (std::abs(dzs) > tol){doZ = true;}
 //std::cout << "yar" << std::endl;
         // Analytic gradients assuming constant velocity in cell
         auto gradX00 = (dx0/sycl::sqrt(dx0*dx0 + dz0*dz0))*slow0;
@@ -256,22 +250,18 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
         auto gradZ11 = (dz1/sycl::sqrt(dx1*dx1 + dz1*dz1))*slow0;
         auto gradX01 = (dx0/sycl::sqrt(dx0*dx0 + dz1*dz1))*slow0;
         auto gradZ01 = (dz1/sycl::sqrt(dx0*dx0 + dz1*dz1))*slow0;
-        // Fill gradients (cache friendly)
-        if (std::abs(dxs) > tol)
-        {
-            gradientInX->at(i0) = static_cast<T> (gradX00);
-            gradientInX->at(i1) = static_cast<T> (gradX10);
-            gradientInX->at(i3) = static_cast<T> (gradX01);
-            gradientInX->at(i2) = static_cast<T> (gradX11);
-        }
+        // Fill gradients
+        if (doX){gradient->at(2*i0)     = static_cast<T> (gradX00);}
+        if (doZ){gradient->at(2*i0 + 1) = static_cast<T> (gradZ00);}
 
-        if (std::abs(dzs) > tol)
-        {
-            gradientInZ->at(i0) = static_cast<T> (gradZ00);
-            gradientInZ->at(i1) = static_cast<T> (gradZ10);
-            gradientInZ->at(i3) = static_cast<T> (gradZ01);
-            gradientInZ->at(i2) = static_cast<T> (gradZ11);
-        }
+        if (doX){gradient->at(2*i1)     = static_cast<T> (gradX10);}
+        if (doZ){gradient->at(2*i1 + 1) = static_cast<T> (gradZ10);}
+
+        if (doX){gradient->at(2*i3)     = static_cast<T> (gradX01);}
+        if (doZ){gradient->at(2*i3 + 1) = static_cast<T> (gradZ01);}
+
+        if (doX){gradient->at(2*i2)     = static_cast<T> (gradX11);}
+        if (doZ){gradient->at(2*i2 + 1) = static_cast<T> (gradZ11);}
     }
 }
 
@@ -281,8 +271,7 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
                       const EikonalXX::Source2D &source,
                       const EikonalXX::Model2D<T> &velocityModel,
                       const T *travelTimeField,
-                      std::vector<T> *gradientInX,
-                      std::vector<T> *gradientInZ,
+                      std::vector<T> *gradient,
                       const DerivativeType derivativeType = DerivativeType::CentralDifference)
 {
     sycl::queue q{sycl::cpu_selector_v,
@@ -291,8 +280,7 @@ void finiteDifference(const EikonalXX::Geometry2D &geometry,
                        source,
                        velocityModel,
                        travelTimeField,
-                       gradientInX,
-                       gradientInZ,
+                       gradient,
                        q,
                        derivativeType);
 }

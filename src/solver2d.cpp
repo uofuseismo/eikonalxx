@@ -118,8 +118,7 @@ public:
     /// The travel time field.
     std::vector<T> mTravelTimeField;
     /// The gradient of the travel time field.
-    std::vector<T> mTravelTimeGradientInXField;
-    std::vector<T> mTravelTimeGradientInZField;
+    std::vector<T> mTravelTimeGradientField;
     /// The source location
     //std::pair<double, double> mSourceLocation{0, 0};
     /// The shifted source location in (x,z).  This is useful to the solver.
@@ -168,8 +167,7 @@ void Solver2D<T>::clear() noexcept
     pImpl->mSolverSweep3.clear();
     pImpl->mSolverSweep4.clear();
     pImpl->mTravelTimeField.clear();
-    pImpl->mTravelTimeGradientInXField.clear();
-    pImpl->mTravelTimeGradientInZField.clear();
+    pImpl->mTravelTimeGradientField.clear();
     //pImpl->mSourceLocation = std::make_pair<double, double> (0, 0);
     //pImpl->mShiftedSource = std::make_pair<T, T> (0, 0);
     //pImpl->mSourceCellX = 0;
@@ -829,43 +827,23 @@ bool Solver2D<T>::haveTravelTimeGradientField() const noexcept
 }
 
 template<class T>
-std::vector<T> Solver2D<T>::getTravelTimeGradientFieldInX() const
+std::vector<T> Solver2D<T>::getTravelTimeGradientField() const
 {
     if (!haveTravelTimeGradientField())
     {
          throw std::runtime_error("Travel time gradient field not computed");
     }
-    return pImpl->mTravelTimeGradientInXField;
+    return pImpl->mTravelTimeGradientField;
 }
 
 template<class T>
-const T* Solver2D<T>::getTravelTimeGradientFieldInXPointer() const
+const T* Solver2D<T>::getTravelTimeGradientFieldPointer() const
 {
     if (!haveTravelTimeGradientField())
     {
          throw std::runtime_error("Travel time gradient field not computed");
     }
-    return pImpl->mTravelTimeGradientInXField.data();
-}
-
-template<class T>
-std::vector<T> Solver2D<T>::getTravelTimeGradientFieldInZ() const
-{
-    if (!haveTravelTimeGradientField())
-    {
-         throw std::runtime_error("Travel time gradient field not computed");
-    }
-    return pImpl->mTravelTimeGradientInZField;
-}
-
-template<class T>
-const T* Solver2D<T>::getTravelTimeGradientFieldInZPointer() const
-{
-    if (!haveTravelTimeGradientField())
-    {
-         throw std::runtime_error("Travel time gradient field not computed");
-    }
-    return pImpl->mTravelTimeGradientInZField.data();
+    return pImpl->mTravelTimeGradientField.data();
 }
 
 ///--------------------------------------------------------------------------///

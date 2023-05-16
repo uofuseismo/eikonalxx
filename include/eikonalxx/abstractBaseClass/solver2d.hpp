@@ -4,17 +4,26 @@
 namespace EikonalXX::AbstractBaseClass
 {
 template<class T>
+/// @class ISolver2D "solver2d.hpp" "eikonalxx/abstractBaseClass/solver2d.hpp"
+/// @brief The abstract base class for the two dimensional solvers.
+/// @ingroup Solver_BaseClass
+/// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 class ISolver2D
 {
 public:
+    /// @brief Default destructor.
     virtual ~ISolver2D() = default;
+    /// @brief Gets a copy of the travel time field.
     virtual std::vector<T> getTravelTimeField() const = 0;
+    /// @brief Gets a pointer to the travel time field.
     virtual const T* getTravelTimeFieldPointer() const = 0;
-    virtual std::vector<T> getTravelTimeGradientFieldInX() const = 0;
-    virtual const T* getTravelTimeGradientFieldInXPointer() const = 0;
-    virtual std::vector<T> getTravelTimeGradientFieldInZ() const = 0;
-    virtual const T* getTravelTimeGradientFieldInZPointer() const = 0;
+    /// @brief Gets a copy of the gradient of the travel time field.
+    virtual std::vector<T> getTravelTimeGradientField() const = 0;
+    /// @brief Gets a pointer to the gradient of the travel time field.
+    virtual const T *getTravelTimeGradientFieldPointer() const = 0;
+    /// @result True indicates the travel time field was computed.
     virtual bool haveTravelTimeField() const noexcept = 0;
+    /// @result True indicates the gradient of the travel time field was computed. 
     virtual bool haveTravelTimeGradientField() const noexcept = 0;
 };
 }

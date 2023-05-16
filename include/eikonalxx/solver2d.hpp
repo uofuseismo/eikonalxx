@@ -116,29 +116,20 @@ public:
     ///         time field is available.
     [[nodiscard]] bool haveTravelTimeField() const noexcept override;
 
-    /// @result The gradient of the travel time field in x in seconds/meter.
-    ///         This uses the natural ordering.
+    /// @result The gradient of the travel time field in x in and z - both in
+    ///         seconds/meter.  This uses the natural ordering.  This has
+    ///         dimension [getGeometry.getNumberOfGridPoints() x 2] and is
+    ///         stored in row major format.
     /// @note This has dimension getGeometry.getNumberOfGridPoints().
     /// @sa \c Ordering2D, \c haveTravelTimeGradientField(), \c getGeometry()
-    [[nodiscard]] std::vector<T> getTravelTimeGradientFieldInX() const override;
+    [[nodiscard]] std::vector<T> getTravelTimeGradientField() const override;
     /// @result A reference to the gradient of the travel time field in x
-    ///         in seconds/meter.  This uses the natural ordering and
-    ///         has dimension [getGeometry.getNumberOfGridPoints()].
+    ///         and z - both in seconds/meter.  This uses the natural ordering
+    ///         has dimension [getGeometry.getNumberOfGridPoints() x 2] and
+    ///         is stored in row major format.
     /// @throws std::runtime_error if \c haveTravelTimeGradientField() is false.
     /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
-    [[nodiscard]] const T *getTravelTimeGradientFieldInXPointer() const override;
-
-    /// @result The gradient of the travel time field in z in seconds/meter.
-    ///         This uses the natural ordering.
-    /// @note This has dimension getGeometry.getNumberOfGridPoints().
-    /// @sa \c Ordering2D, \c haveTravelGradientTimeField(), \c getGeometry()
-    [[nodiscard]] std::vector<T> getTravelTimeGradientFieldInZ() const override;
-    /// @result A reference to the gradient of the travel time field in z
-    ///         in seconds/meter.  This uses the natural ordering and
-    ///         has dimension [getGeometry.getNumberOfGridPoints()].
-    /// @throws std::runtime_error if \c haveTravelTimeGradientField() is false.
-    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
-    [[nodiscard]] const T *getTravelTimeGradientFieldInZPointer() const override;
+    [[nodiscard]] const T *getTravelTimeGradientFieldPointer() const override;
 
     /// @result True indicates the travel time field's gradient was computed.
     [[nodiscard]] bool haveTravelTimeGradientField() const noexcept override;

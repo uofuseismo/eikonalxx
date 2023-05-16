@@ -16,11 +16,12 @@ namespace Analytic
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 /// @note Further details can be found in Fomel's : Fast sweeping method for
 ///       the factored eikonal equation.
+/// @ingroup Solver_Analytic_chapter
 template<class T>
 class LinearGradient3D : public EikonalXX::AbstractBaseClass::ISolver3D<T>
 {
 public:
-    /// @name Constructor
+    /// @name Constructors
     /// @{
 
     /// @brief Constructor.
@@ -29,22 +30,6 @@ public:
     LinearGradient3D(const LinearGradient3D &solver);
     /// @brief Move constructor.
     LinearGradient3D(LinearGradient3D &&solver) noexcept;
-    /// @}
-
-    /// @name Operators
-    /// @{
-
-    /// @brief Copy assignment.
-    /// @param[in] solver  The 3D linear graident analytic solver to copy
-    ///                    to this.
-    /// @result A deep copy of the input solver.
-    LinearGradient3D& operator=(const LinearGradient3D &solver);
-    /// @brief Move assignment.
-    /// @param[in,out] solver  The 3D linear gradient analytic solver whose
-    ///                        memory will be moved to this.  On exit, solver's
-    ///                        behavior is undefined.
-    /// @result The memory from the input solver moved to this.
-    LinearGradient3D& operator=(LinearGradient3D &&solver) noexcept;
     /// @}
 
     /// @name Step 1: Initialization
@@ -126,41 +111,19 @@ public:
     ///         time field is available.
     [[nodiscard]] bool haveTravelTimeField() const noexcept override;
 
-    /// @result The gradient of the travel time field in x in seconds/meter.
-    ///         This uses the natural ordering.
-    /// @note This has dimension getGeometry.getNumberOfGridPoints().
+    /// @result The gradient of the travel time field in x, y, and z - all in
+    ///         seconds/meter.  This uses the natural ordering.  This has
+    ///         dimension [getGeometry.getNumberOfGridPoints() x 3] and is 
+    ///         stored in row major format.
     /// @sa \c Ordering2D, \c haveTravelTimeField(), \c getGeometry()
-    [[nodiscard]] std::vector<T> getTravelTimeGradientFieldInX() const override;
-    /// @result A reference to the gradient of the travel time field in x
-    ///         in seconds/meter.  This uses the natural ordering and
-    ///         has dimension [getGeometry.getNumberOfGridPoints()].
+    [[nodiscard]] std::vector<T> getTravelTimeGradientField() const override;
+    /// @result A reference to the gradient of the travel time field in x, y,
+    ///         and z - all in seconds/meter.  This uses the natural ordering.
+    ///         This has dimension [getGeometry.getNumberOfGridPoints() x 3]
+    ///         and is stored in row major format.
     /// @throws std::runtime_error if \c haveTravelTimeGradientField() is false.
     /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
-    [[nodiscard]] const T *getTravelTimeGradientFieldInXPointer() const override;
-
-    /// @result The gradient of the travel time field in y in seconds/meter.
-    ///         This uses the natural ordering.
-    /// @note This has dimension getGeometry.getNumberOfGridPoints().
-    /// @sa \c Ordering2D, \c haveTravelTimeField(), \c getGeometry()
-    [[nodiscard]] std::vector<T> getTravelTimeGradientFieldInY() const override;
-    /// @result A reference to the gradient of the travel time field in y
-    ///         in seconds/meter.  This uses the natural ordering and
-    ///         has dimension [getGeometry.getNumberOfGridPoints()].
-    /// @throws std::runtime_error if \c haveTravelTimeGradientField() is false.
-    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
-    [[nodiscard]] const T *getTravelTimeGradientFieldInYPointer() const override;
-
-    /// @result The gradient of the travel time field in z in seconds/meter.
-    ///         This uses the natural ordering.
-    /// @note This has dimension getGeometry.getNumberOfGridPoints().
-    /// @sa \c Ordering2D, \c haveTravelTimeField(), \c getGeometry()
-    [[nodiscard]] std::vector<T> getTravelTimeGradientFieldInZ() const override;
-    /// @result A reference to the gradient of the travel time field in z
-    ///         in seconds/meter.  This uses the natural ordering and
-    ///         has dimension [getGeometry.getNumberOfGridPoints()].
-    /// @throws std::runtime_error if \c haveTravelTimeGradientField() is false.
-    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
-    [[nodiscard]] const T *getTravelTimeGradientFieldInZPointer() const override;
+    [[nodiscard]] const T *getTravelTimeGradientFieldPointer() const override;
 
     /// @result True indicates the travel time field's gradient was computed.
     [[nodiscard]] bool haveTravelTimeGradientField() const noexcept override;
@@ -173,6 +136,22 @@ public:
     ///         output file.
     void writeVTK(const std::string &fileName,
                   const std::string &title = "linearGradient_analytic_traveltime_field") const;
+    /// @}
+
+    /// @name Operators
+    /// @{
+
+    /// @brief Copy assignment.
+    /// @param[in] solver  The 3D linear graident analytic solver to copy
+    ///                    to this.
+    /// @result A deep copy of the input solver.
+    LinearGradient3D& operator=(const LinearGradient3D &solver);
+    /// @brief Move assignment.
+    /// @param[in,out] solver  The 3D linear gradient analytic solver whose
+    ///                        memory will be moved to this.  On exit, solver's
+    ///                        behavior is undefined.
+    /// @result The memory from the input solver moved to this.
+    LinearGradient3D& operator=(LinearGradient3D &&solver) noexcept;
     /// @}
 
     /// @name Destructors

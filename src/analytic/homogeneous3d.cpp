@@ -72,6 +72,73 @@ void solve3d(const size_t nGridX, const size_t nGridY, const size_t nGridZ,
     // Release memory
     sycl::free(travelTimesDevice, q);
 }
+
+template<typename T>
+void gradient3d(const size_t nGridX, const size_t nGridY, const size_t nGridZ,
+                const double xSrcOffset,
+                const double ySrcOffset,
+                const double zSrcOffset,
+                const double dx, const double dy, const double dz, 
+                const double vel,
+                std::vector<T> *gradient)
+{
+    const T epsilon = std::numeric_limits<T>::epsilon();
+    sycl::queue q{sycl::cpu_selector_v,
+                  sycl::property::queue::in_order()};
+    auto workGroupSize = q.get_device().get_info<sycl::info::device::max_work_group_size> (); 
+    workGroupSize = static_cast<size_t> (std::cbrt(workGroupSize));
+    // Set memory on the host
+    auto nGrid = nGridX*nGridZ;
+    if (gradient->size() != 3*nGrid){gradient->resize(3*nGrid, 0);}
+    // Determine ranges
+    sycl::range global{nGridX, nGridY, nGridZ};
+    auto nTileX = std::min(workGroupSize, nGridX);
+    auto nTileY = std::min(workGroupSize, nGridY);
+    auto nTileZ = std::min(workGroupSize, nGridZ);
+    sycl::range local{nTileX, nTileY, nTileZ};
+    // Simplify some geometric terms
+    auto xShiftedSource = static_cast<T> (xSrcOffset);
+    auto yShiftedSource = static_cast<T> (ySrcOffset);
+    auto zShiftedSource = static_cast<T> (zSrcOffset);
+    auto hx = static_cast<T> (dx);
+    auto hy = static_cast<T> (dy);
+    auto hz = static_cast<T> (dz);
+    auto slowness = static_cast<T> (1./vel); // Do division here
+    // When this goes out of scope the data should be copied back to the host
+    {   
+    // Create the buffers
+    sycl::buffer<T> gradientBuffer(*gradient);
+    // Tabulate the gradient which involves taking the derivative of a 
+    // distance function and scaling by the slowness
+    auto eGradient = q.submit([&](sycl::handler &h) 
+    {   
+        sycl::accessor gradientAccessor(gradientBuffer, h,
+                                        sycl::write_only, sycl::no_init);
+        h.parallel_for(sycl::nd_range{global, local},
+                       [=](sycl::nd_item<3> it) 
+        {
+            size_t ix = it.get_global_id(0);
+            size_t iy = it.get_global_id(1);
+            size_t iz = it.get_global_id(2);
+            auto idst = 3*::gridToIndex(nGridX, nGridY, ix, iy, iz);
+            T delX = ix*hx - xShiftedSource;
+            T delY = iy*hy - yShiftedSource;
+            T delZ = iz*hz - zShiftedSource;
+            // Let this thing safely go to zero 
+            T distance
+                = sycl::fmax(epsilon,
+                             sycl::sqrt(delX*delX + delY*delY + delZ*delZ));
+            T invDistanceSlowness = slowness/distance;
+            // Analytic expression for gradient
+            gradientAccessor[idst]     = delX*invDistanceSlowness;
+            gradientAccessor[idst + 1] = delY*invDistanceSlowness;
+            gradientAccessor[idst + 2] = delZ*invDistanceSlowness;
+        });
+    }); 
+    }   
+    q.wait();
+}
+
 }
 
 using namespace EikonalXX::Analytic;
@@ -83,9 +150,7 @@ public:
     EikonalXX::Geometry3D mGeometry;
     EikonalXX::Source3D mSource;
     std::vector<T> mTravelTimeField; 
-    std::vector<T> mTravelTimeGradientInXField;
-    std::vector<T> mTravelTimeGradientInYField;
-    std::vector<T> mTravelTimeGradientInZField;
+    std::vector<T> mTravelTimeGradientField;
     double mVelocity{0};
     bool mHaveTravelTimeField{false};
     bool mHaveTravelTimeGradientField{false};
@@ -122,9 +187,7 @@ void Homogeneous3D<T>::clear() noexcept
     pImpl->mGeometry.clear();
     pImpl->mSource.clear();
     pImpl->mTravelTimeField.clear();
-    pImpl->mTravelTimeGradientInXField.clear();
-    pImpl->mTravelTimeGradientInYField.clear();
-    pImpl->mTravelTimeGradientInZField.clear();
+    pImpl->mTravelTimeGradientField.clear();
     pImpl->mVelocity = 0;
     pImpl->mHaveTravelTimeField = false;
     pImpl->mHaveTravelTimeGradientField = false;
@@ -376,63 +439,23 @@ bool Homogeneous3D<T>::haveTravelTimeGradientField() const noexcept
 }
 
 template<class T>
-std::vector<T> Homogeneous3D<T>::getTravelTimeGradientFieldInX() const
+std::vector<T> Homogeneous3D<T>::getTravelTimeGradientField() const
 {
     if (!haveTravelTimeGradientField())
     {
          throw std::runtime_error("Travel time gradient field not computed");
     }
-    return pImpl->mTravelTimeGradientInXField;
+    return pImpl->mTravelTimeGradientField;
 }
 
 template<class T>
-const T* Homogeneous3D<T>::getTravelTimeGradientFieldInXPointer() const
+const T* Homogeneous3D<T>::getTravelTimeGradientFieldPointer() const
 {
     if (!haveTravelTimeGradientField())
     {
          throw std::runtime_error("Travel time gradient field not computed");
     }
-    return pImpl->mTravelTimeGradientInXField.data();
-}
-
-template<class T>
-std::vector<T> Homogeneous3D<T>::getTravelTimeGradientFieldInY() const
-{
-    if (!haveTravelTimeGradientField())
-    {
-         throw std::runtime_error("Travel time gradient field not computed");
-    }
-    return pImpl->mTravelTimeGradientInYField;
-}
-
-template<class T>
-const T* Homogeneous3D<T>::getTravelTimeGradientFieldInYPointer() const
-{
-    if (!haveTravelTimeGradientField())
-    {   
-         throw std::runtime_error("Travel time gradient field not computed");
-    }   
-    return pImpl->mTravelTimeGradientInYField.data();
-}
-
-template<class T>
-std::vector<T> Homogeneous3D<T>::getTravelTimeGradientFieldInZ() const
-{
-    if (!haveTravelTimeGradientField())
-    {
-         throw std::runtime_error("Travel time gradient field not computed");
-    }
-    return pImpl->mTravelTimeGradientInZField;
-}
-
-template<class T>
-const T* Homogeneous3D<T>::getTravelTimeGradientFieldInZPointer() const
-{
-    if (!haveTravelTimeGradientField())
-    {
-         throw std::runtime_error("Travel time gradient field not computed");
-    }
-    return pImpl->mTravelTimeGradientInZField.data();
+    return pImpl->mTravelTimeGradientField.data();
 }
 
 /// Write the travel time field

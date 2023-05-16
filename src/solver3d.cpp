@@ -94,9 +94,7 @@ public:
     Source3D mSource;
     SolverOptions mOptions;
     std::vector<T> mTravelTimeField;
-    std::vector<T> mTravelTimeGradientInXField;
-    std::vector<T> mTravelTimeGradientInYField;
-    std::vector<T> mTravelTimeGradientInZField;
+    std::vector<T> mTravelTimeGradientField;
     int mSourceCell{0};
     bool mHaveTravelTimeField{false};
     bool mHaveTravelTimeGradientField{false};
@@ -134,9 +132,7 @@ void Solver3D<T>::clear() noexcept
     pImpl->mGeometry.clear();
     pImpl->mOptions.clear();
     pImpl->mTravelTimeField.clear();
-    pImpl->mTravelTimeGradientInXField.clear();
-    pImpl->mTravelTimeGradientInYField.clear();
-    pImpl->mTravelTimeGradientInZField.clear();
+    pImpl->mTravelTimeGradientField.clear();
     pImpl->mSourceCell = 0;
     pImpl->mHaveTravelTimeField = false;
     pImpl->mHaveTravelTimeGradientField = false;
@@ -485,6 +481,13 @@ std::vector<T> Solver3D<T>::getTravelTimeField() const
     return pImpl->mTravelTimeField;
 }
 
+/// Have travel time field?
+template<class T>
+bool Solver3D<T>::haveTravelTimeField() const noexcept
+{
+    return pImpl->mHaveTravelTimeField;
+}
+
 /// Get travel time field pointer
 template<class T>
 const T* Solver3D<T>::getTravelTimeFieldPointer() const
@@ -504,70 +507,23 @@ bool Solver3D<T>::haveTravelTimeGradientField() const noexcept
 }
 
 template<class T>
-std::vector<T> Solver3D<T>::getTravelTimeGradientFieldInX() const
+std::vector<T> Solver3D<T>::getTravelTimeGradientField() const
 {
     if (!haveTravelTimeGradientField())
     {   
          throw std::runtime_error("Travel time gradient field not computed");
     }   
-    return pImpl->mTravelTimeGradientInXField;
+    return pImpl->mTravelTimeGradientField;
 }
 
 template<class T>
-const T* Solver3D<T>::getTravelTimeGradientFieldInXPointer() const
+const T* Solver3D<T>::getTravelTimeGradientFieldPointer() const
 {
     if (!haveTravelTimeGradientField())
     {   
          throw std::runtime_error("Travel time gradient field not computed");
     }   
-    return pImpl->mTravelTimeGradientInXField.data();
-}
-
-template<class T>
-std::vector<T> Solver3D<T>::getTravelTimeGradientFieldInY() const
-{
-    if (!haveTravelTimeGradientField())
-    {
-         throw std::runtime_error("Travel time gradient field not computed");
-    }
-    return pImpl->mTravelTimeGradientInYField;
-}
-
-template<class T>
-const T* Solver3D<T>::getTravelTimeGradientFieldInYPointer() const
-{
-    if (!haveTravelTimeGradientField())
-    {
-         throw std::runtime_error("Travel time gradient field not computed");
-    }
-    return pImpl->mTravelTimeGradientInYField.data();
-}
-
-template<class T>
-std::vector<T> Solver3D<T>::getTravelTimeGradientFieldInZ() const
-{
-    if (!haveTravelTimeGradientField())
-    {   
-         throw std::runtime_error("Travel time gradient field not computed");
-    }   
-    return pImpl->mTravelTimeGradientInZField;
-}
-
-template<class T>
-const T* Solver3D<T>::getTravelTimeGradientFieldInZPointer() const
-{
-    if (!haveTravelTimeGradientField())
-    {   
-         throw std::runtime_error("Travel time gradient field not computed");
-    }   
-    return pImpl->mTravelTimeGradientInZField.data();
-}
-
-/// Have travel time field?
-template<class T>
-bool Solver3D<T>::haveTravelTimeField() const noexcept
-{
-    return pImpl->mHaveTravelTimeField;
+    return pImpl->mTravelTimeGradientField.data();
 }
 
 ///--------------------------------------------------------------------------///
