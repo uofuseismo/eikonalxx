@@ -11,19 +11,21 @@ if (OPENMP_FOUND)
    string(APPEND CMAKE_CXX_FLAGS " ${OpenMP_CXX_FLAGS}")
 endif()
 
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package(GTest REQUIRED)
 find_package(Boost COMPONENTS graph)
 find_package(spdlog REQUIRED)
+find_package(Threads REQUIRED)
 set(FindTBB_DIR ${CMAKE_SOURCE_DIR}/cmake)
 find_package(FindTBB REQUIRED)
 
 configure_file(${CMAKE_SOURCE_DIR}/include/private/version.hpp.in
                ${CMAKE_SOURCE_DIR}/include/eikonalxx/version.hpp)
 
-include_directories(
-   ${CMAKE_SOURCE_DIR}/include
-   ${TBB_INCLUDE_DIR}
-)
+#include_directories(
+#   ${CMAKE_SOURCE_DIR}/include
+#   ${TBB_INCLUDE_DIR}
+#)
 
 set(PUBLIC_HEADER_DIRECTORIES
     ${CMAKE_SOURCE_DIR}/include/eikonalxx)
@@ -51,15 +53,22 @@ set(LIBSRC
 
 set(BUILD_SHARED_LIBS YES)
 add_library(eikonalxx ${LIBSRC})
-target_link_libraries(eikonalxx PRIVATE sycl ${TBB_LIBRARY} stdc++fs)
-if (${Boost_FOUND})
-   target_compile_definitions(eikonalxx PRIVATE USE_BOOST)
-   target_include_directories(eikonalxx PRIVATE ${Boost_INCLUDE_DIRS})
-endif()
 set_target_properties(eikonalxx PROPERTIES
                       CXX_STANDARD 20
-                      CXX_STANDARD_REQUIRED YES
-                      CXX_EXTENSIONS NO)
+                      CXX_STANDARD_REQUIRED YES 
+                      CXX_EXTENSIONS NO) 
+if (${Boost_FOUND})
+   target_compile_definitions(eikonalxx PRIVATE USE_BOOST)
+   #target_include_directories(eikonalxx PRIVATE ${Boost_INCLUDE_DIRS})
+endif()
+target_include_directories(eikonalxx
+                           PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+                           PRIVATE sycl 
+                           PRIVATE spdlog::spdlog Threads::Threads
+                           PRIVATE ${TBB_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
+#                           PUBLIC $<INSTALL_INTERFACE:${CMAKE_SOURCE_DIR}/include/eikonalxx>)
+target_link_libraries(eikonalxx PRIVATE sycl ${TBB_LIBRARY} Threads::Threads)# stdc++fs)
+
 
 
 if (WRAP_PYTHON)
@@ -78,8 +87,9 @@ if (WRAP_PYTHON)
                          CXX_STANDARD 20
                          CXX_STANDARD_REQUIRED YES
                          CXX_EXTENSIONS NO)
-   target_include_directories(pyEikonalXX PRIVATE pybind11
-                              ${CMAKE_SOURCE_DIR}/python)
+   target_include_directories(pyEikonalXX
+                              PRIVATE pybind11
+                              PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
 endif()
 
 ##########################################################################################
@@ -99,7 +109,8 @@ add_executable(unitTests
                testing/gradient.cpp
                testing/ray.cpp
                )
-target_link_libraries(unitTests PRIVATE eikonalxx ${GTEST_BOTH_LIBRARIES} ${TBB_LIBRARY} OpenCL pthread)
+target_link_libraries(unitTests PRIVATE eikonalxx ${GTEST_BOTH_LIBRARIES} ${TBB_LIBRARY}
+                                        OpenCL Threads::Threads)
 target_include_directories(unitTests PRIVATE ${GTEST_INCLUDE_DIRS}
                                              ${CMAKE_SOURCE_DIR}/include
                                              ${CMAKE_SOURCE_DIR}/src)
