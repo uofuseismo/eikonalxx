@@ -306,6 +306,8 @@ TEST(Ray, HomogeneousGradientTracer2D)
     const int nz{101};
     const double xs{x0 + nx/2*dx};
     const double zs{z0 + nz/2*dz};
+    const int nStationsVertical{11};
+    const int nStationsHorizontal{11};
     // Create geometry
     EikonalXX::Geometry2D geometry;
     geometry.setGridSpacingInX(dx);
@@ -320,6 +322,33 @@ TEST(Ray, HomogeneousGradientTracer2D)
     source.setLocationInX(xs);
     source.setLocationInZ(zs);
     // Get the stations
+    std::vector<EikonalXX::Station2D> stations;
+    EikonalXX::Station2D station;
+    station.setGeometry(geometry);
+    station.setName("UU.T" + std::to_string(stations.size()));
+    station.setLocationInX(xs + 0.001);
+    station.setLocationInZ(zs + 0.001);
+    stations.push_back(station);
+    // Distribute set of stations along free surface
+    for (int is = 0; is < nStationsHorizontal; ++is)
+    {
+        station.setName("UU.T" + std::to_string(stations.size()));
+        station.setLocationInX(x0 + is/(nStationsHorizontal - 1.0)*(nx - 1)*dx);
+        station.setZToFreeSurface();
+        stations.push_back(station);
+    }
+    // Distribute set of stations through depth
+    for (int is = 0; is < nStationsVertical; ++is)
+    {
+        station.setName("UU.T" + std::to_string(stations.size()));
+        station.setLocationInX(x0);
+        station.setLocationInZ(z0 + is/(nStationsVertical - 1.0)*(nz - 1)*dz);
+        stations.push_back(station);
+
+        station.setName("UU.T" + std::to_string(stations.size()));
+        station.setLocationInX(x0 + (nx - 1)*dx);
+        stations.push_back(station);
+    }
     // Solve eikonal equation and compute gradient
     EikonalXX::Analytic::Homogeneous2D<double> solver;
     solver.initialize(geometry);
@@ -328,6 +357,10 @@ TEST(Ray, HomogeneousGradientTracer2D)
     solver.solve();
     solver.computeTravelTimeGradientField();
     // Create the ray tracer
+    EikonalXX::Ray::GradientTracer2D tracer;
+    EXPECT_NO_THROW(tracer.initialize(geometry));
+    EXPECT_NO_THROW(tracer.setStations(stations));
+    tracer.trace(solver);
 }
 
 }
