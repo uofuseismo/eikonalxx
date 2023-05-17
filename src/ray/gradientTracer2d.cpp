@@ -1,4 +1,5 @@
 #include <iostream>
+#include <limits>
 #include <CL/sycl.hpp>
 #include <algorithm>
 #include <map>
@@ -207,6 +208,10 @@ void GradientTracer2D::trace(
     const EikonalXX::AbstractBaseClass::ISolver2D<T> &solver)
 {
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
+    if (!solver.haveVelocityModel())
+    {
+        throw std::invalid_argument("Velocity model not set on solver");
+    }
     if (!solver.haveSource())
     {
         throw std::invalid_argument("Source not on solver");
@@ -215,28 +220,52 @@ void GradientTracer2D::trace(
     {
         throw std::invalid_argument("Travel time gradient field not set");
     }
+    // Grid properties
+    int nGridX = pImpl->mGeometry.getNumberOfGridPointsInX();
+    int nGridZ = pImpl->mGeometry.getNumberOfGridPointsInZ();
+    double dx = pImpl->mGeometry.getGridSpacingInX();
+    double dz = pImpl->mGeometry.getGridSpacingInZ();
+    double x0 = pImpl->mGeometry.getOriginInX();
+    double z0 = pImpl->mGeometry.getOriginInZ();
+    // Source properties
     auto source = solver.getSource();
     auto iSourceCell = source.getCell();
     auto xs = source.getOffsetInX();
     auto zs = source.getOffsetInZ();
-    // Set the source point
-    Point2D sourcePoint{xs, zs}; 
+    // Set the source point (we'll always use this when tracing)
+    Point2D sourcePoint{x0 + xs, z0 + zs}; 
     const T* gradientPtr = solver.getTravelTimeGradientFieldPointer();
     // Loop on receivers
     for (const auto &station : pImpl->mStations)
     {
-        auto ix = station.getCellInX();
-        auto iz = station.getCellInZ();
+        auto iStationCellX = station.getCellInX();
+        auto iStationCellZ = station.getCellInZ();
+        // Define the station piont (we'll also always use this when tracing)
         auto xr = station.getOffsetInX();
         auto zr = station.getOffsetInZ();
-        Point2D stationPoint {xr, zr};
+        Point2D stationPoint {x0 + xr, z0 + zr};
         auto iStationCell = station.getCell();
+        // Deal with an algorithm breakdown where the source/station are in
+        // the same cell
         if (iSourceCell == iStationCell)
         {
             Segment2D segment;
             segment.setStartAndEndPoint(std::pair {sourcePoint, stationPoint});
-            segment.setVelocityModelCellIndex(iSourceCell); 
+            segment.setSlowness(
+                solver.getSlowness(station.getCellInX(), station.getCellInZ()));
+            segment.setVelocityModelCellIndex(iStationCell); 
             continue; 
+        }
+        // Business as usual - march up the gradient
+        bool mConverged{false};
+        for (int iSegment = 0;
+             iSegment < std::numeric_limits<int>::max(); ++iSegment)
+        {
+            // 
+        }
+        if (!mConverged)
+        {
+            std::cerr << "Ray did not converge to source" << std::endl;
         }
     }
 }

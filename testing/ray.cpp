@@ -1,12 +1,21 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include "eikonalxx/ray/gradientTracer2d.hpp"
 #include "eikonalxx/ray/path2d.hpp"
 #include "eikonalxx/ray/path3d.hpp"
 #include "eikonalxx/ray/point2d.hpp"
 #include "eikonalxx/ray/point3d.hpp"
 #include "eikonalxx/ray/segment2d.hpp"
 #include "eikonalxx/ray/segment3d.hpp"
+#include "eikonalxx/geometry2d.hpp"
+#include "eikonalxx/geometry3d.hpp"
+#include "eikonalxx/source2d.hpp"
+#include "eikonalxx/source3d.hpp"
+#include "eikonalxx/station2d.hpp"
+#include "eikonalxx/station3d.hpp"
+#include "eikonalxx/analytic/homogeneous2d.hpp"
+#include "eikonalxx/analytic/homogeneous3d.hpp"
 #include <gtest/gtest.h>
 
 namespace
@@ -286,5 +295,39 @@ TEST(Ray, Path3D)
     }
 }
 
+TEST(Ray, HomogeneousGradientTracer2D)
+{
+    constexpr double velocity{4000};
+    const double dx{100};
+    const double dz{101};
+    const double x0{1};
+    const double z0{2};
+    const int nx{201};
+    const int nz{101};
+    const double xs{x0 + nx/2*dx};
+    const double zs{z0 + nz/2*dz};
+    // Create geometry
+    EikonalXX::Geometry2D geometry;
+    geometry.setGridSpacingInX(dx);
+    geometry.setGridSpacingInZ(dz);
+    geometry.setNumberOfGridPointsInX(nx);
+    geometry.setNumberOfGridPointsInZ(nz);
+    geometry.setOriginInX(x0);
+    geometry.setOriginInZ(z0);
+    // Create source
+    EikonalXX::Source2D source;
+    source.setGeometry(geometry);
+    source.setLocationInX(xs);
+    source.setLocationInZ(zs);
+    // Get the stations
+    // Solve eikonal equation and compute gradient
+    EikonalXX::Analytic::Homogeneous2D<double> solver;
+    solver.initialize(geometry);
+    solver.setVelocityModel(velocity);
+    solver.setSource(source);
+    solver.solve();
+    solver.computeTravelTimeGradientField();
+    // Create the ray tracer
+}
 
 }

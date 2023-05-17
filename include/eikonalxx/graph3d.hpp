@@ -4,6 +4,9 @@
 #include "eikonalxx/enums.hpp"
 namespace EikonalXX
 {
+/// @class Graph3D "graph3d.hpp" "eikonalxx/graph3d.hpp"
+/// @brief Defines the computational graph for the 3D level-set method.
+/// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 template<EikonalXX::SweepNumber3D E>
 class Graph3D
 {

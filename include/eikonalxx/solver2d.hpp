@@ -61,7 +61,7 @@ public:
     /// @throws std::runtime_error if the \c haveVelocityModel() is false.
     [[nodiscard]] Model2D<T> getVelocityModel() const;
     /// @result True indicates that the velocity model was set.
-    [[nodiscard]] bool haveVelocityModel() const noexcept;
+    [[nodiscard]] bool haveVelocityModel() const noexcept override;
     /// @result The slowness in s/m at a cell.
     /// @param[in] iCellX  The cell index in x.
     /// @param[in] iCellZ  The cell index in z.

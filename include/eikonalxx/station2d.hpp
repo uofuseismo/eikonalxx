@@ -1,6 +1,7 @@
 #ifndef EIKONALXX_STATION_2D_HPP
 #define EIKONALXX_STATION_2D_HPP
 #include <ostream>
+#include <string>
 #include <memory>
 namespace EikonalXX
 {
@@ -61,7 +62,7 @@ public:
     /// @param[in] name  The name of the station.
     void setName(const std::string &name) noexcept;
     /// @result The station's name.
-    std::string getName() const noexcept;
+    [[nodiscard]] std::string getName() const noexcept;
     /// @}
 
     /// @name X Location

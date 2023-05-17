@@ -8,7 +8,7 @@ namespace EikonalXX
 class Geometry2D;
 namespace IO
 {
-/// @name VTKRectilinearGrid2D "vtkRectilinearGrid2d.hpp" "eikonalxx/io/vtkRectilinearGrid2d.hpp"
+/// @class VTKRectilinearGrid2D "vtkRectilinearGrid2d.hpp" "eikonalxx/io/vtkRectilinearGrid2d.hpp"
 /// @brief A utility class for writing outputs to Legacy VTK file format.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 class VTKRectilinearGrid2D

@@ -17,6 +17,8 @@ class ISolver2D
 public:
     /// @brief Default destructor.
     virtual ~ISolver2D() = default;
+    /// @result True indicates the velocity model was set.
+    virtual bool haveVelocityModel() const noexcept = 0;
     /// @brief Gets a copy of the travel time field.
     virtual std::vector<T> getTravelTimeField() const = 0;
     /// @brief Gets a pointer to the travel time field.

@@ -54,7 +54,7 @@ public:
     /// @throws std::invalid_argument if velocity is not positive.
     void setVelocityModel(const std::pair<double, double> &velocity);
     /// @result True indicates that the velocity model was set.
-    [[nodiscard]] bool haveVelocityModel() const noexcept;
+    [[nodiscard]] bool haveVelocityModel() const noexcept override;
     /// @result The slowness in s/m at a cell.
     /// @param[in] iCellX  The cell index in x.
     /// @param[in] iCellY  The cell index in y.
