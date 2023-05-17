@@ -21,6 +21,11 @@ public:
     /// @param[in,out] point  The point from which to initialize this class. 
     ///                       On exit, point's behavior is undefined.
     Point3D(Point3D &&point) noexcept;
+    /// @brief Constructs a point from an (x, y, z) position.
+    /// @param[in] x  The position in the model in x.  This has units of meters.
+    /// @param[in] y  The position in the model in y.  This has units of meters.
+    /// @param[in] z  The position in the model in z.  This has units of meters.
+    Point3D(double x, double y, double z); 
     /// @}
 
     /// @name X Position

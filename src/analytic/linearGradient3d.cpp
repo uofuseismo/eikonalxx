@@ -355,6 +355,51 @@ void LinearGradient3D<T>::setVelocityModel(
     pImpl->mVelocity = velocity;
 }
 
+template<class T>
+T LinearGradient3D<T>::getSlowness(
+    const int iCellX, const int iCellY, const int iCellZ) const 
+{
+    if (!haveVelocityModel())
+    {   
+         throw std::runtime_error("Velocity model not set");
+    }   
+    auto nCellX = pImpl->mGeometry.getNumberOfCellsInX();
+    auto nCellY = pImpl->mGeometry.getNumberOfCellsInY();
+    auto nCellZ = pImpl->mGeometry.getNumberOfCellsInZ();
+    double dx = pImpl->mGeometry.getGridSpacingInX();
+    double dy = pImpl->mGeometry.getGridSpacingInY();
+    double dz = pImpl->mGeometry.getGridSpacingInZ();
+    if (iCellX < 0 || iCellX >= nCellX)
+    {
+        throw std::invalid_argument("iCellX = " + std::to_string(iCellX)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellX) + "]");
+    }
+    if (iCellY < 0 || iCellY >= nCellY)
+    {
+        throw std::invalid_argument("iCellY = " + std::to_string(iCellY)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellY) + "]");
+    }
+    if (iCellZ < 0 || iCellZ >= nCellZ)
+    {
+        throw std::invalid_argument("iCellZ = " + std::to_string(iCellZ)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellZ) + "]");
+    }
+    constexpr double vGradInX{0};
+    constexpr double vGradInY{0};
+    double v0 = pImpl->mVelocity.first;
+    double v1 = pImpl->mVelocity.second;
+    double vGradInZ = (v1 - v0)/(nCellZ*dz);
+    double xi = iCellX*dx + 0.5*dx; // Half way across cell
+    double yi = iCellY*dy + 0.5*dy; // Half way through cell
+    double zi = iCellZ*dz + 0.5*dz; // Half way down cell 
+    double vi = v0 + vGradInX*xi + vGradInY*yi + vGradInZ*zi;
+    return static_cast<T> (1./vi);
+}
+
+
 /// Have velocity?
 template<class T>
 bool LinearGradient3D<T>::haveVelocityModel() const noexcept

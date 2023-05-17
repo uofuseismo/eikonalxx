@@ -11,7 +11,7 @@ public:
     Point2D mStartPoint;
     Point2D mEndPoint;
     double mLength{0};
-    double mVelocity{0};
+    double mSlowness{0};
     int mVelocityModelCellIndex{-1};
     bool mHaveStartAndEndPoint{false};
 };
@@ -121,23 +121,29 @@ bool Segment2D::haveStartAndEndPoint() const noexcept
 void Segment2D::setVelocity(const double velocity)
 {
     if (velocity <= 0){throw std::runtime_error("Velocity must be positive");}
-    pImpl->mVelocity = velocity;
+    setSlowness(1./velocity);
+}
+
+void Segment2D::setSlowness(const double slowness)
+{
+    if (slowness <= 0){throw std::runtime_error("Slowness must be positive");}
+    pImpl->mSlowness = slowness;
 }
 
 double Segment2D::getVelocity() const
 {
     if (!haveVelocity()){throw std::runtime_error("Velocity not set");}
-    return pImpl->mVelocity;
+    return 1./getSlowness();
 }
 
 double Segment2D::getSlowness() const
 {
-    return 1./getVelocity();
+    return pImpl->mSlowness;
 }
 
 bool Segment2D::haveVelocity() const noexcept
 {
-    return (pImpl->mVelocity > 0);
+    return (pImpl->mSlowness > 0);
 }
 
 /// Travel time

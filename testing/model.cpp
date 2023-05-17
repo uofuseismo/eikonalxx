@@ -110,9 +110,9 @@ TEST(TestModel, model2d)
 
     std::vector<double> velocities(nx*nz, 0);
     std::vector<double> velTrans(nx*nz, 0);
-    for (int iz=0; iz<nz; ++iz)
+    for (int iz = 0; iz < nz; ++iz)
     {
-        for (int ix=0; ix<nx; ++ix)
+        for (int ix = 0; ix < nx; ++ix)
         {
             auto idst = iz*nx + ix;
             velocities[idst] = idst + 1;
@@ -122,9 +122,9 @@ TEST(TestModel, model2d)
     }
     std::vector<double> vCell((nx - 1)*(nz - 1), 0);
     std::vector<double> vCellTrans((nx - 1)*(nz - 1), 0);
-    for (int iz=0; iz<nz-1; ++iz)
+    for (int iz = 0; iz < nz - 1; ++iz)
     {
-        for (int ix=0; ix<nx-1; ++ix)
+        for (int ix=0; ix < nx - 1; ++ix)
         {
             auto idst = iz*(nx - 1) + ix;
             auto jdst = ix*(nz - 1) + iz;
@@ -158,6 +158,10 @@ TEST(TestModel, model2d)
     slowness = model.getSlowness();
     errmax = infinityNorm(sCellRef, slowness);
     EXPECT_LT(errmax, 1.e-10);
+    int ixs = 50;
+    int izs = 60;
+    EXPECT_NEAR(model.getSlowness(ixs, izs),
+                1./vCell[ (nx - 1)*izs + ixs ], 1.e-12);
 
     EXPECT_NO_THROW(model.setCellularVelocities(nCell, vCellTrans.data(),
                                                 EikonalXX::Ordering2D::XZ));
@@ -244,6 +248,12 @@ TEST(TestModel, model3d)
     slowness = model.getSlowness();
     errmax = infinityNorm(sCellRef, slowness);
     EXPECT_LT(errmax, 1.e-10);
+    int ixs = 20; 
+    int iys = 22;
+    int izs = 23; 
+    EXPECT_NEAR(model.getSlowness(ixs, iys, izs),
+                1./vCell[ (nx - 1)*(ny- 1)*izs + (nx - 1)*iys + ixs ], 1.e-12);
+
 
     EXPECT_NO_THROW(model.setCellularVelocities(nCell, vCellTrans.data(),
                                                 EikonalXX::Ordering3D::XYZ));

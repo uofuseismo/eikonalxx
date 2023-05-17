@@ -1,5 +1,9 @@
 #ifndef EIKONALX_ABSTRACT_BASE_CLASS_SOLVER_3D_HPP
 #define EIKONALX_ABSTRACT_BASE_CLASS_SOLVER_3D_HPP
+namespace EikonalXX
+{
+ class Source3D;
+}
 namespace EikonalXX::AbstractBaseClass
 {
 template<class T>
@@ -25,6 +29,12 @@ public:
     /// @result True indicates the gradient of the travel time field
     ///         is available.
     virtual bool haveTravelTimeGradientField() const noexcept = 0;
+    /// @result The source information.
+    virtual Source3D getSource() const = 0;
+    /// @result True indicates the source exists.
+    virtual bool haveSource() const noexcept = 0;
+    /// @result The slowness at a cell.
+    virtual T getSlowness(int iCellX, int iCellY, int iCellZ) const = 0;
 };
 }
 #endif

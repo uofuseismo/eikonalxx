@@ -62,6 +62,14 @@ public:
     [[nodiscard]] Model3D<T> getVelocityModel() const;
     /// @result True indicates that the velocity model was set.
     [[nodiscard]] bool haveVelocityModel() const noexcept;
+    /// @result The slowness in s/m at a cell.
+    /// @param[in] iCellX  The cell index in x.
+    /// @param[in] iCellY  The cell index in y.
+    /// @param[in] iCellZ  The cell index in z.
+    /// @throws std::runtime_error if \c haveVelocities() is false.
+    /// @throws std::invalid_argument if iCellX, iCellY, or iCellZ is out of the
+    ///         geometry bounds.
+    [[nodiscard]] T getSlowness(int iCellX, int iCellY, int iCellZ) const override;
     /// @}
 
     /// @name Step 3: Source
@@ -86,9 +94,9 @@ public:
     void setSource(const std::tuple<double, double, double> &location);
     /// @result The source information.
     /// @throws std::runtime_error if \c haveSource() is false.
-    [[nodiscard]] Source3D getSource() const;
+    [[nodiscard]] Source3D getSource() const override;
     /// @result True indicates that the source was set.
-    [[nodiscard]] bool haveSource() const noexcept;
+    [[nodiscard]] bool haveSource() const noexcept override;
     // @}
 
     /// @name Step 4: Solve

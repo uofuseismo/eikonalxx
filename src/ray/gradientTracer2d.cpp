@@ -207,16 +207,44 @@ void GradientTracer2D::trace(
     const EikonalXX::AbstractBaseClass::ISolver2D<T> &solver)
 {
     if (!isInitialized()){throw std::runtime_error("Class not initialized");}
+    if (!solver.haveSource())
+    {
+        throw std::invalid_argument("Source not on solver");
+    }
     if (!solver.haveTravelTimeGradientField())
     {
         throw std::invalid_argument("Travel time gradient field not set");
     }
+    auto source = solver.getSource();
+    auto iSourceCell = source.getCell();
+    auto xs = source.getOffsetInX();
+    auto zs = source.getOffsetInZ();
+    // Set the source point
+    Point2D sourcePoint{xs, zs}; 
     const T* gradientPtr = solver.getTravelTimeGradientFieldPointer();
     // Loop on receivers
     for (const auto &station : pImpl->mStations)
     {
-         auto ix = station.getCellInX();
-         auto iz = station.getCellInZ();
-         auto iCell = station.getCell();
+        auto ix = station.getCellInX();
+        auto iz = station.getCellInZ();
+        auto xr = station.getOffsetInX();
+        auto zr = station.getOffsetInZ();
+        Point2D stationPoint {xr, zr};
+        auto iStationCell = station.getCell();
+        if (iSourceCell == iStationCell)
+        {
+            Segment2D segment;
+            segment.setStartAndEndPoint(std::pair {sourcePoint, stationPoint});
+            segment.setVelocityModelCellIndex(iSourceCell); 
+            continue; 
+        }
     }
 }
+
+///--------------------------------------------------------------------------///
+///                            Template Instantiation                        ///
+///--------------------------------------------------------------------------///
+template void EikonalXX::Ray::GradientTracer2D::trace(
+    const EikonalXX::AbstractBaseClass::ISolver2D<double> &solver);
+template void EikonalXX::Ray::GradientTracer2D::trace(
+    const EikonalXX::AbstractBaseClass::ISolver2D<float> &solver);

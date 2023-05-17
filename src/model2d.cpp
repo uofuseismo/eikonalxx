@@ -135,8 +135,8 @@ public:
     /// Slowness field in each cell in seconds/meter
     Geometry2D mGeometry;
     std::vector<T> mSlowness;
-    bool mHaveSlowness = false;
-    bool mInitialized = false;
+    bool mHaveSlowness{false};
+    bool mInitialized{false};
 };
 
 /// C'tor
@@ -390,6 +390,32 @@ std::vector<T> Model2D<T>::getVelocities() const
                    std::bind1st(std::divides<T> (), one));
 #endif
     return velocities;
+}
+
+/// Get a slowness at a cell
+template<class T>
+T Model2D<T>::getSlowness(const int iCellX, const int iCellZ) const
+{
+    if (!haveVelocities())
+    {   
+        throw std::runtime_error("Velocity model not yet set");
+    }
+    auto nCellX = pImpl->mGeometry.getNumberOfCellsInX();
+    auto nCellZ = pImpl->mGeometry.getNumberOfCellsInZ();
+    if (iCellX < 0 || iCellX >= nCellX)
+    {
+        throw std::invalid_argument("iCellX = " + std::to_string(iCellX)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellX) + "]");
+    }
+    if (iCellZ < 0 || iCellZ >= nCellZ)
+    {
+        throw std::invalid_argument("iCellZ = " + std::to_string(iCellZ)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellZ) + "]");
+    }
+    auto iCell = ::gridToIndex(nCellX, iCellX, iCellZ);
+    return pImpl->mSlowness[iCell];
 }
 
 /// Write the velocity model

@@ -375,6 +375,38 @@ bool Homogeneous3D<T>::haveVelocityModel() const noexcept
     return pImpl->mVelocity > 0;
 }
 
+template<class T>
+T Homogeneous3D<T>::getSlowness(
+    const int iCellX, const int iCellY, const int iCellZ) const 
+{
+    if (!haveVelocityModel())
+    {   
+         throw std::runtime_error("Velocity model not set");
+    }   
+    auto nCellX = pImpl->mGeometry.getNumberOfCellsInX();
+    auto nCellY = pImpl->mGeometry.getNumberOfCellsInY();
+    auto nCellZ = pImpl->mGeometry.getNumberOfCellsInZ();
+    if (iCellX < 0 || iCellX >= nCellX)
+    {
+        throw std::invalid_argument("iCellX = " + std::to_string(iCellX)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellX) + "]");
+    }
+    if (iCellY < 0 || iCellY >= nCellY)
+    {
+        throw std::invalid_argument("iCellY = " + std::to_string(iCellY)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellY) + "]");
+    }
+    if (iCellZ < 0 || iCellZ >= nCellZ)
+    {   
+        throw std::invalid_argument("iCellZ = " + std::to_string(iCellZ)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellZ) + "]");
+    }   
+    return 1./pImpl->mVelocity;
+}
+
 /// Solve the eikonal equation
 template<class T>
 void Homogeneous3D<T>::solve()

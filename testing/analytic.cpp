@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <cmath>
 #include "eikonalxx/analytic/homogeneous2d.hpp"
 #include "eikonalxx/analytic/homogeneous3d.hpp"
@@ -35,6 +36,7 @@ TEST(Analytic, Homogeneous2D)
     EXPECT_NO_THROW(solver.initialize(geometry));
     EXPECT_NO_THROW(solver.setSource(std::pair(xSrc, zSrc)));
     EXPECT_NO_THROW(solver.setVelocityModel(velocity));
+    EXPECT_NEAR(solver.getSlowness(1, 3), 1./velocity, 1.e-14);
     EXPECT_TRUE(solver.isInitialized());
     EXPECT_TRUE(solver.haveSource());
     EXPECT_TRUE(solver.haveVelocityModel());
@@ -90,6 +92,7 @@ TEST(Analytic, Homogeneous3D)
     EXPECT_NO_THROW(solver.initialize(geometry));
     EXPECT_NO_THROW(solver.setSource(std::tuple(xSrc, ySrc, zSrc)));
     EXPECT_NO_THROW(solver.setVelocityModel(velocity));
+    EXPECT_NEAR(solver.getSlowness(1, 2, 3), 1./velocity, 1.e-14);
     EXPECT_TRUE(solver.isInitialized());
     EXPECT_TRUE(solver.haveSource());
     EXPECT_TRUE(solver.haveVelocityModel());
@@ -143,6 +146,10 @@ TEST(Analytic, LinearGradient2D)
     EXPECT_NO_THROW(solver.initialize(geometry));
     EXPECT_NO_THROW(solver.setSource(std::pair(xSrc, zSrc)));
     EXPECT_NO_THROW(solver.setVelocityModel(velocity));
+    double vi = velocity.first
+              + (z0 + dz/2.0 - z0)*((velocity.second - velocity.first)
+                                   /(z0 + (nz - 1)*dz - z0));
+    EXPECT_NEAR(1./vi, solver.getSlowness(0, 0), 1.e-10);
     EXPECT_TRUE(solver.isInitialized());
     EXPECT_TRUE(solver.haveSource());
     EXPECT_TRUE(solver.haveVelocityModel());

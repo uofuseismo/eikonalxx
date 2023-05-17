@@ -17,6 +17,14 @@ Point2D::Point2D() :
 {
 }
 
+/// Constructor with (x,z)
+Point2D::Point2D(const double x, const double z) :
+    pImpl(std::make_unique<Point2DImpl> ())
+{
+    setPositionInX(x);
+    setPositionInZ(z);
+}
+
 /// Copy constructor
 Point2D::Point2D(const Point2D &point)
 {

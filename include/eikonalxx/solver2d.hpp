@@ -62,6 +62,13 @@ public:
     [[nodiscard]] Model2D<T> getVelocityModel() const;
     /// @result True indicates that the velocity model was set.
     [[nodiscard]] bool haveVelocityModel() const noexcept;
+    /// @result The slowness in s/m at a cell.
+    /// @param[in] iCellX  The cell index in x.
+    /// @param[in] iCellZ  The cell index in z.
+    /// @throws std::runtime_error if \c haveVelocityModel() is false.
+    /// @throws std::invalid_argument if iCellX or iCellZ is out of the geometry
+    ///         bounds.
+    [[nodiscard]] T getSlowness(const int iCellX, const int iCellZ) const override;
     /// @}
 
     /// @name Step 3: Source
@@ -84,9 +91,9 @@ public:
     void setSource(const std::pair<double, double> &location);
     /// @result The source information.
     /// @throws std::runtime_error if \c haveSource() is false.
-    [[nodiscard]] Source2D getSource() const;
+    [[nodiscard]] Source2D getSource() const override;
     /// @result True indicates that the source was set.
-    [[nodiscard]] bool haveSource() const noexcept;
+    [[nodiscard]] bool haveSource() const noexcept override;
     // @}
 
     /// @name Step 4: Solve

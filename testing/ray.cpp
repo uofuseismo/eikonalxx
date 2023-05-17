@@ -16,12 +16,12 @@ using namespace EikonalXX;
 
 TEST(Ray, Point2D)
 {
-    Ray::Point2D point;
     const double x{5};
     const double z{7};
 
-    point.setPositionInX(x);
-    point.setPositionInZ(z);
+    Ray::Point2D point{x, z};
+    //point.setPositionInX(x);
+    //point.setPositionInZ(z);
 
     Ray::Point2D copy(point);
     EXPECT_TRUE(copy.havePositionInX());
@@ -36,14 +36,14 @@ TEST(Ray, Point2D)
 
 TEST(Ray, Point3D)
 {
-    Ray::Point3D point;
     const double x{5};
     const double y{6};
     const double z{7};
 
-    point.setPositionInX(x);
-    point.setPositionInY(y);
-    point.setPositionInZ(z);
+    Ray::Point3D point{x, y, z};
+    //point.setPositionInX(x);
+    //point.setPositionInY(y);
+    //point.setPositionInZ(z);
 
     Ray::Point3D copy(point);
     EXPECT_TRUE(copy.havePositionInX());
@@ -89,7 +89,7 @@ TEST(Ray, Segment2D)
     EXPECT_NEAR(copy.getStartPoint().getPositionInZ(), z0, 1.e-15);
     EXPECT_NEAR(copy.getEndPoint().getPositionInX(), x1, 1.e-15);
     EXPECT_NEAR(copy.getEndPoint().getPositionInZ(), z1, 1.e-15);
-    EXPECT_NEAR(copy.getVelocity(), velocity, 1.e-15);
+    EXPECT_NEAR(copy.getVelocity(), velocity, 1.e-12);
     EXPECT_NEAR(copy.getSlowness(), 1./velocity, 1.e-15);
     EXPECT_NEAR(copy.getLength(),   length, 1.e-15);
     EXPECT_NEAR(copy.getTravelTime(), travelTime, 1.e-15);
@@ -138,7 +138,7 @@ TEST(Ray, Segment3D)
     EXPECT_NEAR(copy.getEndPoint().getPositionInX(), x1, 1.e-15);
     EXPECT_NEAR(copy.getEndPoint().getPositionInY(), y1, 1.e-15);
     EXPECT_NEAR(copy.getEndPoint().getPositionInZ(), z1, 1.e-15);
-    EXPECT_NEAR(copy.getVelocity(), velocity, 1.e-15);
+    EXPECT_NEAR(copy.getVelocity(), velocity, 1.e-12);
     EXPECT_NEAR(copy.getSlowness(), 1./velocity, 1.e-15);
     EXPECT_NEAR(copy.getLength(),   length, 1.e-15);
     EXPECT_NEAR(copy.getTravelTime(), travelTime, 1.e-15);

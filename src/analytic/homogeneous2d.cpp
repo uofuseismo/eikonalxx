@@ -331,6 +331,30 @@ bool Homogeneous2D<T>::haveVelocityModel() const noexcept
     return pImpl->mVelocity > 0;
 }
 
+template<class T>
+T Homogeneous2D<T>::getSlowness(const int iCellX, const int iCellZ) const 
+{
+    if (!haveVelocityModel())
+    {
+         throw std::runtime_error("Velocity model not set");
+    }
+    auto nCellX = pImpl->mGeometry.getNumberOfCellsInX();
+    auto nCellZ = pImpl->mGeometry.getNumberOfCellsInZ();
+    if (iCellX < 0 || iCellX >= nCellX)
+    {
+        throw std::invalid_argument("iCellX = " + std::to_string(iCellX)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellX) + "]");
+    }
+    if (iCellZ < 0 || iCellZ >= nCellZ)
+    {
+        throw std::invalid_argument("iCellZ = " + std::to_string(iCellZ)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellZ) + "]");
+    }
+    return 1./pImpl->mVelocity;
+}
+
 /// Solve the eikonal equation
 template<class T>
 void Homogeneous2D<T>::solve()

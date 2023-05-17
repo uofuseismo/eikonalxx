@@ -19,6 +19,16 @@ Point3D::Point3D() :
 {
 }
 
+/// Constructor with (x,y,z)
+Point3D::Point3D(const double x, const double y, const double z) :
+    pImpl(std::make_unique<Point3DImpl> ()) 
+{
+    setPositionInX(x);
+    setPositionInY(y);
+    setPositionInZ(z);
+}
+
+
 /// Copy constructor
 Point3D::Point3D(const Point3D &point)
 {

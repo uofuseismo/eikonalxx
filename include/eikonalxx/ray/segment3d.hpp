@@ -57,6 +57,10 @@ public:
     /// @param[in] velocity  The velocity in m/s.
     /// @throws std::invalid_argument if this is not positive.
     void setVelocity(double velocity); 
+    /// @brief Sets the slowness along the ray segment.
+    /// @param[in] slowness  The slowness in s/m.
+    /// @throws std::invalid_argument if this is not positive.
+    void setSlowness(double slowness);
     /// @result The velocity (m/s) along the ray.
     /// @throws std::runtime_error if \c haveVelocity() is false.
     [[nodiscard]] double getVelocity() const;

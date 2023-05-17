@@ -21,6 +21,10 @@ public:
     /// @param[in,out] point  The point from which to initialize this class. 
     ///                       On exit, point's behavior is undefined.
     Point2D(Point2D &&point) noexcept;
+    /// @brief Constructs a point from an (x, z) position.
+    /// @param[in] x  The position in the model in x.  This has units of meters.
+    /// @param[in] z  The position in the model in z.  This has units of meters.
+    Point2D(double x, double z);
     /// @}
 
     /// @name X Position

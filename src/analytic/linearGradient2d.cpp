@@ -437,6 +437,39 @@ bool LinearGradient2D<T>::haveVelocityModel() const noexcept
     return (pImpl->mVelocity.first > 0 && pImpl->mVelocity.second > 0);
 }
 
+template<class T>
+T LinearGradient2D<T>::getSlowness(const int iCellX, const int iCellZ) const 
+{
+    if (!haveVelocityModel())
+    {
+         throw std::runtime_error("Velocity model not set");
+    }
+    auto nCellX = pImpl->mGeometry.getNumberOfCellsInX();
+    auto nCellZ = pImpl->mGeometry.getNumberOfCellsInZ();
+    double dx = pImpl->mGeometry.getGridSpacingInX();
+    double dz = pImpl->mGeometry.getGridSpacingInZ();
+    if (iCellX < 0 || iCellX >= nCellX)
+    {
+        throw std::invalid_argument("iCellX = " + std::to_string(iCellX)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellX) + "]");
+    }
+    if (iCellZ < 0 || iCellZ >= nCellZ)
+    {
+        throw std::invalid_argument("iCellZ = " + std::to_string(iCellZ)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellZ) + "]");
+    }
+    constexpr double vGradInX{0};
+    double v0 = pImpl->mVelocity.first;
+    double v1 = pImpl->mVelocity.second;
+    double vGradInZ = (v1 - v0)/(nCellZ*dz);
+    auto xi = iCellX*dx + 0.5*dx; // Half way across cell
+    auto zi = iCellZ*dz + 0.5*dz; // Half way down cell 
+    double vi = v0 + vGradInX*xi + vGradInZ*zi;
+    return static_cast<T> (1./vi);
+}
+
 /// Solve the eikonal equation
 template<class T>
 void LinearGradient2D<T>::solve()

@@ -130,6 +130,14 @@ public:
     ///         ordering.
     /// @throws std::runtime_error if \c haveVelocities() is false.
     [[nodiscard]] std::vector<T> getVelocities() const;
+    /// @result The slowness in s/m at a cell.
+    /// @param[in] iCellX  The cell index in x.
+    /// @param[in] iCellY  The cell index in y.
+    /// @param[in] iCellZ  The cell index in z.
+    /// @throws std::runtime_error if \c haveVelocities() is false.
+    /// @throws std::invalid_argument if iCellX, iCellY, or iCellZ is out of the
+    ///         geometry bounds.
+    [[nodiscard]] T getSlowness(int iCellX, int iCellY, int iCellZ) const;
     /// @}  
 
     /// @name Destructors

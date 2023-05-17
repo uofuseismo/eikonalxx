@@ -248,6 +248,18 @@ Model3D<T> Solver3D<T>::getVelocityModel() const
     return pImpl->mVelocityModel;
 }
 
+/// Slowness at a point
+template<class T>
+T Solver3D<T>::getSlowness(
+    const int iCellX, const int iCellY, const int iCellZ) const
+{
+    if (!haveVelocityModel())
+    {
+        throw std::runtime_error("Velocity model not set");
+    }
+    return pImpl->mVelocityModel.getSlowness(iCellX, iCellY, iCellZ);
+}
+
 /// Have the velocity model?
 template<class T>
 bool Solver3D<T>::haveVelocityModel() const noexcept
@@ -398,7 +410,9 @@ void Solver3D<T>::solve()
     auto ySourceOffset = static_cast<T> (pImpl->mSource.getOffsetInY());
     auto zSourceOffset = static_cast<T> (pImpl->mSource.getOffsetInZ());
     auto slownessPtr = pImpl->mVelocityModel.getSlownessPointer();
-    T sourceSlowness = slownessPtr[pImpl->mSourceCell];
+    //T sourceSlowness = slownessPtr[pImpl->mSourceCell];
+    auto sourceSlowness
+        = pImpl->mVelocityModel.getSlowness(iSrcX, iSrcY, iSrcZ);
     pImpl->mSolverSweep1.setSourceInformation(iSrcX, iSrcY, iSrcZ,
         xSourceOffset, ySourceOffset, zSourceOffset, sourceSlowness);
     pImpl->mSolverSweep2.setSourceInformation(iSrcX, iSrcY, iSrcZ,

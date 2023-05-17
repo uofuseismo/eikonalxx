@@ -159,8 +159,8 @@ public:
     /// Slowness field in each cell in seconds/meter
     Geometry3D mGeometry;
     std::vector<T> mSlowness;
-    bool mHaveSlowness = false;
-    bool mInitialized = false;
+    bool mHaveSlowness{false};
+    bool mInitialized{false};
 };
 
 /// C'tor
@@ -429,6 +429,40 @@ std::vector<T> Model3D<T>::getVelocities() const
                    std::bind1st(std::divides<T> (), one));
 #endif
     return velocities;
+}
+
+/// Get a slowness at a cell
+template<class T>
+T Model3D<T>::getSlowness(
+    const int iCellX, const int iCellY, const int iCellZ) const
+{
+    if (!haveVelocities())
+    {
+        throw std::runtime_error("Velocity model not yet set");
+    }
+    auto nCellX = pImpl->mGeometry.getNumberOfCellsInX();
+    auto nCellY = pImpl->mGeometry.getNumberOfCellsInY();
+    auto nCellZ = pImpl->mGeometry.getNumberOfCellsInZ();
+    if (iCellX < 0 || iCellX >= nCellX)
+    {
+        throw std::invalid_argument("iCellX = " + std::to_string(iCellX)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellX) + "]");
+    }
+    if (iCellY < 0 || iCellY >= nCellY)
+    {
+        throw std::invalid_argument("iCellY = " + std::to_string(iCellY)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellY) + "]");
+    }
+    if (iCellZ < 0 || iCellZ >= nCellZ)
+    {
+        throw std::invalid_argument("iCellZ = " + std::to_string(iCellZ)
+                                  + " must be in range [0,"
+                                  + std::to_string(nCellZ) + "]");
+    }
+    auto iCell = ::gridToIndex(nCellX, nCellY, iCellX, iCellY, iCellZ);
+    return pImpl->mSlowness[iCell];
 }
 
 /// Write the velocity model

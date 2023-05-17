@@ -421,7 +421,8 @@ void Solver2D<T>::solve()
     T xSourceOffset = static_cast<T> (pImpl->mSource.getOffsetInX());
     T zSourceOffset = static_cast<T> (pImpl->mSource.getOffsetInZ());
     auto slownessPtr = pImpl->mVelocityModel.getSlownessPointer();
-    T sourceSlowness = slownessPtr[pImpl->mSourceCell];
+    //T sourceSlowness = slownessPtr[pImpl->mSourceCell];
+    auto sourceSlowness = pImpl->mVelocityModel.getSlowness(iSrcX, iSrcZ);
     pImpl->mSolverSweep1.setSourceInformation(iSrcX, iSrcZ,
                                               xSourceOffset, zSourceOffset,
                                               sourceSlowness);
@@ -792,6 +793,17 @@ std::cout << travelTimePtr[(nGridX-1)*(nGridZ-1)] << std::endl;
     sycl::free(tTimes, q);
     pImpl->mHaveTravelTimeField = true;
 */
+}
+
+/// Slowness at a point
+template<class T>
+T Solver2D<T>::getSlowness(const int iCellX, const int iCellZ) const
+{
+    if (!haveVelocityModel())
+    {   
+        throw std::runtime_error("Velocity model not set");
+    }   
+    return pImpl->mVelocityModel.getSlowness(iCellX, iCellZ);
 }
 
 /// Get travel time field
