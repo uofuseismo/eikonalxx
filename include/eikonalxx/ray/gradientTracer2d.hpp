@@ -12,6 +12,7 @@ namespace EikonalXX
  class Station2D;
  namespace Ray
  {
+  class GradientTracerOptions;
   class Path2D;
  }
 }
@@ -42,7 +43,8 @@ public:
     /// @{
  
     /// @brief Sets the geometry and options.
-    void initialize(const EikonalXX::Geometry2D &geometry); 
+    void initialize(const GradientTracerOptions &options,
+                    const EikonalXX::Geometry2D &geometry); 
     /// @result True indicates the class is initialized. 
     [[nodiscard]] bool isInitialized() const noexcept;
     /// @}

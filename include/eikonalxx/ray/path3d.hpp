@@ -8,6 +8,9 @@ namespace EikonalXX::Ray
 }
 namespace EikonalXX::Ray
 {
+/// @class Path2D "path2d.hpp" "eikonalxx/ray/path2d.hpp"
+/// @brief Defines a ray path in three dimensions.
+/// @copyright Ben Baker (University of Utah) distributed under the MIT license.
 class Path3D
 {
 private:

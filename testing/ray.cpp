@@ -2,6 +2,7 @@
 #include <cmath>
 #include <vector>
 #include "eikonalxx/ray/gradientTracer2d.hpp"
+#include "eikonalxx/ray/gradientTracerOptions.hpp"
 #include "eikonalxx/ray/path2d.hpp"
 #include "eikonalxx/ray/path3d.hpp"
 #include "eikonalxx/ray/point2d.hpp"
@@ -295,6 +296,26 @@ TEST(Ray, Path3D)
     }
 }
 
+TEST(Ray, GradientTracerOptions)
+{
+    EikonalXX::Ray::GradientTracerOptions options;
+    std::vector<std::pair<int, double>> radiusScaleFactor{ std::pair {2, 0.2},
+                                                           std::pair {1, 0.1} };
+    std::vector<std::pair<int, double>> reference{ std::pair {1, 0.1},
+                                                   std::pair {2, 0.2},
+                                                   std::pair {std::numeric_limits<int>::max(), 0.2} };
+    options.setRadiusScaleFactor(radiusScaleFactor);
+ 
+    EikonalXX::Ray::GradientTracerOptions copy(options);
+    auto rsf = copy.getRadiusScaleFactor();
+    EXPECT_EQ(rsf.size(), reference.size());
+    for (int i = 0; i < static_cast<int> (rsf.size()); ++i)
+    {
+        EXPECT_EQ(rsf[i].first, reference[i].first);
+        EXPECT_NEAR(rsf[i].second, reference[i].second, 1.e-14);
+    }
+}
+
 TEST(Ray, HomogeneousGradientTracer2D)
 {
     constexpr double velocity{4000};
@@ -357,8 +378,9 @@ TEST(Ray, HomogeneousGradientTracer2D)
     solver.solve();
     solver.computeTravelTimeGradientField();
     // Create the ray tracer
+    EikonalXX::Ray::GradientTracerOptions options;
     EikonalXX::Ray::GradientTracer2D tracer;
-    EXPECT_NO_THROW(tracer.initialize(geometry));
+    EXPECT_NO_THROW(tracer.initialize(options, geometry));
     EXPECT_NO_THROW(tracer.setStations(stations));
     tracer.trace(solver);
 }

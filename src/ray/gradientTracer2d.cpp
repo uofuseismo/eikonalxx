@@ -20,6 +20,7 @@
 //#else
 //#endif
 #include "eikonalxx/ray/gradientTracer2d.hpp"
+#include "eikonalxx/ray/gradientTracerOptions.hpp"
 #include "eikonalxx/ray/path2d.hpp"
 #include "eikonalxx/ray/segment2d.hpp"
 #include "eikonalxx/ray/point2d.hpp"
@@ -34,13 +35,14 @@ using namespace EikonalXX::Ray;
 namespace
 {
 
-enum class Wall : int
+struct Segment
 {
-    Top = 0,
-    Right = 1,
-    Bottom = 2,
-    Left = 3,
-    Unknown =-1
+    double x0;
+    double z0;
+    double x1;
+    double z1;
+    int iCellX;
+    int iCellZ;
 };
 
 [[nodiscard]] bool geometryMatches(
@@ -358,6 +360,7 @@ class GradientTracer2D::GradientTracer2DImpl
 {
 public:
     EikonalXX::Geometry2D mGeometry;
+    EikonalXX::Ray::GradientTracerOptions mOptions;
     std::vector<EikonalXX::Station2D> mStations;
     std::vector<EikonalXX::Ray::Path2D> mPaths;
     bool mInitialized{false};
@@ -435,7 +438,9 @@ bool GradientTracer2D::haveStations() const noexcept
 }
 
 /// Set the geometry
-void GradientTracer2D::initialize(const EikonalXX::Geometry2D &geometry)
+void GradientTracer2D::initialize(
+    const EikonalXX::Ray::GradientTracerOptions &options,
+    const EikonalXX::Geometry2D &geometry)
 {
     if (!geometry.haveGridSpacingInX())
     {
@@ -453,6 +458,7 @@ void GradientTracer2D::initialize(const EikonalXX::Geometry2D &geometry)
     {
         throw std::invalid_argument("Grid points in z not set");
     }
+    pImpl->mOptions = options;
     pImpl->mGeometry = geometry;
     pImpl->mInitialized = true;
 }
@@ -494,7 +500,10 @@ void GradientTracer2D::trace(
     double dzi = 1./dz;
     double x0 = pImpl->mGeometry.getOriginInX();
     double z0 = pImpl->mGeometry.getOriginInZ();
-    double stepLength = 0.1*std::min(dx, dz);
+    // Step properties
+    auto radiusScaleFactors = pImpl->mOptions.getRadiusScaleFactor();
+    double defaultStepLength
+         = radiusScaleFactors.back().second*std::min(dx, dz);
     // Source properties
     auto source = solver.getSource();
     auto iSourceCellX = source.getCellInX();
@@ -546,12 +555,17 @@ std::cout << source << std::endl;
         double gz010 = 1.e10;
         double gx110 = 1.e10;
         double gz110 = 1.e10;
+        double stepLength0 = defaultStepLength;
         bool mConverged{false};
         const int maxSegments{2500};
+        int nCellsVisited = 1;
+        std::vector<::Segment> raySegments;
+        raySegments.reserve(3*(nGridX + nGridZ));
         for (int iSegment = 0; iSegment < maxSegments; ++iSegment)
         {
             auto iCellX = static_cast<int> (xRay0/dx);
             auto iCellZ = static_cast<int> (zRay0/dz);
+            auto stepLength = stepLength0;
             auto gx00 = gx000;
             auto gz00 = gz000;
             auto gx10 = gx100;
@@ -559,9 +573,22 @@ std::cout << source << std::endl;
             auto gx01 = gx010;
             auto gz01 = gz010;
             auto gx11 = gx110;
-            auto gz11 = gz110; 
+            auto gz11 = gz110;
             if (iCellX != iCellX0 || iCellZ != iCellZ0)
             {
+                // Find appropriate step length
+                auto iCellDistance = std::min(std::abs(iSourceCellX - iCellX),
+                                              std::abs(iSourceCellZ - iCellZ));
+                stepLength = radiusScaleFactors.back().second*std::min(dx, dz);
+                for (const auto &rsf : radiusScaleFactors)
+                {
+                    if (rsf.first >= iCellDistance)
+                    {
+                        stepLength = rsf.second*std::min(dx, dz);
+                        break;
+                    }   
+                }
+                // Extract gradient and interpolate
                 auto i00 = 2*::gridToIndex(nGridX, iCellX,     iCellZ);
                 auto i10 = 2*::gridToIndex(nGridX, iCellX + 1, iCellZ);
                 auto i11 = 2*::gridToIndex(nGridX, iCellX + 1, iCellZ + 1);
@@ -573,7 +600,8 @@ std::cout << source << std::endl;
                 gx01 = static_cast<double> (gradientPtr[i01]);
                 gz01 = static_cast<double> (gradientPtr[i01 + 1]);
                 gx11 = static_cast<double> (gradientPtr[i11]);
-                gz11 = static_cast<double> (gradientPtr[i11 + 1]); 
+                gz11 = static_cast<double> (gradientPtr[i11 + 1]);
+                nCellsVisited = nCellsVisited + 1;
             }
             auto gx = ::bilinear(xRay0, zRay0,
                                  iCellX*dx, (iCellX + 1)*dx,
@@ -592,15 +620,24 @@ std::cout << source << std::endl;
             // March a small step opposite direction of gradient
             xRay1 = xRay0 - gx*gStep;
             zRay1 = zRay0 - gz*gStep;
-            std::cout << xRay1 << " " << zRay1 << std::endl;
+            // Update temporary segments
+            ::Segment thisSegment{xRay0, zRay0,
+                                  xRay1, zRay1,
+                                  iCellX, iCellZ};
+            raySegments.push_back(std::move(thisSegment));
             // Did we converge?
             if (std::abs(iCellX - iSourceCellX) < 2 &&
                 std::abs(iCellZ - iSourceCellZ) < 2)
             {
+                ::Segment lastSegment{xRay1, zRay1,
+                                      xs, zs,
+                                      iSourceCellX, iSourceCellZ};
+                raySegments.push_back(std::move(lastSegment));
                 mConverged = true;
                 break;
             }
             // Update
+            stepLength0 = stepLength;
             xRay0 = xRay1;
             zRay0 = zRay1;
             iCellX0 = iCellX;
@@ -613,32 +650,16 @@ std::cout << source << std::endl;
             gz010 = gz01;
             gx110 = gx11;
             gz110 = gz11;
-/*
-            //  
-            computeNextPointInPath(iCurrentCellX, iCurrentCellZ,
-                                   xRay0, zRay0,
-                                   dx, dz,
-                                   gradientPtr,
-                                   nGridX, nGridZ,
-                                   &iNextCellX, &iNextCellZ,
-                                   &xRay1, &zRay1);
-            Point2D p0{xRay0 + x0, zRay0 + z0};
-            Point2D p1{xRay1 + x0, zRay1 + z0};
-std::cout << xRay0 + x0 << " " << zRay0 + z0 << std::endl;
-std::cout << xRay1 + x0 << " " << zRay1 + z0 << std::endl;
-            Segment2D segment;
-            segment.setStartAndEndPoint(std::pair {p0, p1});
-            // Are we at the source?
-getchar();
-*/
         }
         if (mConverged){std::cout << "Converged!" << std::endl;}
-getchar();
+//getchar();
         if (!mConverged)
         {
             std::cerr << "Ray for station: " << station.getName()
                       << " did not converge to source" << std::endl;
         }
+        // Try to heal the ray
+        
     }
 }
 
