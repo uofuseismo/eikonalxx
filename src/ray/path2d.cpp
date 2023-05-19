@@ -196,12 +196,12 @@ Path2D::iterator Path2D::begin()
     return pImpl->mSegments.begin();
 }
 
-constexpr Path2D::const_iterator Path2D::begin() const noexcept
+Path2D::const_iterator Path2D::begin() const noexcept
 {
     return pImpl->mSegments.begin();
 }
 
-constexpr Path2D::const_iterator Path2D::cbegin() const noexcept
+Path2D::const_iterator Path2D::cbegin() const noexcept
 {
     return pImpl->mSegments.cbegin();
 }
@@ -211,12 +211,12 @@ Path2D::iterator Path2D::end()
     return pImpl->mSegments.end();
 }
 
-constexpr Path2D::const_iterator Path2D::end() const noexcept
+Path2D::const_iterator Path2D::end() const noexcept
 {
     return pImpl->mSegments.end();
 }
 
-constexpr Path2D::const_iterator Path2D::cend() const noexcept
+Path2D::const_iterator Path2D::cend() const noexcept
 {
     return pImpl->mSegments.cend();
 }

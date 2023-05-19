@@ -50,7 +50,8 @@ set(LIBSRC
     src/ray/path2d.cpp src/ray/path3d.cpp
     src/ray/point2d.cpp src/ray/point3d.cpp
     src/ray/segment2d.cpp src/ray/segment3d.cpp
-    src/io/vtkRectilinearGrid2d.cpp src/io/vtkRectilinearGrid3d.cpp)
+    src/io/vtkRectilinearGrid2d.cpp src/io/vtkRectilinearGrid3d.cpp
+    src/io/vtkPolygon2d.cpp)
 
 set(BUILD_SHARED_LIBS YES)
 add_library(eikonalxx ${LIBSRC})

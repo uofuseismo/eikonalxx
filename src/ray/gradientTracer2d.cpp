@@ -28,6 +28,7 @@
 #include "eikonalxx/geometry2d.hpp"
 #include "eikonalxx/source2d.hpp"
 #include "eikonalxx/station2d.hpp"
+#include "eikonalxx/io/vtkPolygon2d.hpp"
 #include "private/grid.hpp"
 
 using namespace EikonalXX::Ray;
@@ -41,8 +42,10 @@ struct Segment
     double z0;
     double x1;
     double z1;
-    int iCellX;
-    int iCellZ;
+    int iCellX0;
+    int iCellZ0;
+    int iCellX1;
+    int iCellZ1;
 };
 
 [[nodiscard]] bool geometryMatches(
@@ -97,38 +100,14 @@ T bilinear(const T x, const T z,
     return dzi*(z2mz*fxz1 + zmz1*fxz2);
 }
 
-/*
-template<typename T>
-T bilinear(const T x, const T z,
-           const T x1, const T x2, 
-           const T z1, const T z2, 
-           const T f00, const T f01,
-           const T f10, const T f11)
-{
-    T dxi = static_cast<T> (1./(x2 - x1));
-    T dzi = static_cast<T> (1./(z2 - z1));
-    return ::bilinear(x, z, 
-                      x1, x2,
-                      z1, z2,
-                      f00, f01,
-                      f10, f11,
-                      dxi, dzi);
-}
-*/
-
 /// @result The point where this line intersects the next cell wall.
 /// The idea for intersection is pretty straightforward.  We have a 
 /// point and a gradient, hence we are moving along the linear 
 /// trajectory
 ///   \textbf{f}(t) = \textbf{o} + \textbf{g} t 
 /// where \textbf{o} is the origin of the vector, \textbf{g} is 
-/// direction given by the gradient field, and t is some unknown value. 
+/// direction given by the gradient field, and t is some unknown value.
 /// Now, we find where \textbf{v} intersects the edge of the cell.  
-/// Note, the four (left, right, bottom, top) cell faces are:
-///   F_l = x_0
-///   F_r = x_1
-///   F_b = z_0 
-///   F_t = z_1
 /// Really, all we are now doing is finding the point of intersection
 /// with some existence conditions:
 ///   Left:   o_x + g_x t_l = x_0 -> t_l = (x_0 - o_x)/g_x; g_x < 0
@@ -142,157 +121,46 @@ T bilinear(const T x, const T z,
 /// - i.e., intersects the closest plane.  Therefore, if 
 ///     | \textbf{o} + \textbf{g} t_i | < | \textbf{o} + \textbf{g} t_j |
 /// we would select t_i, otherwise, we select t_j. Following this 
-/*
-template<typename T>
-void intersect(const int iCurrentCellX, const int iCurrentCellZ,
-               const int nCellX, const int nCellZ,
-               const T ox, const T oz,
-               const T gx, const T gz,
-               const T dx, const T dz,
-               T *ex, T *ez)
+void intersect(const int iCellX0, const int iCellZ0,
+               const double ox, const double oz,
+               const double gx, const double gz,
+               const double dx, const double dz,
+               double *ex, double *ez)
 {
-    const double tol{1.e-2}; // 2 cm
     *ex = ox;
     *ez = oz;
-    T ti{1.e10};
-    T tj{1.e10};
-    T gxUse = gx;
-    T gzUse = gz;
-    // The easy case is when we are in the cell.
-    int ix0 = iCurrentCellX;
-    int ix1 = ix0 + 1;
-    int iz0 = iCurrentCellZ;
-    int iz1 = iz0 + 1;
-    // It's more complicated when we are on a boundary:
-    // Left cell boundry
-    if (std::abs(ox - iCurrentCellX*dx) < tol)
-    {
-        // Make sure gradient doesn't take us out of bounds
-        if (iCurrentCellX == 0)
-        {
-            if (gx < 0){gxUse = 0;}
-            ix0 = 0;
-            ix1 = 1;
-        }
-        else
-        {
-            if (gx < 0)
-            {
-                ix0 = iCurrentCellX - 1;
-                ix1 = iCurrentCellX;
-            }
-            else
-            {
-                ix0 = iCurrentCellX;
-                ix1 = iCurrentCellX + 1;
-            }
-        }
-    }
-    // Right cell boundary
-    else if (std::abs(ox - (iCurrentCellX + 1)*dx) < tol)
-    {
-        if (iCurrentCellX == nCellX - 1)
-        {
-            if (gx > 0){gxUse = 0;}
-            ix0 = nCellX - 1;
-            ix1 = nCellX;
-        }
-        else
-        {
-            if (gx > 0)
-            {
-                ix0 = iCurrentCellX + 1;
-                ix1 = iCurrentCellX + 2;
-            }
-            else
-            {
-                ix0 = iCurrentCellX;
-                ix1 = iCurrentCellX + 1;
-            }
-        }
-    }
-    if (std::abs(oz - iCurrentCellZ*dz) < tol)
-    {
-        if (iCurrentCellZ == 0)
-        {
-            if (gz < 0){gzUse = 0;}
-            iz0 = 0;
-            iz1 = 1;
-        }
-        else
-        {
-            if (gz < 0)
-            {
-                iz0 = iCurrentCellZ - 1;
-                iz1 = iCurrentCellZ;
-            }
-            else
-            {
-                iz0 = iCurrentCellZ;
-                iz1 = iCurrentCellZ + 1;
-            }
-        }
-    }
-    else if (std::abs(oz - (iCurrentCellZ + 1)*dz) < tol)
-    {
-        if (iCurrentCellZ == nCellZ - 1)
-        {
-            if (gz > 0){gzUse = 0;}
-            iz0 = nCellZ - 1;
-            iz1 = nCellZ;    
-        }
-        else
-        {
-            if (gz > 0)
-            {
-                iz0 = iCurrentCellZ + 1;
-                iz1 = iCurrentCellZ + 2;
-            }
-            else
-            {
-                iz0 = iCurrentCellZ;
-                iz1 = iCurrentCellZ + 1;
-            }
-        }
-    }
-    // Normalize vectors
-    double gNorm = std::hypot(gxUse, gzUse);
-    gxUse = gxUse/gNorm;
-    gzUse = gzUse/gNorm;
+    double ti{1.e10};
+    double tj{1.e10};
     // Figure out the horizontal then vertical planes
-    T z0 = oz + iz0*dz;
-    T z1 = oz + iz1*dz;
-    T x0 = ox + ix0*dx;
-    T x1 = ox + ix0*dx;
-std::cout << "gUse: " << gxUse << " " << gzUse << std::endl;
-std::cout << ix0 << " " << ix1 << " " << iz0 << " " << iz1 << std::endl;
+    double z0 = oz + iCellZ0*dz;
+    double z1 = oz + (iCellZ0 + 1)*dz;
+    double x0 = ox + iCellX0*dx;
+    double x1 = ox + (iCellX0 + 1)*dx;
     /// Existence
-    if (gxUse > 0)
+    if (gx > 0)
     {
-        ti = (x1 - ox)/gxUse;
+        ti = (x1 - ox)/gx;
     }
-    else if (gxUse < 0)
+    else if (gx < 0)
     {
-        ti = (x0 - ox)/gxUse;
+        ti = (x0 - ox)/gx;
     }
-    if (gzUse > 0)
+    if (gz > 0)
     {
-        tj = (z1 - oz)/gzUse;
+        tj = (z1 - oz)/gz;
     }
     else if (gz > 0)
     {
-        tj = (z0 - oz)/gzUse;
+        tj = (z0 - oz)/gz;
     }
     // Make my lines
-    T fxi = ox + gxUse*ti;
-    T fzi = oz + gzUse*ti;
-    T fxj = ox + gxUse*tj;
-    T fzj = oz + gzUse*tj;
-std::cout << "next point i: " << fxi << " " << fzi << std::endl;
-std::cout << "next point j: " << fxj << " " << fzj << std::endl;
+    double fxi = ox + gx*ti;
+    double fzi = oz + gz*ti;
+    double fxj = ox + gx*tj;
+    double fzj = oz + gz*tj;
     // Distance squared is good enough
-    T li = (fxi - ox)*(fxi - ox) + (fzi - oz)*(fzi - oz);
-    T lj = (fxj - ox)*(fxj - ox) + (fzj - oz)*(fzj - oz);
+    double li = (fxi - ox)*(fxi - ox) + (fzi - oz)*(fzi - oz);
+    double lj = (fxj - ox)*(fxj - ox) + (fzj - oz)*(fzj - oz);
     if (li < lj)
     {
         *ex = fxi;
@@ -305,55 +173,6 @@ std::cout << "next point j: " << fxj << " " << fzj << std::endl;
     }
 }
 
-template<typename T>
-void computeNextPointInPath(const int iCurrentCellX, const int iCurrentCellZ,
-                            const double xRay0, const double zRay0,
-                            const double dx, const double dz,
-                            const T *gradientPtr,
-                            const int nGridX, const int nGridZ,
-                            int *iNextCellX, int *iNextCellZ,
-                            double *xRay1, double *zRay1)
-{
-    *iNextCellX = iCurrentCellX;
-    *iNextCellZ = iCurrentCellZ;
-    auto i00 = 2*::gridToIndex(nGridX, iCurrentCellX,     iCurrentCellZ);
-    auto i10 = 2*::gridToIndex(nGridX, iCurrentCellX + 1, iCurrentCellZ);
-    auto i11 = 2*::gridToIndex(nGridX, iCurrentCellX + 1, iCurrentCellZ + 1); 
-    auto i01 = 2*::gridToIndex(nGridX, iCurrentCellX,     iCurrentCellZ + 1); 
-    auto gx00 = static_cast<double> (gradientPtr[i00]);
-    auto gz00 = static_cast<double> (gradientPtr[i00 + 1]);
-    auto gx10 = static_cast<double> (gradientPtr[i10]);
-    auto gz10 = static_cast<double> (gradientPtr[i10 + 1]);
-    auto gx01 = static_cast<double> (gradientPtr[i01]);
-    auto gz01 = static_cast<double> (gradientPtr[i01 + 1]);
-    auto gx11 = static_cast<double> (gradientPtr[i11]);
-    auto gz11 = static_cast<double> (gradientPtr[i11 + 1]); 
-    // Interpolate gradient.  Note, we reduce to unit cell [0, dx] x [0, dz].
-    double x0 = iCurrentCellX*dx;
-    double x1 = (iCurrentCellX + 1)*dx;
-    double z0 = iCurrentCellZ*dz;
-    double z1 = (iCurrentCellZ + 1)*dz;
-    constexpr double zero{0};
-    auto gx = ::bilinear(xRay0 - x0, zRay0 - z0,
-                         zero, dx, zero, dz,
-                         gx00, gx01, gx10, gx11,
-                         1./dx, 1./dz);
-    auto gz = ::bilinear(xRay0 - x0, zRay0 - z0,
-                         zero, dx, zero, dz,
-                         gz00, gz01, gz10, gz11,
-                         1./dx, 1./dz);
-    // March down the gradient
-    gx =-gx;
-    gz =-gz;
-    // Figure out where next to advance ray
-std::cout << xRay0 << " " << zRay0 << std::endl;
-std::cout << gx << " " << gz << std::endl;
-    ::intersect(iCurrentCellX, iCurrentCellZ,
-                nGridX - 1, nGridZ - 1,
-                xRay0, zRay0, gx, gz, dx, dz, xRay1, zRay1);
-}
-*/
-
 }
 
 class GradientTracer2D::GradientTracer2DImpl
@@ -364,6 +183,7 @@ public:
     std::vector<EikonalXX::Station2D> mStations;
     std::vector<EikonalXX::Ray::Path2D> mPaths;
     bool mInitialized{false};
+    bool mHaveRayPaths{false};
 };
 
 /// Constructor
@@ -429,6 +249,8 @@ void GradientTracer2D::setStations(
         }
     }
     pImpl->mStations = stations;
+    pImpl->mPaths.clear();
+    pImpl->mHaveRayPaths = false;
 }
 
 /// Have stations?
@@ -461,6 +283,8 @@ void GradientTracer2D::initialize(
     pImpl->mOptions = options;
     pImpl->mGeometry = geometry;
     pImpl->mInitialized = true;
+    pImpl->mPaths.clear();
+    pImpl->mHaveRayPaths = false;
 }
 
 /// Initialized?
@@ -491,6 +315,10 @@ void GradientTracer2D::trace(
     {
         throw std::runtime_error("No stations were set");
     }
+    // Initialize
+    pImpl->mHaveRayPaths = false;
+    pImpl->mPaths.clear();
+    pImpl->mPaths.resize(pImpl->mStations.size());
     // Grid properties
     int nGridX = pImpl->mGeometry.getNumberOfGridPointsInX();
     int nGridZ = pImpl->mGeometry.getNumberOfGridPointsInZ();
@@ -511,20 +339,21 @@ void GradientTracer2D::trace(
     auto iSourceCell = source.getCell();
     auto xs = source.getOffsetInX();
     auto zs = source.getOffsetInZ();
-std::cout << source << std::endl;
+    auto sourceSlowness
+        = static_cast<double> (solver.getSlowness(iSourceCellX, iSourceCellZ));
     // Set the source point (we'll always use this when tracing)
     Point2D sourcePoint{x0 + xs, z0 + zs}; 
     const T* gradientPtr = solver.getTravelTimeGradientFieldPointer();
     // Loop on receivers
-    for (const auto &station : pImpl->mStations)
+    for (int iStation = 0; iStation < static_cast<int> (pImpl->mStations.size()); ++iStation)
     {
-        auto iStationCellX = station.getCellInX();
-        auto iStationCellZ = station.getCellInZ();
+        auto iStationCellX = pImpl->mStations[iStation].getCellInX();
+        auto iStationCellZ = pImpl->mStations[iStation].getCellInZ();
         // Define the station piont (we'll also always use this when tracing)
-        auto xr = station.getOffsetInX();
-        auto zr = station.getOffsetInZ();
+        auto xr = pImpl->mStations[iStation].getOffsetInX();
+        auto zr = pImpl->mStations[iStation].getOffsetInZ();
         Point2D stationPoint {x0 + xr, z0 + zr};
-        auto iStationCell = station.getCell();
+        auto iStationCell = pImpl->mStations[iStation].getCell();
         // Deal with an algorithm breakdown where the source/station are in
         // the same cell
         if (iSourceCell == iStationCell)
@@ -532,21 +361,26 @@ std::cout << source << std::endl;
             Segment2D segment;
             segment.setStartAndEndPoint(std::pair {sourcePoint, stationPoint});
             segment.setSlowness(
-                solver.getSlowness(station.getCellInX(), station.getCellInZ()));
+                solver.getSlowness(iStationCellX, iStationCellZ));
             segment.setVelocityModelCellIndex(iStationCell); 
+            Path2D rayPath;
+            rayPath.open();
+            rayPath.append(std::move(segment));
+            rayPath.close();
+            pImpl->mPaths[iStation] = std::move(rayPath);
             continue; 
         }
         // Business as usual - march down the gradient
-        double xRay0 = xr;
-        double zRay0 = zr;
-        double xRay1 = 0;
-        double zRay1 = 0;
+        double xRayStart = xr;
+        double zRayStart = zr;
+        double xRayEnd = 0;
+        double zRayEnd = 0;
         //int iCurrentCellX = iStationCellX;
         //int iCurrentCellZ = iStationCellZ;
         //int iNextCellX = 0;
         //int iNextCellZ = 0;
         int iCellX0 =-1;
-        int iCellZ0 =-1; 
+        int iCellZ0 =-1;
         double gx000 = 1.e10;
         double gz000 = 1.e10;
         double gx100 = 1.e10;
@@ -563,8 +397,8 @@ std::cout << source << std::endl;
         raySegments.reserve(3*(nGridX + nGridZ));
         for (int iSegment = 0; iSegment < maxSegments; ++iSegment)
         {
-            auto iCellX = static_cast<int> (xRay0/dx);
-            auto iCellZ = static_cast<int> (zRay0/dz);
+            auto iCellXStart = static_cast<int> (xRayStart/dx);
+            auto iCellZStart = static_cast<int> (zRayStart/dz);
             auto stepLength = stepLength0;
             auto gx00 = gx000;
             auto gz00 = gz000;
@@ -574,11 +408,13 @@ std::cout << source << std::endl;
             auto gz01 = gz010;
             auto gx11 = gx110;
             auto gz11 = gz110;
-            if (iCellX != iCellX0 || iCellZ != iCellZ0)
+            // The ray is starting in a different cell than last time
+            if (iCellXStart != iCellX0 || iCellZStart != iCellZ0)
             {
                 // Find appropriate step length
-                auto iCellDistance = std::min(std::abs(iSourceCellX - iCellX),
-                                              std::abs(iSourceCellZ - iCellZ));
+                auto iCellDistance
+                    = std::min(std::abs(iSourceCellX - iCellXStart),
+                               std::abs(iSourceCellZ - iCellZStart));
                 stepLength = radiusScaleFactors.back().second*std::min(dx, dz);
                 for (const auto &rsf : radiusScaleFactors)
                 {
@@ -589,10 +425,10 @@ std::cout << source << std::endl;
                     }   
                 }
                 // Extract gradient and interpolate
-                auto i00 = 2*::gridToIndex(nGridX, iCellX,     iCellZ);
-                auto i10 = 2*::gridToIndex(nGridX, iCellX + 1, iCellZ);
-                auto i11 = 2*::gridToIndex(nGridX, iCellX + 1, iCellZ + 1);
-                auto i01 = 2*::gridToIndex(nGridX, iCellX,     iCellZ + 1);
+                auto i00 = 2*::gridToIndex(nGridX, iCellXStart,     iCellZStart);
+                auto i10 = 2*::gridToIndex(nGridX, iCellXStart + 1, iCellZStart);
+                auto i11 = 2*::gridToIndex(nGridX, iCellXStart + 1, iCellZStart + 1);
+                auto i01 = 2*::gridToIndex(nGridX, iCellXStart,     iCellZStart + 1);
                 gx00 = static_cast<double> (gradientPtr[i00]);
                 gz00 = static_cast<double> (gradientPtr[i00 + 1]);
                 gx10 = static_cast<double> (gradientPtr[i10]);
@@ -603,34 +439,38 @@ std::cout << source << std::endl;
                 gz11 = static_cast<double> (gradientPtr[i11 + 1]);
                 nCellsVisited = nCellsVisited + 1;
             }
-            auto gx = ::bilinear(xRay0, zRay0,
-                                 iCellX*dx, (iCellX + 1)*dx,
-                                 iCellZ*dz, (iCellZ + 1)*dz,
+            auto gx = ::bilinear(xRayStart, zRayStart,
+                                 iCellXStart*dx, (iCellXStart + 1)*dx,
+                                 iCellZStart*dz, (iCellZStart + 1)*dz,
                                  gx00, gx01,
                                  gx10, gx11,
                                  dxi, dzi);
-            auto gz = ::bilinear(xRay0, zRay0,
-                                 iCellX*dx, (iCellX + 1)*dx,
-                                 iCellZ*dz, (iCellZ + 1)*dz,
+            auto gz = ::bilinear(xRayStart, zRayStart,
+                                 iCellXStart*dx, (iCellXStart + 1)*dx,
+                                 iCellZStart*dz, (iCellZStart + 1)*dz,
                                  gz00, gz01,
                                  gz10, gz11,
                                  dxi, dzi);
             auto gNorm = std::hypot(gx, gz);
             auto gStep = stepLength/gNorm;
             // March a small step opposite direction of gradient
-            xRay1 = xRay0 - gx*gStep;
-            zRay1 = zRay0 - gz*gStep;
+            xRayEnd = xRayStart - gx*gStep;
+            zRayEnd = zRayStart - gz*gStep;
+            auto iCellXEnd = static_cast<int> (xRayEnd/dx);
+            auto iCellZEnd = static_cast<int> (zRayEnd/dz);
             // Update temporary segments
-            ::Segment thisSegment{xRay0, zRay0,
-                                  xRay1, zRay1,
-                                  iCellX, iCellZ};
+            ::Segment thisSegment{xRayStart, zRayStart,
+                                  xRayEnd, zRayEnd,
+                                  iCellXStart, iCellZStart,
+                                  iCellXEnd,   iCellZEnd};
             raySegments.push_back(std::move(thisSegment));
-            // Did we converge?
-            if (std::abs(iCellX - iSourceCellX) < 2 &&
-                std::abs(iCellZ - iSourceCellZ) < 2)
+            // Look ahead - did the ray finish its journal the source?
+            if (std::abs(iCellXEnd - iSourceCellX) < 2 &&
+                std::abs(iCellZEnd - iSourceCellZ) < 2)
             {
-                ::Segment lastSegment{xRay1, zRay1,
+                ::Segment lastSegment{xRayEnd, zRayEnd,
                                       xs, zs,
+                                      iCellXEnd, iCellZEnd,
                                       iSourceCellX, iSourceCellZ};
                 raySegments.push_back(std::move(lastSegment));
                 mConverged = true;
@@ -638,10 +478,10 @@ std::cout << source << std::endl;
             }
             // Update
             stepLength0 = stepLength;
-            xRay0 = xRay1;
-            zRay0 = zRay1;
-            iCellX0 = iCellX;
-            iCellZ0 = iCellZ;
+            xRayStart = xRayEnd;
+            zRayStart = zRayEnd;
+            iCellX0 = iCellXStart;
+            iCellZ0 = iCellZStart;
             gx000 = gx00;
             gz000 = gz00;
             gx100 = gx10;
@@ -651,16 +491,122 @@ std::cout << source << std::endl;
             gx110 = gx11;
             gz110 = gz11;
         }
-        if (mConverged){std::cout << "Converged!" << std::endl;}
-//getchar();
+        //if (mConverged){std::cout << "Converged!" << std::endl;}
         if (!mConverged)
         {
-            std::cerr << "Ray for station: " << station.getName()
+            std::cerr << "Ray for station: "
+                      << pImpl->mStations[iStation].getName()
                       << " did not converge to source" << std::endl;
+            continue;
         }
-        // Try to heal the ray
-        
+        // Traced from receiver to source - flip that around
+        std::reverse(raySegments.begin(), raySegments.end());
+        // Start the process of healing the ray
+        Path2D rayPath;
+        rayPath.open();
+        auto nSegments = static_cast<int> (raySegments.size());
+        double xRay0 = raySegments[0].x0;
+        double zRay0 = raySegments[0].z0;
+        bool gotSource = false;
+        for (int iSegment = 0; iSegment < nSegments; ++iSegment)
+        {
+            auto iCellX0 = raySegments[iSegment].iCellX0;
+            auto iCellZ0 = raySegments[iSegment].iCellZ0;
+            auto iCellX1 = raySegments[iSegment].iCellX1;
+            auto iCellZ1 = raySegments[iSegment].iCellZ1;
+            // We've hit the end
+            if (iSegment == nSegments - 1)
+            {
+                Point2D startPoint{x0 + xRay0, z0 + zRay0};
+                Segment2D segment;
+                segment.setStartAndEndPoint( std::pair{startPoint, sourcePoint} ); 
+                segment.setSlowness(sourceSlowness);
+                rayPath.append(std::move(segment));
+std::cout << sourcePoint.getPositionInX() << std::endl;
+getchar();
+                gotSource = true;
+                break;
+            }
+            // We've crossed a cell boundary
+            if (iCellX0 != iCellX1 || iCellZ0 != iCellZ1)
+            {
+                double gx = raySegments[iSegment].x1 - raySegments[iSegment].x0;
+                double gz = raySegments[iSegment].z1 - raySegments[iSegment].z0;
+                auto gnorm = std::hypot(gx, gz);
+                gx = gx/gnorm;
+                gz = gz/gnorm;
+                double xRay1, zRay1;
+                ::intersect(iCellX0, iCellZ0,
+                            xRay0, zRay0,
+                            gx, gz,
+                            dx, dz,
+                            &xRay1, &zRay1);
+std::cout << xRay0 << " " << xRay1 << std::endl;
+                Point2D startPoint{x0 + xRay0, z0 + zRay0};
+                Point2D endPoint{x0 + xRay1, z0 + zRay1};
+                Segment2D segment;
+                segment.setStartAndEndPoint( std::pair{startPoint, endPoint} );
+                segment.setSlowness(solver.getSlowness(iCellX0, iCellZ0));
+                rayPath.append(std::move(segment));
+                // Update
+                xRay0 = xRay1;
+                zRay0 = zRay1;
+            }
+        } // Loop
+        if (!gotSource)
+        {
+            std::cerr << "Source point not in path" << std::endl;
+        }
+        rayPath.close();
+        pImpl->mPaths[iStation] = std::move(rayPath);
+    } // Loop on stations
+    pImpl->mHaveRayPaths = true;
+}
+
+bool GradientTracer2D::haveRayPaths() const noexcept
+{
+    return pImpl->mHaveRayPaths;
+}
+
+void GradientTracer2D::writeVTK(const std::string &fileName,
+                                const std::string &title)
+{
+    if (!haveRayPaths()){throw std::runtime_error("Ray paths not computed");}
+    EikonalXX::IO::VTKPolygon2D vtkWriter;
+    vtkWriter.open(fileName, title);
+    if (!pImpl->mPaths.empty())
+    {
+        std::vector<std::vector<std::pair<double, double>>> polygons;
+        polygons.reserve(pImpl->mPaths.size());
+        for (int iPath = 0;
+             iPath < static_cast<int> (pImpl->mPaths.size()); ++iPath)
+        {
+            auto path = pImpl->mPaths.at(iPath);
+            auto nSegments = path.size();
+            std::vector<std::pair<double, double>> polyPath;
+            polyPath.reserve(nSegments + 1);
+            size_t i = 0;
+            for (const auto &pi : path)
+            {
+                auto point = pi.getStartPoint();
+                auto xi = point.getPositionInX();
+                auto zi = point.getPositionInZ();
+                polyPath.push_back(std::pair {xi, zi});
+                if (i == nSegments - 1)
+                {
+                    point = pi.getEndPoint();
+                    xi = point.getPositionInX();
+                    zi = point.getPositionInZ();
+                    polyPath.push_back(std::pair {xi, zi}); 
+                }
+                i = i + 1;
+            }
+            polygons.push_back(std::move(polyPath));
+        }
+        vtkWriter.write(polygons);
     }
+    
+    vtkWriter.close();
 }
 
 ///--------------------------------------------------------------------------///

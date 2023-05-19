@@ -383,6 +383,8 @@ TEST(Ray, HomogeneousGradientTracer2D)
     EXPECT_NO_THROW(tracer.initialize(options, geometry));
     EXPECT_NO_THROW(tracer.setStations(stations));
     tracer.trace(solver);
+solver.writeVTK("homog2d.vtk");
+tracer.writeVTK("raypaths.vtk");
 }
 
 }

@@ -79,6 +79,11 @@ public:
     /// @result The source-to-receiver ray paths for each station.
     /// @throws std::runtime_error if \c haveRayPaths() is false.
     [[nodiscard]] std::vector<Path2D> getRayPaths() const;
+
+    /// @brief Writes the ray paths to disk.
+    /// @throws std::runtime_error if \c haveRayPaths() is false.
+    void writeVTK(const std::string &fileName,
+                  const std::string &title = "RayPaths");
     /// @}
 
     /// @name Operators
