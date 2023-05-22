@@ -162,6 +162,7 @@ void Source3D::setLocationInX(const double x)
 {
     if (!haveGeometry()){throw std::runtime_error("Geometry not yet set");}
     auto nx = pImpl->mGeometry.getNumberOfGridPointsInX();
+    auto nCellX = pImpl->mGeometry.getNumberOfCellsInX();
     double dx = pImpl->mGeometry.getGridSpacingInX();
     double x0 = pImpl->mGeometry.getOriginInX();
     double x1 = x0 + static_cast<double>  (nx - 1)*dx;
@@ -174,7 +175,7 @@ void Source3D::setLocationInX(const double x)
     pImpl->mCell =-1;
     pImpl->mX = x;
     pImpl->mXOffset = x - x0;
-    pImpl->mCellX = static_cast<int> (pImpl->mXOffset/dx);
+    pImpl->mCellX = std::min(nCellX - 1, static_cast<int> (pImpl->mXOffset/dx));
     pImpl->mHaveXLocation = true;
     pImpl->updateCell();
 }
@@ -216,6 +217,7 @@ void Source3D::setLocationInY(const double y)
 {
     if (!haveGeometry()){throw std::runtime_error("Geometry not yet set");}
     auto ny = pImpl->mGeometry.getNumberOfGridPointsInY();
+    auto nCellY = pImpl->mGeometry.getNumberOfCellsInY();
     double dy = pImpl->mGeometry.getGridSpacingInY();
     double y0 = pImpl->mGeometry.getOriginInY();
     double y1 = y0 + static_cast<double>  (ny - 1)*dy;
@@ -228,7 +230,7 @@ void Source3D::setLocationInY(const double y)
     pImpl->mCell =-1;
     pImpl->mY = y;
     pImpl->mYOffset = y - y0;
-    pImpl->mCellY = static_cast<int> (pImpl->mYOffset/dy);
+    pImpl->mCellY = std::min(nCellY - 1, static_cast<int> (pImpl->mYOffset/dy));
     pImpl->mHaveYLocation = true;
     pImpl->updateCell();
 }
@@ -270,6 +272,7 @@ void Source3D::setLocationInZ(const double z)
 {
     if (!haveGeometry()){throw std::runtime_error("Geometry not yet set");}
     auto nz = pImpl->mGeometry.getNumberOfGridPointsInZ();
+    auto nCellZ = pImpl->mGeometry.getNumberOfCellsInZ();
     double dz = pImpl->mGeometry.getGridSpacingInZ();
     double z0 = pImpl->mGeometry.getOriginInZ();
     double z1 = z0 + static_cast<double>  (nz - 1)*dz;
@@ -282,7 +285,7 @@ void Source3D::setLocationInZ(const double z)
     pImpl->mCell =-1;
     pImpl->mZ = z;
     pImpl->mZOffset = z - z0;
-    pImpl->mCellZ = static_cast<int> (pImpl->mZOffset/dz);
+    pImpl->mCellZ = std::min(nCellZ - 1, static_cast<int> (pImpl->mZOffset/dz));
     pImpl->mHaveZLocation = true;
     pImpl->updateCell();
 }

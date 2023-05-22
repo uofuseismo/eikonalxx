@@ -48,6 +48,18 @@ struct Segment
     int iCellZ1;
 };
 
+void reverseSegments(std::vector<Segment> &segments)
+{
+    std::reverse(segments.begin(), segments.end());
+    for (auto &segment : segments)
+    {
+        std::swap(segment.x0,      segment.x1);
+        std::swap(segment.z0,      segment.z1);
+        std::swap(segment.iCellX0, segment.iCellX1);
+        std::swap(segment.iCellZ1, segment.iCellZ1);
+    }
+}
+
 [[nodiscard]] bool geometryMatches(
     const EikonalXX::Geometry2D &lhs,
     const EikonalXX::Geometry2D &rhs)
@@ -131,11 +143,11 @@ void intersect(const int iCellX0, const int iCellZ0,
     *ez = oz;
     double ti{1.e10};
     double tj{1.e10};
-    // Figure out the horizontal then vertical planes
-    double z0 = oz + iCellZ0*dz;
-    double z1 = oz + (iCellZ0 + 1)*dz;
-    double x0 = ox + iCellX0*dx;
-    double x1 = ox + (iCellX0 + 1)*dx;
+    // Bracket the position with horizontal and vertical planes
+    double x0 = iCellX0*dx;
+    double x1 = (iCellX0 + 1)*dx;
+    double z0 = iCellZ0*dz;
+    double z1 = (iCellZ0 + 1)*dz;
     /// Existence
     if (gx > 0)
     {
@@ -149,7 +161,7 @@ void intersect(const int iCellX0, const int iCellZ0,
     {
         tj = (z1 - oz)/gz;
     }
-    else if (gz > 0)
+    else if (gz < 0)
     {
         tj = (z0 - oz)/gz;
     }
@@ -354,6 +366,9 @@ void GradientTracer2D::trace(
         auto zr = pImpl->mStations[iStation].getOffsetInZ();
         Point2D stationPoint {x0 + xr, z0 + zr};
         auto iStationCell = pImpl->mStations[iStation].getCell();
+        auto stationSlowness
+            = static_cast<double> (solver.getSlowness(iStationCellX,
+                                                      iStationCellZ));
         // Deal with an algorithm breakdown where the source/station are in
         // the same cell
         if (iSourceCell == iStationCell)
@@ -500,7 +515,7 @@ void GradientTracer2D::trace(
             continue;
         }
         // Traced from receiver to source - flip that around
-        std::reverse(raySegments.begin(), raySegments.end());
+        ::reverseSegments(raySegments);
         // Start the process of healing the ray
         Path2D rayPath;
         rayPath.open();
@@ -519,11 +534,10 @@ void GradientTracer2D::trace(
             {
                 Point2D startPoint{x0 + xRay0, z0 + zRay0};
                 Segment2D segment;
-                segment.setStartAndEndPoint( std::pair{startPoint, sourcePoint} ); 
-                segment.setSlowness(sourceSlowness);
+                segment.setStartAndEndPoint(
+                    std::pair{startPoint, stationPoint} );
+                segment.setSlowness(stationSlowness);
                 rayPath.append(std::move(segment));
-std::cout << sourcePoint.getPositionInX() << std::endl;
-getchar();
                 gotSource = true;
                 break;
             }
@@ -535,18 +549,27 @@ getchar();
                 auto gnorm = std::hypot(gx, gz);
                 gx = gx/gnorm;
                 gz = gz/gnorm;
-                double xRay1, zRay1;
+                double xRay1{0};
+                double zRay1{0};
                 ::intersect(iCellX0, iCellZ0,
                             xRay0, zRay0,
                             gx, gz,
                             dx, dz,
                             &xRay1, &zRay1);
-std::cout << xRay0 << " " << xRay1 << std::endl;
                 Point2D startPoint{x0 + xRay0, z0 + zRay0};
                 Point2D endPoint{x0 + xRay1, z0 + zRay1};
+//std::cout << iSegment << " " << iCellX0 << " " << iCellZ0 << " " << x0 + xRay0 << " " << z0 + zRay0 << " " << x0 + xRay1 << " " << z0 + zRay1 << std::endl;
+                //std::cout << xRay0 << " " << zRay0 << " " << xRay1 << " " << zRay1 << std::endl;
                 Segment2D segment;
                 segment.setStartAndEndPoint( std::pair{startPoint, endPoint} );
-                segment.setSlowness(solver.getSlowness(iCellX0, iCellZ0));
+                if (iSegment == 0)
+                {
+                    segment.setSlowness(sourceSlowness);
+                }
+                else
+                {
+                    segment.setSlowness(solver.getSlowness(iCellX0, iCellZ0));
+                }
                 rayPath.append(std::move(segment));
                 // Update
                 xRay0 = xRay1;
@@ -559,6 +582,8 @@ std::cout << xRay0 << " " << xRay1 << std::endl;
         }
         rayPath.close();
         pImpl->mPaths[iStation] = std::move(rayPath);
+//getchar();
+        //getchar();
     } // Loop on stations
     pImpl->mHaveRayPaths = true;
 }
@@ -573,7 +598,7 @@ void GradientTracer2D::writeVTK(const std::string &fileName,
 {
     if (!haveRayPaths()){throw std::runtime_error("Ray paths not computed");}
     EikonalXX::IO::VTKPolygon2D vtkWriter;
-    vtkWriter.open(fileName, title);
+    vtkWriter.open(fileName, pImpl->mGeometry, title);
     if (!pImpl->mPaths.empty())
     {
         std::vector<std::vector<std::pair<double, double>>> polygons;

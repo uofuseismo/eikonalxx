@@ -4,6 +4,7 @@
 #include <string>
 #include <filesystem>
 #include "eikonalxx/io/vtkPolygon2d.hpp"
+#include "eikonalxx/geometry2d.hpp"
 #include "pack.hpp"
 
 using namespace EikonalXX::IO;
@@ -12,6 +13,7 @@ class VTKPolygon2D::VTKPolygon2DImpl
 {
 public:
     std::fstream mFile;
+    EikonalXX::Geometry2D mGeometry;
     bool mWriteBinary{false};
 };
 
@@ -26,11 +28,13 @@ VTKPolygon2D::~VTKPolygon2D() = default;
 
 /// Open file
 void VTKPolygon2D::open(const std::string &fileName,
+                        const EikonalXX::Geometry2D &geometry,
                         const std::string &title)
 {
     constexpr bool writeBinary{false};
     // If the file was previously open then close it
     close();
+    pImpl->mGeometry = geometry;
     // Warn user file will be overwritten if it exists
     if (std::filesystem::exists(fileName))
     {   
@@ -91,11 +95,13 @@ void VTKPolygon2D::write(
         nPoints = nPoints + static_cast<int> (p.size());
     }
     pImpl->mFile << "POINTS " << nPoints << " float" << std::endl;
+    auto z0 = pImpl->mGeometry.getOriginInZ();
     for (const auto &p : polygons)
     {
         for (const auto &pi : p)
         {
-            pImpl->mFile << pi.first << " 0 " << pi.second << std::endl;
+            auto zi =-z0 - (pi.second - z0); // Reverse
+            pImpl->mFile << pi.first << " 0 " << zi << std::endl;
         }
     }
     pImpl->mFile << "POLYGONS " << polygons.size() << " "

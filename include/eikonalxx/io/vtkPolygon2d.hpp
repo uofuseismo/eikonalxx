@@ -28,9 +28,11 @@ public:
 
     /// @brief Opens a VTK file for writing.
     /// @param[in] fileName  The name of the VTK file to write to.
+    /// @param[in] geometry  The model geometry.
     /// @param[in] title     The title for the dataset.
     /// @throws std::invalid_argument if the file path cannot be created.
     void open(const std::string &fileName,
+              const EikonalXX::Geometry2D &geometry,
               const std::string &title = "ray_paths");
     /// @result True indicates that the the file is open for writing.
     [[nodiscard]] bool isOpen() const noexcept;

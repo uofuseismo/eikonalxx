@@ -447,19 +447,19 @@ T Model3D<T>::getSlowness(
     {
         throw std::invalid_argument("iCellX = " + std::to_string(iCellX)
                                   + " must be in range [0,"
-                                  + std::to_string(nCellX) + "]");
+                                  + std::to_string(nCellX) + ")");
     }
     if (iCellY < 0 || iCellY >= nCellY)
     {
         throw std::invalid_argument("iCellY = " + std::to_string(iCellY)
                                   + " must be in range [0,"
-                                  + std::to_string(nCellY) + "]");
+                                  + std::to_string(nCellY) + ")");
     }
     if (iCellZ < 0 || iCellZ >= nCellZ)
     {
         throw std::invalid_argument("iCellZ = " + std::to_string(iCellZ)
                                   + " must be in range [0,"
-                                  + std::to_string(nCellZ) + "]");
+                                  + std::to_string(nCellZ) + ")");
     }
     auto iCell = ::gridToIndex(nCellX, nCellY, iCellX, iCellY, iCellZ);
     return pImpl->mSlowness[iCell];

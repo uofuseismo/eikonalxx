@@ -406,13 +406,13 @@ T Model2D<T>::getSlowness(const int iCellX, const int iCellZ) const
     {
         throw std::invalid_argument("iCellX = " + std::to_string(iCellX)
                                   + " must be in range [0,"
-                                  + std::to_string(nCellX) + "]");
+                                  + std::to_string(nCellX) + ")");
     }
     if (iCellZ < 0 || iCellZ >= nCellZ)
     {
         throw std::invalid_argument("iCellZ = " + std::to_string(iCellZ)
                                   + " must be in range [0,"
-                                  + std::to_string(nCellZ) + "]");
+                                  + std::to_string(nCellZ) + ")");
     }
     auto iCell = ::gridToIndex(nCellX, iCellX, iCellZ);
     return pImpl->mSlowness[iCell];
