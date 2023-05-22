@@ -3,13 +3,13 @@
 #include <fstream>
 #include <string>
 #include <filesystem>
-#include "eikonalxx/io/vtkPolygon2d.hpp"
+#include "eikonalxx/io/vtkLines2d.hpp"
 #include "eikonalxx/geometry2d.hpp"
 #include "pack.hpp"
 
 using namespace EikonalXX::IO;
 
-class VTKPolygon2D::VTKPolygon2DImpl
+class VTKLines2D::VTKLines2DImpl
 {
 public:
     std::fstream mFile;
@@ -18,16 +18,16 @@ public:
 };
 
 /// Constructor
-VTKPolygon2D::VTKPolygon2D() :
-    pImpl(std::make_unique<VTKPolygon2DImpl> ())
+VTKLines2D::VTKLines2D() :
+    pImpl(std::make_unique<VTKLines2DImpl> ())
 {
 }
 
 /// Destructor
-VTKPolygon2D::~VTKPolygon2D() = default;
+VTKLines2D::~VTKLines2D() = default;
 
 /// Open file
-void VTKPolygon2D::open(const std::string &fileName,
+void VTKLines2D::open(const std::string &fileName,
                         const EikonalXX::Geometry2D &geometry,
                         const std::string &title)
 {
@@ -85,7 +85,7 @@ void VTKPolygon2D::open(const std::string &fileName,
 }
 
 /// Write the polygons
-void VTKPolygon2D::write(
+void VTKLines2D::write(
     const std::vector<std::vector<std::pair<double, double>>> &polygons) const
 {
     if (!isOpen()){throw std::runtime_error("File not open");}
@@ -104,8 +104,8 @@ void VTKPolygon2D::write(
             pImpl->mFile << pi.first << " 0 " << zi << std::endl;
         }
     }
-    pImpl->mFile << "POLYGONS " << polygons.size() << " "
-                                << nPoints + polygons.size() << std::endl; 
+    pImpl->mFile << "LINES " << polygons.size() << " "
+                             << nPoints + polygons.size() << std::endl; 
     int iPoint = 0;
     for (const auto &p : polygons)
     {
@@ -120,13 +120,13 @@ void VTKPolygon2D::write(
 }
 
 /// File is open?
-bool VTKPolygon2D::isOpen() const noexcept
+bool VTKLines2D::isOpen() const noexcept
 {
     return pImpl->mFile.is_open();
 }
 
 /// Close the file
-void VTKPolygon2D::close() noexcept
+void VTKLines2D::close() noexcept
 {
     if (isOpen()){pImpl->mFile.close();}
 }

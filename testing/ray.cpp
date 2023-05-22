@@ -16,6 +16,7 @@
 #include "eikonalxx/station2d.hpp"
 #include "eikonalxx/station3d.hpp"
 #include "eikonalxx/analytic/homogeneous2d.hpp"
+#include "eikonalxx/analytic/linearGradient2d.hpp"
 #include "eikonalxx/analytic/homogeneous3d.hpp"
 #include <gtest/gtest.h>
 
@@ -319,6 +320,7 @@ TEST(Ray, GradientTracerOptions)
 TEST(Ray, HomogeneousGradientTracer2D)
 {
     constexpr double velocity{4000};
+    constexpr double velBottom{5000};
     const double dx{100};
     const double dz{101};
     const double x0{1};
@@ -385,6 +387,37 @@ TEST(Ray, HomogeneousGradientTracer2D)
     tracer.trace(solver);
 solver.writeVTK("homog2d.vtk");
 tracer.writeVTK("raypaths.vtk");
+    auto rays = tracer.getRayPaths();
+    EXPECT_EQ(rays.size(), stations.size());
+    for (int iRay = 0; iRay < static_cast<int> (rays.size()); ++iRay)
+    {
+        auto xri = stations[iRay].getLocationInX();
+        auto zri = stations[iRay].getLocationInZ();
+        auto distRef = std::hypot(xri - xs, zri - zs);
+        auto tRef = distRef/velocity;
+        EXPECT_NEAR(rays[iRay].getLength(), distRef, 1); // 1 m
+        EXPECT_NEAR(rays[iRay].getTravelTime(), tRef, 1.e-3);
+        //std::cout << rays[iRay].getLength() << " " << distRef << std::endl;
+        //std::cout << rays[iRay].getTravelTime() << " " << tRef << std::endl;
+        //std::cout << 1./rays.getSlowness() << " " << velocity << std::endl;
+// std::cout << " " << std::endl;
+    }
+    // Solve eikonal equation in linear gradient
+    EikonalXX::Analytic::LinearGradient2D<double> linearGradientSolver;
+    linearGradientSolver.initialize(geometry);
+    linearGradientSolver.setVelocityModel(std::pair {velocity, velBottom});
+    linearGradientSolver.setSource(source);
+    linearGradientSolver.solve();
+    linearGradientSolver.computeTravelTimeGradientField();
+    tracer.trace(linearGradientSolver);
+linearGradientSolver.writeVTK("lingrad2d.vtk");
+tracer.writeVTK("lingradRays.vtk");
+    rays = tracer.getRayPaths();
+    EXPECT_EQ(rays.size(), stations.size());
+    for (int iRay = 0; iRay < static_cast<int> (rays.size()); ++iRay)
+    {
+std::cout << rays[iRay].getLength() << " " << rays[iRay].getTravelTime() << std::endl;
+    }
 }
 
 }

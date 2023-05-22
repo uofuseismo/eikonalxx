@@ -28,7 +28,7 @@
 #include "eikonalxx/geometry2d.hpp"
 #include "eikonalxx/source2d.hpp"
 #include "eikonalxx/station2d.hpp"
-#include "eikonalxx/io/vtkPolygon2d.hpp"
+#include "eikonalxx/io/vtkLines2d.hpp"
 #include "private/grid.hpp"
 
 using namespace EikonalXX::Ray;
@@ -56,7 +56,7 @@ void reverseSegments(std::vector<Segment> &segments)
         std::swap(segment.x0,      segment.x1);
         std::swap(segment.z0,      segment.z1);
         std::swap(segment.iCellX0, segment.iCellX1);
-        std::swap(segment.iCellZ1, segment.iCellZ1);
+        std::swap(segment.iCellZ0, segment.iCellZ1);
     }
 }
 
@@ -148,6 +148,10 @@ void intersect(const int iCellX0, const int iCellZ0,
     double x1 = (iCellX0 + 1)*dx;
     double z0 = iCellZ0*dz;
     double z1 = (iCellZ0 + 1)*dz;
+#ifndef NDEBUG
+//    assert(ox >= x0 && ox <= x1);
+//    assert(oz >= z0 && oz <= z1);
+#endif
     /// Existence
     if (gx > 0)
     {
@@ -334,6 +338,8 @@ void GradientTracer2D::trace(
     // Grid properties
     int nGridX = pImpl->mGeometry.getNumberOfGridPointsInX();
     int nGridZ = pImpl->mGeometry.getNumberOfGridPointsInZ();
+    //int nCellX = pImpl->mGeometry.getNumberOfCellsInX();
+    //int nCellZ = pImpl->mGeometry.getNumberOfCellsInZ();
     double dx = pImpl->mGeometry.getGridSpacingInX();
     double dz = pImpl->mGeometry.getGridSpacingInZ();
     double dxi = 1./dx;
@@ -551,6 +557,9 @@ void GradientTracer2D::trace(
                 gz = gz/gnorm;
                 double xRay1{0};
                 double zRay1{0};
+                //int iCellRayX0 = std::min(nCellX - 1, static_cast<int> (xRay0/dx));
+                //int iCellRayZ0 = std::min(nCellZ - 1, static_cast<int> (zRay0/dz));
+//std::cout << xRay0 << " " << zRay0 << std::endl;
                 ::intersect(iCellX0, iCellZ0,
                             xRay0, zRay0,
                             gx, gz,
@@ -597,12 +606,12 @@ void GradientTracer2D::writeVTK(const std::string &fileName,
                                 const std::string &title)
 {
     if (!haveRayPaths()){throw std::runtime_error("Ray paths not computed");}
-    EikonalXX::IO::VTKPolygon2D vtkWriter;
+    EikonalXX::IO::VTKLines2D vtkWriter;
     vtkWriter.open(fileName, pImpl->mGeometry, title);
     if (!pImpl->mPaths.empty())
     {
-        std::vector<std::vector<std::pair<double, double>>> polygons;
-        polygons.reserve(pImpl->mPaths.size());
+        std::vector<std::vector<std::pair<double, double>>> lines;
+        lines.reserve(pImpl->mPaths.size());
         for (int iPath = 0;
              iPath < static_cast<int> (pImpl->mPaths.size()); ++iPath)
         {
@@ -626,12 +635,18 @@ void GradientTracer2D::writeVTK(const std::string &fileName,
                 }
                 i = i + 1;
             }
-            polygons.push_back(std::move(polyPath));
+            lines.push_back(std::move(polyPath));
         }
-        vtkWriter.write(polygons);
+        vtkWriter.write(lines);
     }
-    
     vtkWriter.close();
+}
+
+/// Get the ray paths
+std::vector<Path2D> GradientTracer2D::getRayPaths() const
+{
+    if (!haveRayPaths()){throw std::runtime_error("Ray paths not computed");}
+    return pImpl->mPaths;
 }
 
 ///--------------------------------------------------------------------------///

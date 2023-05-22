@@ -1,5 +1,5 @@
-#ifndef EIKONALXX_IO_VTK_POLYGON_2D_HPP
-#define EIKONALXX_IO_VTK_POLYGON_2D_HPP
+#ifndef EIKONALXX_IO_VTK_LINES_2D_HPP
+#define EIKONALXX_IO_VTK_LINES_2D_HPP
 #include <string>
 #include <vector>
 #include <memory>
@@ -10,17 +10,17 @@ class Geometry2D;
 }
 namespace EikonalXX::IO
 {
-/// @class VTKPolygon2D "vtkPolygon2d.hpp" "eikonalxx/io/vtkPolygon2d.hpp"
+/// @class VTKLines2D "vtkLines2d.hpp" "eikonalxx/io/vtkLines2d.hpp"
 /// @brief A utility class for writing polygons to Legacy VTK file format.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
-class VTKPolygon2D
+class VTKLines2D
 {
 public:
     /// @name Constructors
     /// @{
 
     /// @brief Constructor.
-    VTKPolygon2D();
+    VTKLines2D();
     /// @}
 
     /// @name Step 1: Open the VTK file 
@@ -58,17 +58,17 @@ public:
     /// @{
 
     /// @brief Destructor.
-    ~VTKPolygon2D();
+    ~VTKLines2D();
     /// @}
 
     // Remove some functionality
-    VTKPolygon2D(const VTKPolygon2D &vtk) = delete;
-    VTKPolygon2D(VTKPolygon2D &&vtk) noexcept = delete;
-    VTKPolygon2D& operator=(const VTKPolygon2D &vtk) = delete;
-    VTKPolygon2D& operator=(VTKPolygon2D &&vtk) noexcept = delete;
+    VTKLines2D(const VTKLines2D &vtk) = delete;
+    VTKLines2D(VTKLines2D &&vtk) noexcept = delete;
+    VTKLines2D& operator=(const VTKLines2D &vtk) = delete;
+    VTKLines2D& operator=(VTKLines2D &&vtk) noexcept = delete;
 private:
-    class VTKPolygon2DImpl;
-    std::unique_ptr<VTKPolygon2DImpl> pImpl;
+    class VTKLines2DImpl;
+    std::unique_ptr<VTKLines2DImpl> pImpl;
 };
 }
 #endif
