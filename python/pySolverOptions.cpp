@@ -53,6 +53,11 @@ SolverOptions& SolverOptions::operator=(SolverOptions &&options) noexcept
     return *this;
 }
 
+const EikonalXX::SolverOptions* SolverOptions::getNativeClassPointer() const
+{
+    return pImpl.get();
+}
+
 /// Reset class
 void SolverOptions::clear() noexcept
 {
@@ -104,7 +109,7 @@ EikonalXX::Verbosity SolverOptions::getVerbosity() const noexcept
     return pImpl->getVerbosity();
 }
 
-/// Sovler algorithm
+/// Solver algorithm
 void SolverOptions::setAlgorithm(
     const EikonalXX::SolverAlgorithm algorithm) noexcept
 {
@@ -120,7 +125,29 @@ void PEikonalXX::initializeSolverOptions(pybind11::module &m)
 {
     pybind11::class_<PEikonalXX::SolverOptions> o(m, "SolverOptions");
     o.def(pybind11::init<> ());
-    o.doc() = "This defines the solver options which are as follows:\n\nnumber_of_sweeps : The number of Gauss-Seidel iterations used in the fast-sweeping method.  Convergence can be terminated early if the change in the travel time solution is less than the tolerance.\n\ntolerance : If the maximum change in the travel time solution (measured in seconds) is less than this value then the Gauss-Seidel iterations will be terminated early.  This can be disabled by setting the value to zero or a negative number.\n\nfactored_eikonal_equation_solver_radius : When the update node's grid index in a principle direction exceeds this value then the solver will use a Cartesian finite difference stencil as opposed to a factored-eikonal equation finite-difference stencil.  The factored eikonal equation stencil is designed to well-approximate the traveltime solution in the presence of high-wavefront curvature.\n\nalgorithm : The solver algorithm.\n\nverbosity : The solver's verbosity.";
+    o.doc() = R""""(
+This defines the solver options which are as follows:
+ 
+    number_of_sweeps : int
+       The number of Gauss-Seidel iterations used in the fast-sweeping method.
+       Convergence can be terminated early if the change in the travel time solution
+       is less than the tolerance.
+
+    tolerance : double
+       If the maximum change in the travel time solution (measured in seconds) is
+       less than this value then the Gauss-Seidel iterations will be terminated
+       early.  This can be disabled by setting the value to zero or a negative
+       number.
+
+    factored_eikonal_equation_solver_radius : int
+       When the update node's grid index in a principle direction exceeds this value
+       then the solver will use a Cartesian finite difference stencil as opposed to
+       a factored-eikonal equation finite-difference stencil.  The factored eikonal
+       equation stencil is designed to well-approximate the traveltime solution in the
+       presence of high-wavefront curvature.
+
+    algorithm : The solver algorithm.\n\nverbosity : The solver's verbosity.
+)"""";
     o.def_property("number_of_sweeps",
                    &SolverOptions::getNumberOfSweeps,
                    &SolverOptions::setNumberOfSweeps);

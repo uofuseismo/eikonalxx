@@ -1,5 +1,5 @@
-#ifndef PYEIKONALXX_SOLVEROPTIONS_HPP
-#define PYEIKONALXX_SOLVEROPTIONS_HPP
+#ifndef PYEIKONALXX_SOLVER_OPTIONS_HPP
+#define PYEIKONALXX_SOLVER_OPTIONS_HPP
 #include <memory>
 #include <pybind11/pybind11.h>
 #include <eikonalxx/enums.hpp>
@@ -24,6 +24,7 @@ public:
     SolverOptions& operator=(const EikonalXX::SolverOptions &options);
     /// @brief Move assignment.
     SolverOptions& operator=(SolverOptions &&options) noexcept;
+    const EikonalXX::SolverOptions *getNativeClassPointer() const;
     /// @brief Destructor
     ~SolverOptions();
     /// @brief Reset teh class

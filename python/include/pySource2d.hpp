@@ -24,6 +24,8 @@ public:
     Source2D& operator=(const EikonalXX::Source2D &source);
     /// @brief Move assignment.
     Source2D& operator=(Source2D &&source) noexcept;
+    /// @result Native class
+    const EikonalXX::Source2D* getNativeClassPointer() const;
     /// @brief Destructor.
     ~Source2D();
     /// @brief Reset the class.

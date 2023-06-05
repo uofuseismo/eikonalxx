@@ -139,9 +139,83 @@ def test_source2d():
     assert abs(source2d.z - geo2d.z0) < 1.e-14, 'z to free surface failed'
     print("Passed source2d")
 
+def test_source3d():
+    """
+    Test the 3D source.
+    """
+    geo3d = pyEikonalXX.Geometry3D()
+    geo3d.dx = 100
+    geo3d.dy = 100.5
+    geo3d.dz = 101.
+    geo3d.nx = 55
+    geo3d.ny = 45
+    geo3d.nz = 25
+    geo3d.x0 = 1
+    geo3d.y0 =-1
+    geo3d.z0 = 2
+    source3d = pyEikonalXX.Source3D()
+    source3d.geometry = geo3d
+    x_src = geo3d.x0 + geo3d.nx/3*geo3d.dx
+    y_src = geo3d.y0 + geo3d.ny/2*geo3d.dy
+    z_src = geo3d.z0 + geo3d.nz/7*geo3d.dz
+    source3d.x = x_src
+    source3d.y = y_src
+    source3d.z = z_src
+
+    geo_back = source3d.geometry
+    assert geo3d.nx == geo_back.nx, 'nx failed'
+    assert geo3d.ny == geo_back.ny, 'ny failed'
+    assert geo3d.nz == geo_back.nz, 'nz failed'
+    assert abs(geo3d.dx - geo_back.dx) < 1.e-14, 'dx failed'
+    assert abs(geo3d.dy - geo_back.dy) < 1.e-14, 'dy failed'
+    assert abs(geo3d.dz - geo_back.dz) < 1.e-14, 'dz failed'
+    assert abs(geo3d.x0 - geo_back.x0) < 1.e-14, 'x0 failed'
+    assert abs(geo3d.y0 - geo_back.y0) < 1.e-14, 'y0 failed'
+    assert abs(geo3d.z0 - geo_back.z0) < 1.e-14, 'z0 failed'
+    assert abs(source3d.x - x_src) < 1.e-14, 'x failed'
+    assert abs(source3d.y - y_src) < 1.e-14, 'y failed'
+    assert abs(source3d.z - z_src) < 1.e-14, 'z failed'
+    source3d.set_z_to_free_surface()
+    assert abs(source3d.z - geo3d.z0) < 1.e-14, 'z to free surface failed'
+    print("Passed source3d")
+
+def test_station2d():
+    """
+    Test the 2D station.
+    """
+    geo2d = pyEikonalXX.Geometry2D()
+    geo2d.dx = 103 
+    geo2d.dz = 101.
+    geo2d.nx = 25
+    geo2d.nz = 45
+    geo2d.x0 = 5
+    geo2d.z0 = 2 
+    station2d = pyEikonalXX.Source2D()
+    station2d.geometry = geo2d
+    x_sta = geo2d.x0 + geo2d.nx/3*geo2d.dx
+    z_sta = geo2d.z0 + geo2d.nz/9*geo2d.dz
+    station2d.x = x_sta
+    station2d.z = z_sta
+
+    geo_back = station2d.geometry
+    assert geo2d.nx == geo_back.nx, 'nx failed'
+    assert geo2d.nz == geo_back.nz, 'nz failed'
+    assert abs(geo2d.dx - geo_back.dx) < 1.e-14, 'dx failed'
+    assert abs(geo2d.dz - geo_back.dz) < 1.e-14, 'dz failed'
+    assert abs(geo2d.x0 - geo_back.x0) < 1.e-14, 'x0 failed'
+    assert abs(geo2d.z0 - geo_back.z0) < 1.e-14, 'z0 failed'
+    assert abs(station2d.x - x_sta) < 1.e-14, 'x failed'
+    assert abs(station2d.z - z_sta) < 1.e-14, 'z failed'
+    station2d.set_z_to_free_surface()
+    assert abs(station2d.z - geo2d.z0) < 1.e-14, 'z to free surface failed'
+    print("Passed station2d")
+
+
 if __name__ == "__main__":
     test_geometry2d()
     test_geometry3d()
     test_solverOptions()
     test_velocityModel2d()
     test_source2d()
+    test_source3d()
+    test_station2d()

@@ -16,6 +16,11 @@ Source2D::Source2D(const Source2D &source)
     *this = source;
 }
 
+Source2D::Source2D(const EikonalXX::Source2D &source)
+{
+    *this = source;
+}
+
 Source2D::Source2D(Source2D &&source) noexcept
 {
     *this = std::move(source);
@@ -43,6 +48,11 @@ Source2D& Source2D::operator=(Source2D &&source) noexcept
     if (&source == this){return *this;}
     pImpl = std::move(source.pImpl);
     return *this;
+}
+
+const EikonalXX::Source2D* Source2D::getNativeClassPointer() const
+{
+    return pImpl.get();
 }
 
 /// Set geometry
