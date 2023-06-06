@@ -30,6 +30,7 @@
 #include "eikonalxx/station2d.hpp"
 #include "eikonalxx/io/vtkLines2d.hpp"
 #include "private/grid.hpp"
+#include "bilinear.hpp"
 
 using namespace EikonalXX::Ray;
 
@@ -94,6 +95,7 @@ void reverseSegments(std::vector<Segment> &segments)
     return true;
 }
 
+/*
 template<typename T>
 T bilinear(const T x, const T z,
            const T x1, const T x2,
@@ -111,6 +113,7 @@ T bilinear(const T x, const T z,
     T zmz1 = z - z1; 
     return dzi*(z2mz*fxz1 + zmz1*fxz2);
 }
+*/
 
 /// @result The point where this line intersects the next cell wall.
 /// The idea for intersection is pretty straightforward.  We have a 

@@ -5,11 +5,14 @@
 #include "eikonalxx/abstractBaseClass/solver2d.hpp"
 namespace EikonalXX
 {
-// Forward declarations
 class Geometry2D;
-class Source2D;
 template<class T> class Model2D;
+class Source2D;
 class SolverOptions;
+class Station2D;
+}
+namespace EikonalXX
+{
 /// @class Solver2D "solver2d.hpp" "eikonalx/solver2d.hpp"
 /// @brief Solves the eikonal equation in a 2D slice.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
@@ -94,18 +97,37 @@ public:
     [[nodiscard]] Source2D getSource() const override;
     /// @result True indicates that the source was set.
     [[nodiscard]] bool haveSource() const noexcept override;
-    // @}
+    /// @}
 
-    /// @name Step 4: Solve
+    /// @name Step 4: Stations (Optional)
+    /// @{
+
+    /// @brief Sets the stations at which to compute travel times.
+    /// @param[in] stations  The stations at which to compute travel times.
+    /// @throws std::invalid_argument if the geometry for any station is
+    ///         inconsistent with this geometry. 
+    /// @throws std::runtime_error if \c isInitialized() is false.
+    void setStations(const std::vector<Station2D> &stations);
+    /// @result The stations at which to compute travel times.
+    [[nodiscard]] std::vector<Station2D> getStations() const;
+    /// @result A reference to the station list.  
+    /// @note \c getStations() should be preferred. 
+    [[nodiscard]] const std::vector<Station2D>& getStationsReference() const;
+    /// @}
+
+    /// @name Step 5: Solve
     /// @{
 
     /// @brief Solves the eikonal equation for the given source/velocity model.
     /// @throws std::runtime_error if the source or velocity model is not set.
     /// @sa \c isInitialized(), \c haveVelocityModel(), \c haveSource()
     void solve(); 
+    /// @brief Computes the gradient of the travel time field.
+    /// @throws std::runtime_error if \c haveTravelTimeField() is false.
+    void computeTravelTimeGradientField();
     /// @} 
 
-    /// @name Step 5: Results
+    /// @name Step 6: Results
     /// @{
 
     /// @result The travel times from the source to all nodes in the model in
@@ -122,6 +144,8 @@ public:
     /// @result True indicates that \c solve() has been called and the travel
     ///         time field is available.
     [[nodiscard]] bool haveTravelTimeField() const noexcept override;
+    /// @result The travel time extracted at the stations.
+    [[nodiscard]] std::vector<T> getTravelTimesAtStations() const;
 
     /// @result The gradient of the travel time field in x in and z - both in
     ///         seconds/meter.  This uses the natural ordering.  This has
@@ -140,6 +164,19 @@ public:
 
     /// @result True indicates the travel time field's gradient was computed.
     [[nodiscard]] bool haveTravelTimeGradientField() const noexcept override;
+    /// @brief Writes the travel time field to VTK.
+    /// @param[in] fileName  The name of the VTK file.
+    /// @param[in] title     The dataset's title.
+    /// @param[in] writeGradient  If true then also write the gradient of the
+    ///                           travel time field.
+    /// @throws std::runtime_error if \c haveTravelTimeField() is false.
+    ///         Additionally, this throws if writeGradient is true and
+    ///         \c haveGradientTravelTimefield() is false.
+    /// @throws std::invalid_argument if there is an error while opening the
+    ///         output file.
+    void writeVTK(const std::string &fileName,
+                  const std::string &title = "travel_time_field_s",
+                  bool writeGradient = false) const;
     /// @}
 
     /// @name Destructors

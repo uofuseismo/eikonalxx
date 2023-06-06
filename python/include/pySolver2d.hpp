@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
 namespace EikonalXX
 {
  template<class T> class Solver2D;
@@ -34,16 +35,19 @@ public:
     [[nodiscard]] double getSlowness(const int iCellX, const int iCellZ) const;
 
     void setSource(const Source2D &source);
-    void setSource(const std::pair<double, double> &location);
     [[nodiscard]] Source2D getSource() const;
     [[nodiscard]] bool haveSource() const noexcept;
 
     void solve(); 
+    void computeTravelTimeGradientField();
 
-    [[nodiscard]] std::vector<double> getTravelTimeField() const;
+    [[nodiscard]] pybind11::array_t<double, pybind11::array::c_style | pybind11::array::forcecast> getTravelTimeField() const;
     [[nodiscard]] bool haveTravelTimeField() const noexcept;
-    [[nodiscard]] std::vector<double> getTravelTimeGradientField() const;
+    [[nodiscard]] pybind11::array_t<double, pybind11::array::c_style | pybind11::array::forcecast> getTravelTimeGradientField() const;
     [[nodiscard]] bool haveTravelTimeGradientField() const noexcept;
+    void writeVTK(const std::string &fileName,
+                  const std::string &title = "travel_time_field_s",
+                  const bool writeGradientField = false) const;
 
     ~Solver2D();
 private:

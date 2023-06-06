@@ -2,6 +2,8 @@
 #include "include/pyGeometry2d.hpp"
 #include "include/pyGeometry3d.hpp"
 #include "include/pyModel2d.hpp"
+#include "include/pyRay2d.hpp"
+#include "include/pySolver2d.hpp"
 #include "include/pySource2d.hpp"
 #include "include/pySource3d.hpp"
 #include "include/pyStation2d.hpp"
@@ -13,17 +15,8 @@
 PYBIND11_MODULE(pyEikonalXX, m)
 {
     m.attr("__version__") = EIKONALXX_VERSION;
+    m.attr("__name__") = "pyEikonalXX";
     m.attr("__doc__") = "A toolkit for solving the eikonal equation in seismic applications.";
-
-    PEikonalXX::initializeGeometry2D(m);
-    PEikonalXX::initializeGeometry3D(m);
-    PEikonalXX::initializeSolverOptions(m);
-    PEikonalXX::initializeSource2D(m);
-    PEikonalXX::initializeSource3D(m);
-    PEikonalXX::initializeStation2D(m);
-    PEikonalXX::initializeStation3D(m);
-    PEikonalXX::initializeModel2D(m);
-
 
     pybind11::enum_<EikonalXX::Ordering2D> (m, "Ordering2D")
         .value("natural", EikonalXX::Ordering2D::Natural,
@@ -57,4 +50,19 @@ PYBIND11_MODULE(pyEikonalXX, m)
                 "Warnings, errors, and general information will be reported.  This is a recommended level for a handful of solves.")
          .value("debug", EikonalXX::Verbosity::Debug,
                 "All information will be reported.  This verbosity level is not recommended.");
+
+    PEikonalXX::initializeGeometry2D(m);
+    PEikonalXX::initializeGeometry3D(m);
+    PEikonalXX::initializeSolverOptions(m);
+    PEikonalXX::initializeSolver2D(m);
+    PEikonalXX::initializeSource2D(m);
+    PEikonalXX::initializeSource3D(m);
+    PEikonalXX::initializeStation2D(m);
+    PEikonalXX::initializeStation3D(m);
+    PEikonalXX::initializeModel2D(m);
+
+    pybind11::module rayModule = m.def_submodule("Ray");
+    rayModule.attr("__doc__") = "Ray tracing utilities.";
+    PEikonalXX::Ray::initializeRay2D(rayModule);
+
 }

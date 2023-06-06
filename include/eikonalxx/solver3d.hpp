@@ -5,11 +5,14 @@
 #include "eikonalxx/abstractBaseClass/solver3d.hpp"
 namespace EikonalXX
 {
-// Forward declarations
 class Geometry3D;
-class Source3D;
 template<class T> class Model3D;
+class Source3D;
 class SolverOptions;
+class Station3D;
+}
+namespace EikonalXX
+{
 /// @class Solver3D "solver3d.hpp" "eikonalx/solver3d.hpp"
 /// @brief Solves the eikonal equation in a 3D medium.
 /// @copyright Ben Baker (University of Utah) distributed under the MIT license.
@@ -97,9 +100,25 @@ public:
     [[nodiscard]] Source3D getSource() const override;
     /// @result True indicates that the source was set.
     [[nodiscard]] bool haveSource() const noexcept override;
-    // @}
+    /// @}
 
-    /// @name Step 4: Solve
+    /// @name Step 4: Stations (Optional)
+    /// @{
+
+    /// @brief Sets the stations at which to compute travel times.
+    /// @param[in] stations  The stations at which to compute travel times.
+    /// @throws std::invalid_argument if the geometry for any station is
+    ///         inconsistent with this geometry. 
+    /// @throws std::runtime_error if \c isInitialized() is false.
+    void setStations(const std::vector<Station3D> &stations);
+    /// @result The stations at which to compute travel times.
+    [[nodiscard]] std::vector<Station3D> getStations() const;
+    /// @result A reference to the station list.  
+    /// @note \c getStations() should be preferred. 
+    [[nodiscard]] const std::vector<Station3D>& getStationsReference() const;
+    /// @}
+
+    /// @name Step 5: Solve
     /// @{
 
     /// @brief Solves the eikonal equation for the given source/velocity model.
@@ -108,7 +127,7 @@ public:
     void solve(); 
     /// @}
 
-    /// @name Step 5: Results
+    /// @name Step 6: Results
     /// @{
 
     /// @result The travel times from the source to all nodes in the model in
@@ -130,14 +149,14 @@ public:
     ///         seconds/meter.  This uses the natural ordering.  It has 
     ///         dimension [getGeometry.getNumberOfGridPoints() x 3] and is
     ///         stored in row major format.
-    /// @sa \c Ordering2D, \c haveTravelTimeGradientField(), \c getGeometry()
+    /// @sa \c Ordering3D, \c haveTravelTimeGradientField(), \c getGeometry()
     [[nodiscard]] std::vector<T> getTravelTimeGradientField() const override;
     /// @result A pointer to the gradient of the travel time field in x, y, and
     ///         a - all in seconds/meter.  This uses the natural ordering.
     ///         It has dimension [getGeometry.getNumberOfGridPoints() x 3] and
     ///         is sotred in row major format.
     /// @throws std::runtime_error if \c haveTravelTimeGradientField() is false.
-    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering2D
+    /// @sa \c haveTravelTimeField(), \c getGeometry(), \c Ordering3D
     [[nodiscard]] const T *getTravelTimeGradientFieldPointer() const override;
 
     /// @result True indicates the travel time field's gradient was computed.

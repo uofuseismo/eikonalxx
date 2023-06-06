@@ -86,17 +86,107 @@ void Solver2D::solve()
     mSolver->solve();
 }
 
-//std::vector<double> getTravelTimeField() const;
+void Solver2D::writeVTK(const std::string &fileName,
+                        const std::string &title,
+                        const bool writeGradientField) const
+{
+    mSolver->writeVTK(fileName, title, writeGradientField);
+}
+
+pybind11::array_t<double, pybind11::array::c_style | pybind11::array::forcecast> 
+Solver2D::getTravelTimeField() const
+{
+    const auto *travelTimes = mSolver->getTravelTimeFieldPointer();
+    auto nGrid = mSolver->getGeometry().getNumberOfGridPoints();
+    auto result = pybind11::array_t<double, pybind11::array::c_style> (nGrid);
+    pybind11::buffer_info resultBuffer = result.request();
+    auto resultPointer = static_cast<double *> (resultBuffer.ptr);
+    std::copy(travelTimes, travelTimes + nGrid, resultPointer);
+    return result;
+}
+
+pybind11::array_t<double, pybind11::array::c_style | pybind11::array::forcecast> 
+Solver2D::getTravelTimeGradientField() const
+{
+    const auto *gradientTravelTimes
+        = mSolver->getTravelTimeGradientFieldPointer();
+    auto nGrid2 = 2*mSolver->getGeometry().getNumberOfGridPoints();
+    auto result = pybind11::array_t<double, pybind11::array::c_style> (nGrid2);
+    pybind11::buffer_info resultBuffer = result.request();
+    auto resultPointer = static_cast<double *> (resultBuffer.ptr);
+    std::copy(gradientTravelTimes, gradientTravelTimes + nGrid2, resultPointer);
+    return result;
+}
+
+void Solver2D::computeTravelTimeGradientField()
+{
+    mSolver->computeTravelTimeGradientField();
+}
+
 bool Solver2D::haveTravelTimeField() const noexcept
 {
     return mSolver->haveTravelTimeField();
 }
 
-//std::vector<double> getTravelTimeGradientField() const;
 bool Solver2D::haveTravelTimeGradientField() const noexcept
 {
     return mSolver->haveTravelTimeGradientField();
 }
 
 
+/// Initialize class
+void PEikonalXX::initializeSolver2D(pybind11::module &m) 
+{
+    pybind11::class_<PEikonalXX::Solver2D> s(m, "Solver2D");
+    s.def(pybind11::init<> ());
+    s.doc() = R"""(
+This defines the 2D solver.  Note, the first thing you must do is initialize the solver.
+
+Properties
+----------
+source : Source2D
+    Defines the seismic source in the model.  This must be called after initialization.
+velocity_model : VelocityModel2D
+    Defines the velocity model.  This must be called after initialization.
+
+Read-Only Properties
+--------------------
+have_source : bool
+    True indicates the source was set.
+have_travel_time_field : bool
+    True indicates the travel time field was computed.
+have_velocity_model : bool
+    True indicates the velocity model was set.
+
+)""";
+    s.def("initialize",
+          &Solver2D::initialize,
+          "Initializes the solver.");
+    s.def("solve",
+          &Solver2D::solve,
+          "Solves the eikonal equation.  Note, the class must be initialized and the source and velocity model must be set.");
+    s.def("compute_travel_time_gradient_field",
+          &Solver2D::computeTravelTimeGradientField,
+          "Computes the gradient of the travel time field.");
+    s.def("write_vtk",
+          &Solver2D::writeVTK,
+          "Writes the travel time field and, optionally, the gradient field to disk.  Note, have_travel_time_field must be true.",
+          pybind11::arg("file_name"),
+          pybind11::arg("title") = "travel_time_field_s",
+          pybind11::arg("write_gradient_field") = false);
+    s.def_property("source",
+                   &Solver2D::getSource,
+                   &Solver2D::setSource);
+    s.def_property("velocity_model",
+                   &Solver2D::getVelocityModel,
+                   &Solver2D::setVelocityModel);
+    s.def_property_readonly("have_source",
+                            &Solver2D::haveSource);
+    s.def_property_readonly("have_velocity_model",
+                            &Solver2D::haveVelocityModel);
+    s.def_property_readonly("have_travel_time_field",
+                            &Solver2D::haveTravelTimeField);
+    s.def_property_readonly("have_travel_time_gradient_field",
+                            &Solver2D::haveTravelTimeGradientField);
+}
 

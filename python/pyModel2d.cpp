@@ -90,12 +90,48 @@ Geometry2D Model2D::getGeometry() const
     return geometry;
 }
 
+/// Nodal velocities
+void Model2D::setNodalVelocities(
+    const pybind11::array_t<double, pybind11::array::c_style | pybind11::array::forcecast> &velocities, 
+    const EikonalXX::Ordering2D ordering)
+{
+    pybind11::buffer_info velocityBuffer = velocities.request();
+    auto nGrid = static_cast<int> (velocityBuffer.size);
+    const double *velocityPointer = (double *) (velocityBuffer.ptr);
+    pImpl->setNodalVelocities(nGrid, velocityPointer, ordering); 
+}
+
+void Model2D::setCellularVelocities(
+    const pybind11::array_t<double, pybind11::array::c_style | pybind11::array::forcecast> &velocities, 
+    const EikonalXX::Ordering2D ordering)
+{
+    pybind11::buffer_info velocityBuffer = velocities.request();
+    auto nCell = static_cast<int> (velocityBuffer.size);
+    const double *velocityPointer = (double *) (velocityBuffer.ptr);
+    pImpl->setCellularVelocities(nCell, velocityPointer, ordering); 
+}
+
+/// Write vtk
+void Model2D::writeVTK(const std::string &fileName, const std::string &title)
+{
+    pImpl->writeVTK(fileName, title); 
+}
+
 /// Initialize class
 void PEikonalXX::initializeModel2D(pybind11::module &module)
 {
     pybind11::class_<PEikonalXX::Model2D> m(module, "VelocityModel2D");
     m.def(pybind11::init<> ());
-    m.doc() = "This defines a 2D Cartesian velocity model.";
+    m.doc() = R""""(
+This defines a 2D Cartesian velocity model.
+
+Read-Only Properties
+--------------------
+is_initialized : bool
+   True indicates the class is initialized.
+geometry : Geometry2D
+   The two-dimensionsal geometry.
+)"""";
 
     m.def("__copy__", [](const Model2D &self)
     {
@@ -104,10 +140,23 @@ void PEikonalXX::initializeModel2D(pybind11::module &module)
     m.def("initialize",
           &Model2D::initialize, 
           "Initializes the class.");
-    m.def("is_initialized",
-          &Model2D::isInitialized,
-          "True indicates that the class is initialized");
-    m.def("get_geometry",
-          &Model2D::getGeometry,
-          "Gets the underlying geometry.");
+    m.def_property_readonly("is_initialized",
+                            &Model2D::isInitialized);
+    m.def_property_readonly("geometry",
+                            &Model2D::getGeometry);
+    m.def("set_cellular_velocities",
+          &Model2D::setCellularVelocities,
+          "Sets the cell-based velocities.  The velocities are in m/s.",
+          pybind11::arg("velocities"),
+          pybind11::arg("ordering") = EikonalXX::Ordering2D::Natural);
+    m.def("set_nodal_velocities",
+          &Model2D::setNodalVelocities,
+          "Sets the node-based velocities.  The velocities are in m/s.",
+          pybind11::arg("velocities"),
+          pybind11::arg("ordering") = EikonalXX::Ordering2D::Natural);
+    m.def("write_vtk",
+          &Model2D::writeVTK,
+          "Writes the velocity model to a VTK file.",
+          pybind11::arg("file_name"),
+          pybind11::arg("title") = "velocity_m/s"); 
 }

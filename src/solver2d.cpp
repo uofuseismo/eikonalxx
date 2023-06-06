@@ -18,8 +18,12 @@
 #include "private/timer.hpp"
 #include "eikonalxx/solverOptions.hpp"
 #include "eikonalxx/source2d.hpp"
+#include "eikonalxx/station2d.hpp"
 #include "eikonalxx/model2d.hpp"
 #include "eikonalxx/geometry2d.hpp"
+#include "eikonalxx/io/vtkRectilinearGrid2d.hpp"
+#include "gradient.hpp"
+#include "ray/bilinear.hpp"
 
 using namespace EikonalXX;
 
@@ -99,6 +103,69 @@ public:
         mSolverSweep3.initializeUpdateNodes(sourceNodes, verbosity);
         mSolverSweep4.initializeUpdateNodes(sourceNodes, verbosity);
     }
+    void interpolateTravelTimes()
+    {
+        if (mStations.empty()){return;}
+        if (mTravelTimesAtStations.size() != mStations.size())
+        {
+            mTravelTimesAtStations.resize(mStations.size());
+        }
+        auto iSourceCell = mSource.getCell();
+        auto iSourceCellX = mSource.getCellInX();
+        auto iSourceCellZ = mSource.getCellInZ();
+        auto sourceSlowness
+            = static_cast<double>
+              (mVelocityModel.getSlowness(iSourceCellX, iSourceCellZ));
+        double xs = mSource.getOffsetInX();
+        double zs = mSource.getOffsetInZ();
+        double dx = mGeometry.getGridSpacingInX();
+        double dz = mGeometry.getGridSpacingInZ();
+        auto dxi = 1./dx;
+        auto dzi = 1./dz;
+        auto nGridX = mGeometry.getNumberOfGridPointsInX();
+        for (int i = 0; i < static_cast<int> (mStations.size()); ++i)
+        {
+            auto iCell  = mStations[i].getCell();
+            double xi = mStations[i].getOffsetInX();
+            double zi = mStations[i].getOffsetInZ();
+            if (iCell == iSourceCell)
+            {
+                mTravelTimesAtStations[i]
+                    = static_cast<T> (std::hypot(xi - xs, zi - zs)
+                                     *sourceSlowness);
+            }
+            else
+            {
+                auto iCellX = mStations[i].getCellInX();
+                auto iCellZ = mStations[i].getCellInZ();
+                auto i00 = ::gridToIndex(nGridX, iCellX, iCellZ);
+                auto i10 = i00 + 1;
+                auto i01 = i00 + nGridX;
+                auto i11 = i01 + 1;
+                double x0 = iCellX*dx;
+                double x1 = (iCellX + 1)*dx;
+                double z0 = iCellZ*dz;
+                double z1 = (iCellZ + 1)*dz;
+#ifndef NDEBUG
+                assert(xi >= x0 && xi <= x1);
+                assert(zi >= z0 && zi <= z1);
+#endif
+                auto t00 = static_cast<double> (mTravelTimeField[i00]);
+                auto t10 = static_cast<double> (mTravelTimeField[i10]);
+                auto t01 = static_cast<double> (mTravelTimeField[i01]);
+                auto t11 = static_cast<double> (mTravelTimeField[i11]);
+                mTravelTimesAtStations[i]
+                    = static_cast<T> (::bilinear(xi, zi,
+                                                 x0, x1,
+                                                 z0 ,z1,
+                                                 t00, t01,
+                                                 t10, t11,
+                                                 dxi, dzi));
+std::cout << mTravelTimesAtStations[i] << std::endl;
+            }
+        }
+    }
+                                 
     /// The logger
     //std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> mStdOutSink{nullptr};
     //std::shared_ptr<spdlog::logger> mLogger{nullptr};
@@ -119,14 +186,10 @@ public:
     std::vector<T> mTravelTimeField;
     /// The gradient of the travel time field.
     std::vector<T> mTravelTimeGradientField;
-    /// The source location
-    //std::pair<double, double> mSourceLocation{0, 0};
-    /// The shifted source location in (x,z).  This is useful to the solver.
-    //std::pair<T, T> mShiftedSource{0, 0};
-    /// The source cell index in x.
-    //int mSourceCellX = 0;
-    /// The source cell index in z.
-    //int mSourceCellZ = 0;
+    /// The travel times at the stations
+    std::vector<T> mTravelTimesAtStations;
+    /// The station locations
+    std::vector<Station2D> mStations;
     /// The source cell - this is used to extract the slowness at the source.
     int mSourceCell{0};
     /// Initialized?
@@ -168,6 +231,8 @@ void Solver2D<T>::clear() noexcept
     pImpl->mSolverSweep4.clear();
     pImpl->mTravelTimeField.clear();
     pImpl->mTravelTimeGradientField.clear();
+    pImpl->mTravelTimesAtStations.clear();
+    pImpl->mStations.clear();
     //pImpl->mSourceLocation = std::make_pair<double, double> (0, 0);
     //pImpl->mShiftedSource = std::make_pair<T, T> (0, 0);
     //pImpl->mSourceCellX = 0;
@@ -496,7 +561,8 @@ void Solver2D<T>::solve()
     //                    + std::to_string(updateDuration
     //                                   + initializationTime) + " (s)");
     pImpl->mHaveTravelTimeField = true;
-
+    // Interpolate travel times at stations
+    pImpl->interpolateTravelTimes();
 /*
     // Create a queue
     // Get information about geometry, sweeps, and source
@@ -795,6 +861,23 @@ std::cout << travelTimePtr[(nGridX-1)*(nGridZ-1)] << std::endl;
 */
 }
 
+/// Compute the gradient of the travel time field
+template<class T>
+void Solver2D<T>::computeTravelTimeGradientField()
+{
+    if (!haveTravelTimeField())
+    {
+        throw std::runtime_error("Travel time field not yet computed");
+    }
+    ::finiteDifference(pImpl->mGeometry,
+                       pImpl->mSource,
+                       pImpl->mVelocityModel,
+                       getTravelTimeFieldPointer(),
+                       &pImpl->mTravelTimeGradientField,
+                       ::DerivativeType::CentralDifference);
+    pImpl->mHaveTravelTimeGradientField = true;
+}
+
 /// Slowness at a point
 template<class T>
 T Solver2D<T>::getSlowness(const int iCellX, const int iCellZ) const
@@ -856,6 +939,96 @@ const T* Solver2D<T>::getTravelTimeGradientFieldPointer() const
          throw std::runtime_error("Travel time gradient field not computed");
     }
     return pImpl->mTravelTimeGradientField.data();
+}
+
+/// Write the travel time field
+template<class T>
+void Solver2D<T>::writeVTK(const std::string &fileName,
+                           const std::string &title,
+                           const bool writeGradient) const
+{
+    auto tPtr = getTravelTimeFieldPointer(); // Throws
+    const T *gradientPtr = nullptr;
+    if (writeGradient){gradientPtr = getTravelTimeGradientFieldPointer();}
+    IO::VTKRectilinearGrid2D vtkWriter;
+    constexpr bool writeBinary{true};
+    vtkWriter.open(fileName, pImpl->mGeometry, title, writeBinary); 
+    vtkWriter.writeNodalDataset(title, tPtr, EikonalXX::Ordering2D::Natural);
+    if (writeGradient)
+    {
+        vtkWriter.writeNodalVectorDataset(title + "_gradient",
+                                          gradientPtr,
+                                          EikonalXX::Ordering2D::Natural);
+    }
+    vtkWriter.close();
+}
+
+/// Stations
+template<class T>
+void Solver2D<T>::setStations(const std::vector<Station2D> &stations)
+{
+    auto geometry = getGeometry(); // Throws
+    for (const auto &station : stations)
+    {
+        auto stationGeometry = station.getGeometry();
+        if (geometry.getNumberOfGridPointsInX() !=
+            stationGeometry.getNumberOfGridPointsInX())
+        {
+            throw std::invalid_argument("nx is inconsistent");
+        }
+        if (geometry.getNumberOfGridPointsInZ() !=
+            stationGeometry.getNumberOfGridPointsInZ())
+        {
+            throw std::invalid_argument("nz is inconsistent");
+        }
+        if (std::abs(geometry.getGridSpacingInX() -
+                     stationGeometry.getGridSpacingInX()) > 1.e-3)
+        {
+            throw std::invalid_argument("dx is inconsistent");
+        }
+        if (std::abs(geometry.getGridSpacingInZ() -
+                     stationGeometry.getGridSpacingInZ()) > 1.e-3)
+        {
+            throw std::invalid_argument("dz is inconsistent");
+        }
+        if (std::abs(geometry.getOriginInX() -
+                     stationGeometry.getOriginInX()) > 1.e-3)
+        {
+            throw std::invalid_argument("x0 is inconsistent");
+        }
+        if (std::abs(geometry.getOriginInZ() -
+                     stationGeometry.getOriginInZ()) > 1.e-3)
+        {
+            throw std::invalid_argument("z0 is inconsistent");
+        }
+    }
+    pImpl->mStations = stations;
+    if (haveTravelTimeField())
+    {
+        pImpl->interpolateTravelTimes();
+    }
+}
+
+template<class T>
+std::vector<Station2D> Solver2D<T>::getStations() const
+{
+    return pImpl->mStations;
+}
+
+template<class T>
+const std::vector<Station2D>& Solver2D<T>::getStationsReference() const
+{
+    return *&pImpl->mStations;
+}
+
+template<class T>
+std::vector<T> Solver2D<T>::getTravelTimesAtStations() const
+{
+    if (!haveTravelTimeField())
+    {
+        throw std::runtime_error("Travel times not yet computed");
+    }
+    return pImpl->mTravelTimesAtStations;
 }
 
 ///--------------------------------------------------------------------------///

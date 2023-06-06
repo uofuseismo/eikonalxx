@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import pyEikonalXX
+from math import sqrt
 
 def test_geometry2d():
     """
@@ -97,8 +98,8 @@ def test_velocityModel2d():
     model2d = pyEikonalXX.VelocityModel2D()
     model2d.initialize(geo2d)
 
-    assert model2d.is_initialized(), 'initialized failed'
-    geo_back = model2d.get_geometry()
+    assert model2d.is_initialized, 'initialized failed'
+    geo_back = model2d.geometry
     assert geo2d.nx == geo_back.nx, 'nx failed'
     assert geo2d.nz == geo_back.nz, 'nz failed'
     assert abs(geo2d.dx - geo_back.dx) < 1.e-14, 'dx failed'
@@ -210,6 +211,42 @@ def test_station2d():
     assert abs(station2d.z - geo2d.z0) < 1.e-14, 'z to free surface failed'
     print("Passed station2d")
 
+def test_point2d():
+    point = pyEikonalXX.Ray.Point2D()
+    x = 32
+    z = 88
+    point.x = x
+    point.z = z
+    assert abs(point.x - x) < 1.e-14, 'x failed'
+    assert abs(point.z - z) < 1.e-14, 'z failed'
+    print("Passed point2d")
+
+def test_segment2d():
+    start_point = pyEikonalXX.Ray.Point2D()
+    end_point = pyEikonalXX.Ray.Point2D()
+    x1 = 1
+    z1 = 2
+    start_point.x = x1
+    start_point.z = z1
+    x2 = 4
+    z2 = 8
+    end_point.x = x2
+    end_point.z = z2
+    velocity = 5000.
+    cell_index = 892
+    segment = pyEikonalXX.Ray.Segment2D()
+    segment.set_start_and_end_point([start_point, end_point])
+    segment.velocity = velocity
+    segment.velocity_model_cell_index = cell_index
+
+    length = sqrt( (x2 - x1)**2 + (z2 - z1)**2 )
+    travel_time = length/velocity
+    assert abs(segment.length - length) < 1.e-14, 'length failed'
+    assert abs(segment.start_point.x - x1) < 1.e-14, 'x failed'
+    assert abs(segment.end_point.z - z2) < 1.e-14, 'z failed'
+    assert abs(segment.travel_time - travel_time) < 1.e-12, 'travel time failed'
+    print("Passed segment2d")
+    
 
 if __name__ == "__main__":
     test_geometry2d()
@@ -219,3 +256,5 @@ if __name__ == "__main__":
     test_source2d()
     test_source3d()
     test_station2d()
+    test_point2d()
+    test_segment2d()

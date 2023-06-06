@@ -2,6 +2,8 @@
 #define PYEIKONALXX_MODEL2D_HPP
 #include <memory>
 #include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
+#include "eikonalxx/enums.hpp"
 namespace EikonalXX
 {
 template<class T> class Model2D;
@@ -46,6 +48,12 @@ public:
     /// @result The model geometry.
     /// @throws std::runtime_error if \c isInitialized() is false.
     [[nodiscard]] Geometry2D getGeometry() const;
+
+    void setNodalVelocities(const pybind11::array_t<double, pybind11::array::c_style | pybind11::array::forcecast> &velocities, 
+                            const EikonalXX::Ordering2D = EikonalXX::Ordering2D::Natural);
+    void setCellularVelocities(const pybind11::array_t<double, pybind11::array::c_style | pybind11::array::forcecast> &velocities, 
+                               const EikonalXX::Ordering2D = EikonalXX::Ordering2D::Natural);
+    void writeVTK(const std::string &fileName, const std::string &title= "velocity_m/s");
 private:
     std::unique_ptr<EikonalXX::Model2D<double>> pImpl;
 };

@@ -3,6 +3,7 @@
 #include <vector>
 #include "eikonalxx/solver2d.hpp"
 #include "eikonalxx/source2d.hpp"
+#include "eikonalxx/station2d.hpp"
 #include "eikonalxx/geometry2d.hpp"
 #include "eikonalxx/model2d.hpp"
 #include "private/solverUtilities2d.hpp"
@@ -1234,19 +1235,34 @@ TEST(Solver2D, solveHomogeneous)
     options.setFactoredEikonalEquationSolverRadius(nEps);
     options.setVerbosity(Verbosity::Debug);
     options.setAlgorithm(solverAlgorithm);
+
+    // Create some stations
+    std::vector<Station2D> stations;
+    Station2D station;
+    station.setGeometry(geometry);
+    station.setLocationInX(xSrc);
+    station.setLocationInZ(zSrc);
+    stations.push_back(station);
+    auto staLocX = xSrc + 2*dx;
+    auto staLocZ = zSrc + 3.1*dz;
+    station.setLocationInX(staLocX);
+    station.setLocationInZ(staLocZ);
+    stations.push_back(station);
+
     // Initialize 
     Solver2D<double> solver;
     EXPECT_NO_THROW(solver.initialize(options, geometry));
     EXPECT_TRUE(solver.isInitialized());
     EXPECT_NO_THROW(solver.setVelocityModel(vModel));
     EXPECT_NO_THROW(solver.setSource(std::pair(xSrc, zSrc)));
+    EXPECT_NO_THROW(solver.setStations(stations));    
     EXPECT_TRUE(solver.haveVelocityModel());
     EXPECT_TRUE(solver.haveSource());
     // Solve
-//    EXPECT_NO_THROW(solver.solve());
-/*
+    EXPECT_NO_THROW(solver.solve());
     EXPECT_TRUE(solver.haveTravelTimeField());
     auto tEst = solver.getTravelTimeField();
+/*
     std::ofstream ofl("ttimes.txt");
     for (int iz=0; iz<nz; ++iz)
     {
@@ -1259,6 +1275,30 @@ TEST(Solver2D, solveHomogeneous)
     }
     ofl.close();
 */
+    // 
+    auto travelTimesAtStations = solver.getTravelTimesAtStations();
+    EXPECT_EQ(travelTimesAtStations.size(), stations.size());
+    EXPECT_NEAR(travelTimesAtStations[0], 0, 1.e-7);
+    auto staCellX = stations[1].getCellInX();
+    auto staCellZ = stations[1].getCellInZ();
+    auto i00 = ::gridToIndex(nx, staCellX, staCellZ);
+    auto i10 = i00 + 1;
+    auto i01 = i00 + nx;
+    auto i11 = i01 + 1;
+    auto t00 = tEst.at(i00);
+    auto t10 = tEst.at(i10);
+    auto t01 = tEst.at(i01);
+    auto t11 = tEst.at(i11);
+    auto fxz0 = ((staCellX + 1)*dx - staLocX)/dx*t00
+              + (staLocX - staCellX*dx)/dx*t10; 
+    auto fxz1 = ((staCellX + 1)*dx - staLocX)/dx*t01
+              + (staLocX - staCellX*dx)/dx*t11; 
+    auto fi = ((staCellZ + 1)*dz - staLocZ)/dz*fxz0
+            + (staLocZ - staCellZ*dz)/dz*fxz1;
+    EXPECT_NEAR(fi, travelTimesAtStations[1], 1.e-8);
+    //std::cout << fxz0 << " " << fxz1 << " " << fi << " " << travelTimesAtStations[1] <<std::endl; 
+    //getchar();
+       
 } 
 
 TEST(Solver2D, Increment)

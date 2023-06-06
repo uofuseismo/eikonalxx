@@ -3,6 +3,7 @@
 #include <algorithm>
 #include "eikonalxx/solver3d.hpp"
 #include "eikonalxx/source3d.hpp"
+#include "eikonalxx/station3d.hpp"
 #include "eikonalxx/geometry3d.hpp"
 #include "eikonalxx/graph3d.hpp"
 #include "eikonalxx/model3d.hpp"
@@ -95,6 +96,7 @@ public:
     SolverOptions mOptions;
     std::vector<T> mTravelTimeField;
     std::vector<T> mTravelTimeGradientField;
+    std::vector<Station3D> mStations;
     int mSourceCell{0};
     bool mHaveTravelTimeField{false};
     bool mHaveTravelTimeGradientField{false};
@@ -129,6 +131,7 @@ void Solver3D<T>::clear() noexcept
     pImpl->mSolverSweep8.clear();
 */
     pImpl->mVelocityModel.clear();
+    pImpl->mStations.clear();
     pImpl->mGeometry.clear();
     pImpl->mOptions.clear();
     pImpl->mTravelTimeField.clear();
@@ -195,6 +198,14 @@ template<class T>
 bool Solver3D<T>::isInitialized() const noexcept
 {
     return pImpl->mInitialized;
+}
+
+/// Gets the geometry
+template<class T>
+Geometry3D Solver3D<T>::getGeometry() const
+{
+    if (!isInitialized()){throw std::runtime_error("Class not initialized");}
+    return pImpl->mGeometry;
 }
 
 /// Sets the velocity model
@@ -538,6 +549,75 @@ const T* Solver3D<T>::getTravelTimeGradientFieldPointer() const
          throw std::runtime_error("Travel time gradient field not computed");
     }   
     return pImpl->mTravelTimeGradientField.data();
+}
+
+/// Set stations
+template<class T>
+void Solver3D<T>::setStations(const std::vector<Station3D> &stations)
+{
+    auto geometry = getGeometry(); // Throws
+    for (const auto &station : stations)
+    {
+        auto stationGeometry = station.getGeometry();
+        if (geometry.getNumberOfGridPointsInX() !=
+            stationGeometry.getNumberOfGridPointsInX())
+        {
+            throw std::invalid_argument("nx is inconsistent");
+        }
+        if (geometry.getNumberOfGridPointsInY() !=
+            stationGeometry.getNumberOfGridPointsInY())
+        {   
+            throw std::invalid_argument("ny is inconsistent");
+        }
+        if (geometry.getNumberOfGridPointsInZ() !=
+            stationGeometry.getNumberOfGridPointsInZ())
+        {
+            throw std::invalid_argument("nz is inconsistent");
+        }
+        if (std::abs(geometry.getGridSpacingInX() -
+                     stationGeometry.getGridSpacingInX()) > 1.e-3)
+        {
+            throw std::invalid_argument("dx is inconsistent");
+        }
+        if (std::abs(geometry.getGridSpacingInY() -
+                     stationGeometry.getGridSpacingInY()) > 1.e-3)
+        {
+            throw std::invalid_argument("dy is inconsistent");
+        }
+        if (std::abs(geometry.getGridSpacingInZ() -
+                     stationGeometry.getGridSpacingInZ()) > 1.e-3)
+        {
+            throw std::invalid_argument("dz is inconsistent");
+        }
+        if (std::abs(geometry.getOriginInX() -
+                     stationGeometry.getOriginInX()) > 1.e-3)
+        {
+            throw std::invalid_argument("x0 is inconsistent");
+        }
+        if (std::abs(geometry.getOriginInY() -
+                     stationGeometry.getOriginInY()) > 1.e-3)
+        {
+            throw std::invalid_argument("y0 is inconsistent");
+        }
+        if (std::abs(geometry.getOriginInZ() -
+                     stationGeometry.getOriginInZ()) > 1.e-3)
+        {   
+            throw std::invalid_argument("z0 is inconsistent");
+        }   
+    }   
+    pImpl->mStations = stations;
+}
+
+template<class T>
+std::vector<Station3D> Solver3D<T>::getStations() const
+{
+    return pImpl->mStations;
+}
+
+template<class T>
+const std::vector<Station3D>& Solver3D<T>::getStationsReference() const
+{
+    return *&pImpl->mStations;
 }
 
 ///--------------------------------------------------------------------------///

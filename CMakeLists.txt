@@ -80,6 +80,7 @@ if (WRAP_PYTHON)
                python/pySolverOptions.cpp
                python/pyGeometry2d.cpp python/pyGeometry3d.cpp
                python/pyModel2d.cpp
+               python/pyRay2d.cpp
                python/pySolver2d.cpp
                python/pySource2d.cpp
                python/pySource3d.cpp
