@@ -38,6 +38,9 @@ public:
     [[nodiscard]] Source2D getSource() const;
     [[nodiscard]] bool haveSource() const noexcept;
 
+    void setStations(const std::vector<Station2D> &stations);
+    [[nodiscard]] std::vector<Station2D> getStations() const;
+
     void solve(); 
     void computeTravelTimeGradientField();
 

@@ -1,4 +1,5 @@
 #include "include/pyRay2d.hpp"
+#include "eikonalxx/ray/path2d.hpp"
 #include "eikonalxx/ray/point2d.hpp"
 #include "eikonalxx/ray/segment2d.hpp"
 

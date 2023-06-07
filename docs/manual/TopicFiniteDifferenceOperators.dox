@@ -1,0 +1,45 @@
+/*!
+\page TopicFiniteDifferenceOperators_page Finite Difference Operators
+\ingroup Solver_FiniteDifferenceOperators_chapter
+\section TopicFiniteDifferenceOperators_Outline Installation Section Outline
+
+  - \link TopicFiniteDifferenceOperators_2D Two-Dimensional Solver Oprators \endlink
+  - \link TopicFiniteDifferenceOperators_3D Three-Dimensional Solver Oprators \endlink
+
+\section TopicFiniteDifferenceOperators_2D Two-Dimensional Operators
+
+The following operators are for the two-dimensional Cartesian solver.
+
+\subsection TopicFiniteDifferenceOperators_2D_SweepDirections Sweep Directions
+
+We define the sweep directions as
+
+  - Sweep 1: +x, +z
+  - Sweep 2: -x, +z
+  - Sweep 3: +x, -z
+  - Sweep 4: -x, -z
+
+\subsection TopicFiniteDifferenceOperators_2D_1d One-Dimensional Operators
+
+The following operators are useful for head-waves and should always be applied 
+
+\f{eqnarray*}{
+    t_{1D}^{(a)} = t_1 + h_x \min \{ s_0, s_3 \} \\
+    t_{1D}^{(b)} = t_3 + h_z \min \{ s_0, s_1 \} \\
+    t_{1D} = \min \{ t_{1D}^{(a)}, t_{1D}^{(b)} \}
+\f}
+
+\subsection TopicFiniteDifferenceOperators_2D_TwoPoint Two-Point Operators
+
+The following operators are from Podvin and Lecomte, 1991
+
+\subsection TopicFiniteDifferenceOperators_2D_ThreePoint Three-Point Operators
+
+The following operator is from Vidale, 1988
+
+\section TopicFiniteDifferenceOperators_3D Three-Dimensional Operators
+
+The following operators are for the three-dimensional Cartesian solver.
+
+*/
+

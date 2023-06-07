@@ -161,7 +161,7 @@ public:
                                                  t00, t01,
                                                  t10, t11,
                                                  dxi, dzi));
-std::cout << mTravelTimesAtStations[i] << std::endl;
+//std::cout << mTravelTimesAtStations[i] << std::endl;
             }
         }
     }

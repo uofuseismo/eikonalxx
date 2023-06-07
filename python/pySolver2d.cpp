@@ -133,6 +133,28 @@ bool Solver2D::haveTravelTimeGradientField() const noexcept
     return mSolver->haveTravelTimeGradientField();
 }
 
+void Solver2D::setStations(const std::vector<Station2D> &stationsIn)
+{
+    if (stationsIn.empty()){return;}
+    std::vector<EikonalXX::Station2D> stations;
+    stations.reserve(stationsIn.size());
+    for (const auto &station : stationsIn)
+    {
+        stations.push_back(*station.getNativeClassPointer());
+    }
+    mSolver->setStations(stations);
+}
+
+std::vector<Station2D> Solver2D::getStations() const
+{
+    auto stations = mSolver->getStationsReference();
+    std::vector<Station2D> result;
+    for (const auto &station : stations)
+    {
+        result.push_back(station);
+    }
+    return result;
+}
 
 /// Initialize class
 void PEikonalXX::initializeSolver2D(pybind11::module &m) 
@@ -140,7 +162,19 @@ void PEikonalXX::initializeSolver2D(pybind11::module &m)
     pybind11::class_<PEikonalXX::Solver2D> s(m, "Solver2D");
     s.def(pybind11::init<> ());
     s.doc() = R"""(
-This defines the 2D solver.  Note, the first thing you must do is initialize the solver.
+This defines the 2D solver.  The usage is as follows:
+
+Step 1: Initialize the solver with the initialize method.
+Step 2: Set the velocity model with the velocity_model property.
+Step 3: Set the source with the source property.
+Step 4: Optionally, set the station positions with the station property.
+Step 5: Solve for the eikonal equation with the solve method.
+Step 6: Optionally compute the gradient of the travel time field with
+        the compute_travel_time_gradient_field method.
+
+The solver was designed so that initializiation need only be performed once. 
+After that, you can change the velocity model, source, and stations as much
+as you like.
 
 Properties
 ----------
@@ -151,12 +185,20 @@ velocity_model : VelocityModel2D
 
 Read-Only Properties
 --------------------
+geometry : Geometry2D
+    The 2D geometry.
 have_source : bool
     True indicates the source was set.
 have_travel_time_field : bool
     True indicates the travel time field was computed.
 have_velocity_model : bool
     True indicates the velocity model was set.
+travel_time_field : np.array
+    The travel time field in seconds.  You can reshape this with:
+    result.reshape(geometry.nz, geometry.nx)
+travel_time_gradient_field : np.array
+    The gradient of the travel time field in seconds/meter in x and z.
+    You can reshape this with: result.reshape(geometry.nz, geometry.nx, 2)
 
 )""";
     s.def("initialize",
@@ -180,6 +222,9 @@ have_velocity_model : bool
     s.def_property("velocity_model",
                    &Solver2D::getVelocityModel,
                    &Solver2D::setVelocityModel);
+    s.def_property("stations",
+                   &Solver2D::getStations,
+                   &Solver2D::setStations);
     s.def_property_readonly("have_source",
                             &Solver2D::haveSource);
     s.def_property_readonly("have_velocity_model",
@@ -188,5 +233,9 @@ have_velocity_model : bool
                             &Solver2D::haveTravelTimeField);
     s.def_property_readonly("have_travel_time_gradient_field",
                             &Solver2D::haveTravelTimeGradientField);
+    s.def_property_readonly("travel_time_field",
+                            &Solver2D::getTravelTimeField);
+    s.def_property_readonly("travel_time_gradient_field",
+                            &Solver2D::getTravelTimeGradientField);
 }
 

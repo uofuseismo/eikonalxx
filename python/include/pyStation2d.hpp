@@ -29,6 +29,8 @@ public:
     /// @brief Reset the class.
     void clear() noexcept;
 
+    [[nodiscard]] const EikonalXX::Station2D *getNativeClassPointer() const;
+
     void setGeometry(const Geometry2D &geometry);
     [[nodiscard]] bool haveGeometry() const noexcept;
     Geometry2D getGeometry() const;

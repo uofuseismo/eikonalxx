@@ -16,6 +16,11 @@ Station3D::Station3D(const Station3D &station)
     *this = station;
 }
 
+Station3D::Station3D(const EikonalXX::Station3D &station)
+{
+    *this = station;
+}
+
 Station3D::Station3D(Station3D &&station) noexcept
 {
     *this = std::move(station);
@@ -118,6 +123,11 @@ bool Station3D::haveLocationInZ() const noexcept
 double Station3D::getLocationInZ() const
 {
     return pImpl->getLocationInZ();
+}
+
+const EikonalXX::Station3D* Station3D::getNativeClassPointer() const
+{
+    return pImpl.get();
 }
 
 /// Reset

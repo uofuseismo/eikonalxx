@@ -16,6 +16,11 @@ Station2D::Station2D(const Station2D &station)
     *this = station;
 }
 
+Station2D::Station2D(const EikonalXX::Station2D &station)
+{
+    *this = station;
+}
+
 Station2D::Station2D(Station2D &&station) noexcept
 {
     *this = std::move(station);
@@ -43,6 +48,11 @@ Station2D& Station2D::operator=(Station2D &&source) noexcept
     if (&source == this){return *this;}
     pImpl = std::move(source.pImpl);
     return *this;
+}
+
+const EikonalXX::Station2D* Station2D::getNativeClassPointer() const
+{
+    return pImpl.get();
 }
 
 /// Set geometry

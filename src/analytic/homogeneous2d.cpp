@@ -2,6 +2,7 @@
 #include <CL/sycl.hpp>
 #include "eikonalxx/analytic/homogeneous2d.hpp"
 #include "eikonalxx/source2d.hpp"
+#include "eikonalxx/station2d.hpp"
 #include "eikonalxx/geometry2d.hpp"
 #include "eikonalxx/io/vtkRectilinearGrid2d.hpp"
 #include "private/grid.hpp"
@@ -128,10 +129,31 @@ template<class T>
 class Homogeneous2D<T>::Homogeneous2DImpl
 {
 public:
+    void computeTravelTimesAtStations()
+    {
+        if (mStations.empty()){return;}
+        if (mTravelTimesAtStations.size() != mStations.size())
+        {
+            mTravelTimesAtStations.resize(mStations.size());
+        }
+        auto xSource = mSource.getOffsetInX();
+        auto zSource = mSource.getOffsetInZ();
+        auto slowness = 1./mVelocity; 
+        for (int i = 0; i < static_cast<int> (mStations.size()); ++i)
+        { 
+            auto xStation = mStations[i].getOffsetInX();
+            auto zStation = mStations[i].getOffsetInZ();
+            auto distance = std::hypot(xStation - xSource,
+                                       zStation - zSource);
+            mTravelTimesAtStations[i] = static_cast<T> (distance*slowness);
+        }
+    }
     EikonalXX::Geometry2D mGeometry;
     EikonalXX::Source2D mSource;
     std::vector<T> mTravelTimeField; 
     std::vector<T> mTravelTimeGradientField;
+    std::vector<T> mTravelTimesAtStations;
+    std::vector<Station2D> mStations;
     double mVelocity{0};
     bool mHaveTravelTimeField{false};
     bool mHaveTravelTimeGradientField{false};
@@ -165,15 +187,7 @@ Homogeneous2D<T>::Homogeneous2D(Homogeneous2D &&solver) noexcept
 template<class T>
 void Homogeneous2D<T>::clear() noexcept
 {
-    pImpl->mGeometry.clear();
-    pImpl->mSource.clear();
-    pImpl->mTravelTimeField.clear();
-    pImpl->mTravelTimeGradientField.clear();
-    pImpl->mVelocity = 0;
-    pImpl->mHaveTravelTimeField = false;
-    pImpl->mHaveTravelTimeGradientField = false;
-    pImpl->mHaveSource = false;
-    pImpl->mInitialized = false;
+    pImpl = std::make_unique<Homogeneous2DImpl> ();
 }
 
 /// Destructor

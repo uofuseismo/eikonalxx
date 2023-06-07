@@ -24,5 +24,7 @@ namespace EikonalXX
 \defgroup Solver_Analytic_chapter Analytic Solution Solvers
 \brief These solvers provide analytic solutions to the eikonal equation.
 \ingroup Solver_chapter
+\defgroup Solver_FiniteDifferenceOperators_chapter Finite Difference Operators
+\ingroup Solver_chapter
 */
 }

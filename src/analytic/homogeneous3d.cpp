@@ -2,6 +2,7 @@
 #include <CL/sycl.hpp>
 #include "eikonalxx/analytic/homogeneous3d.hpp"
 #include "eikonalxx/source3d.hpp"
+#include "eikonalxx/station3d.hpp"
 #include "eikonalxx/geometry3d.hpp"
 #include "eikonalxx/io/vtkRectilinearGrid3d.hpp"
 #include "private/grid.hpp"
@@ -147,10 +148,35 @@ template<class T>
 class Homogeneous3D<T>::Homogeneous3DImpl
 {
 public:
+    void computeTravelTimesAtStations()
+    {
+        if (mStations.empty()){return;}
+        if (mTravelTimesAtStations.size() != mStations.size())
+        {
+            mTravelTimesAtStations.resize(mStations.size());
+        }
+        auto xSource = mSource.getOffsetInX();
+        auto ySource = mSource.getOffsetInY();
+        auto zSource = mSource.getOffsetInZ();
+        auto slowness = 1./mVelocity; 
+        for (int i = 0; i < static_cast<int> (mStations.size()); ++i)
+        {
+            auto xStation = mStations[i].getOffsetInX();
+            auto yStation = mStations[i].getOffsetInY();
+            auto zStation = mStations[i].getOffsetInZ();
+            auto dx = xStation - xSource;
+            auto dy = yStation - ySource;
+            auto dz = zStation - zSource;
+            auto distance = std::sqrt(dx*dx + dy*dy + dz*dz);
+            mTravelTimesAtStations[i] = static_cast<T> (distance*slowness);
+        }   
+    }
     EikonalXX::Geometry3D mGeometry;
     EikonalXX::Source3D mSource;
     std::vector<T> mTravelTimeField; 
     std::vector<T> mTravelTimeGradientField;
+    std::vector<T> mTravelTimesAtStations;
+    std::vector<Station3D> mStations;
     double mVelocity{0};
     bool mHaveTravelTimeField{false};
     bool mHaveTravelTimeGradientField{false};
