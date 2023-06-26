@@ -115,6 +115,7 @@ add_executable(unitTests
                testing/solver3d.cpp
                testing/gradient.cpp
                testing/ray.cpp
+               testing/layerSolver.cpp
                )
 target_link_libraries(unitTests PRIVATE eikonalxx ${GTEST_BOTH_LIBRARIES} ${TBB_LIBRARY}
                                         OpenCL Threads::Threads)

@@ -57,6 +57,7 @@ public:
     [[nodiscard]] bool haveStationOffsetAndDepth() const noexcept;
 
     void solve();
+    [[nodiscard]] bool haveRayPath() const noexcept;
 
     /// @brief Reset the class.
     void clear() noexcept;

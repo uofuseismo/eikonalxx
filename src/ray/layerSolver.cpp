@@ -102,13 +102,12 @@ void LayerSolver::setSourceDepth(const double depth)
                   std::lower_bound(pImpl->mInterfaces.begin(),
                                    pImpl->mInterfaces.end(),
                                    pImpl->mSourceDepth));
-#ifndef NDEBUG
-        assert(pImpl->mSourceLayer >= 0 &&
-               pImpl->mSourceLayer <
-               static_cast<int> (pImpl->mInterfaces.size()));
-#endif
     }
     pImpl->mHaveSourceDepth = true;
+#ifndef NDEBUG
+    assert(pImpl->mSourceLayer >= 0 &&
+           pImpl->mSourceLayer < static_cast<int> (pImpl->mInterfaces.size()));
+#endif
 }
 
 double LayerSolver::getSourceDepth() const
@@ -134,6 +133,10 @@ void LayerSolver::setStationOffset(const double offset)
     pImpl->mStationDepth = pImpl->mInterfaces.at(0);
     pImpl->mStationLayer = 0;
     pImpl->mHaveStationOffsetAndDepth = true;
+#ifndef NDEBUG
+    assert(pImpl->mStationLayer >= 0 &&
+           pImpl->mStationLayer < static_cast<int> (pImpl->mInterfaces.size()));
+#endif
 }
 
 void LayerSolver::setStationOffsetAndDepth(const double offset,
@@ -160,13 +163,23 @@ void LayerSolver::setStationOffsetAndDepth(const double offset,
                   std::lower_bound(pImpl->mInterfaces.begin(),
                                    pImpl->mInterfaces.end(),
                                    pImpl->mSourceDepth));
-#ifndef NDEBUG
-        assert(pImpl->mStationLayer >= 0 &&
-               pImpl->mStationLayer <
-               static_cast<int> (pImpl->mInterfaces.size()));
-#endif
     }
     pImpl->mHaveStationOffsetAndDepth = true;
+#ifndef NDEBUG
+    assert(pImpl->mStationLayer >= 0 &&
+           pImpl->mStationLayer < static_cast<int> (pImpl->mInterfaces.size()));
+#endif
+}
+
+bool LayerSolver::haveStationOffsetAndDepth() const noexcept
+{
+    return pImpl->mHaveStationOffsetAndDepth;
+}
+
+/// Have ray path?
+bool LayerSolver::haveRayPath() const noexcept
+{
+    return pImpl->mHaveRayPath;
 }
 
 /// Solve
@@ -177,19 +190,25 @@ void LayerSolver::solve()
         throw std::runtime_error("Velocity model not set");
     }
     if (!haveSourceDepth()){throw std::runtime_error("Source depth not set");}
+    if (!haveStationOffsetAndDepth())
+    {
+        throw std::runtime_error("Station offset not set");
+    }
+    pImpl->mHaveRayPath = false;
     pImpl->mRayPath.clear();
     // Special case
     if (pImpl->mSlownessModel.size() == 1)
     {
         Segment2D segment;
-        Point2D mStartPoint{0, pImpl->mSourceDepth};
-        Point2D mEndPoint{pImpl->mStationOffset, pImpl->mStationDepth};
-        segment.setStartAndEndPoint(std::pair {mStartPoint, mEndPoint});
+        Point2D startPoint{0, pImpl->mSourceDepth};
+        Point2D endPoint{pImpl->mStationOffset, pImpl->mStationDepth};
+        segment.setStartAndEndPoint(std::pair {startPoint, endPoint});
         segment.setSlowness(pImpl->mSlownessModel[0]);
         segment.setVelocityModelCellIndex(0);
         pImpl->mRayPath.open();
         pImpl->mRayPath.append(std::move(segment));
         pImpl->mRayPath.close();
+        pImpl->mHaveRayPath = true;
         return;
     }
     // Special case station directly above/below station
@@ -198,18 +217,19 @@ void LayerSolver::solve()
         int direction =+1;
         int sourceLayer = pImpl->mSourceLayer;
         int stationLayer = pImpl->mStationLayer;
+        Point2D startPoint{0, pImpl->mSourceDepth};
+        Point2D endPoint{pImpl->mStationOffset, pImpl->mStationDepth};
         // Same layer
         if (sourceLayer == stationLayer)
         {
             Segment2D segment;
-            Point2D mStartPoint{0, pImpl->mSourceDepth};
-            Point2D mEndPoint{pImpl->mStationOffset, pImpl->mStationDepth};
-            segment.setStartAndEndPoint(std::pair {mStartPoint, mEndPoint});
+            segment.setStartAndEndPoint(std::pair {startPoint, endPoint});
             segment.setSlowness(pImpl->mSlownessModel[sourceLayer]);
             segment.setVelocityModelCellIndex(sourceLayer);
             pImpl->mRayPath.open();
             pImpl->mRayPath.append(std::move(segment));
             pImpl->mRayPath.close();
+            pImpl->mHaveRayPath = true;
             return;
         }
         // Trace `down' 
@@ -217,10 +237,55 @@ void LayerSolver::solve()
         {
             direction =-1;
         }
-        while (sourceLayer != stationLayer)
+        bool isFirst{true};
+        auto currentLayer = sourceLayer;
+        Segment2D segment;
+        pImpl->mRayPath.open();
+        Point2D point0{startPoint};
+        Point2D point1;
+        while (currentLayer != stationLayer)
         {
-            sourceLayer = sourceLayer + direction;
+            if (direction ==+1)
+            {
+                if (!isFirst)
+                {
+                    point0.setPositionInX(0);
+                    point0.setPositionInZ(pImpl->mInterfaces[currentLayer + 1]);
+                }
+                else
+                {
+                    isFirst = false;
+                }
+                point1.setPositionInX(0);
+                point1.setPositionInZ(pImpl->mInterfaces[currentLayer]);
+            }
+            else
+            {
+                if (!isFirst)
+                {   
+                    point0.setPositionInX(0);
+                    point0.setPositionInZ(pImpl->mInterfaces[currentLayer]);
+                }
+                else
+                {   
+                    isFirst = false;
+                }   
+                point1.setPositionInX(0);
+                point1.setPositionInZ(pImpl->mInterfaces[currentLayer + 1]);
+            } 
+            segment.setStartAndEndPoint(std::pair {point0, point1});
+            segment.setSlowness(pImpl->mSlownessModel[currentLayer]); 
+            pImpl->mRayPath.append(segment);
+            // Update `start point'
+            point0 = point1;
         }
         // Last case - trace from interface
+        point1 = endPoint;
+        segment.setStartAndEndPoint(std::pair {point0, point1});
+        segment.setSlowness(pImpl->mSlownessModel[pImpl->mStationLayer]);
+        pImpl->mRayPath.append(segment);
+        pImpl->mRayPath.close();
+        pImpl->mHaveRayPath = true;
+        return;
     }
 }
