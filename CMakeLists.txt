@@ -47,6 +47,7 @@ set(LIBSRC
     src/analytic/linearGradient2d.cpp src/analytic/linearGradient3d.cpp
     src/ray/gradientTracer2d.cpp
     src/ray/gradientTracerOptions.cpp
+    src/ray/layerSolver.cpp
     src/ray/path2d.cpp src/ray/path3d.cpp
     src/ray/point2d.cpp src/ray/point3d.cpp
     src/ray/segment2d.cpp src/ray/segment3d.cpp

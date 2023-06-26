@@ -11,6 +11,7 @@
 #include "include/pySource2d.hpp"
 #include "include/pyStation2d.hpp"
 #include "include/pySolverOptions.hpp"
+#include <pybind11/stl.h>
 
 using namespace PEikonalXX;
 
@@ -156,6 +157,11 @@ std::vector<Station2D> Solver2D::getStations() const
     return result;
 }
 
+std::vector<double> Solver2D::getTravelTimesAtStations() const
+{
+    return mSolver->getTravelTimesAtStations();
+}
+
 /// Initialize class
 void PEikonalXX::initializeSolver2D(pybind11::module &m) 
 {
@@ -196,6 +202,8 @@ have_velocity_model : bool
 travel_time_field : np.array
     The travel time field in seconds.  You can reshape this with:
     result.reshape(geometry.nz, geometry.nx)
+travel_time_at_stations : np.array
+    The travel times from the source to the receivers in seconds.
 travel_time_gradient_field : np.array
     The gradient of the travel time field in seconds/meter in x and z.
     You can reshape this with: result.reshape(geometry.nz, geometry.nx, 2)
@@ -237,5 +245,7 @@ travel_time_gradient_field : np.array
                             &Solver2D::getTravelTimeField);
     s.def_property_readonly("travel_time_gradient_field",
                             &Solver2D::getTravelTimeGradientField);
+    s.def_property_readonly("travel_times_at_stations",
+                            &Solver2D::getTravelTimesAtStations);
 }
 

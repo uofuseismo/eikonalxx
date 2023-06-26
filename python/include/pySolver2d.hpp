@@ -48,6 +48,7 @@ public:
     [[nodiscard]] bool haveTravelTimeField() const noexcept;
     [[nodiscard]] pybind11::array_t<double, pybind11::array::c_style | pybind11::array::forcecast> getTravelTimeGradientField() const;
     [[nodiscard]] bool haveTravelTimeGradientField() const noexcept;
+    [[nodiscard]] std::vector<double> getTravelTimesAtStations() const;
     void writeVTK(const std::string &fileName,
                   const std::string &title = "travel_time_field_s",
                   const bool writeGradientField = false) const;
