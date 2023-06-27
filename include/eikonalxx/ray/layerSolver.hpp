@@ -3,7 +3,7 @@
 #include <memory>
 namespace EikonalXX::Ray
 {
-class Segment2D;
+class Path2D;
 }
 namespace EikonalXX::Ray
 {
@@ -56,8 +56,17 @@ public:
     void setStationOffsetAndDepth(double offset, double depth);
     [[nodiscard]] bool haveStationOffsetAndDepth() const noexcept;
 
+    /// @brief Traces rays from the source to the receiver through the 1D
+    ///        medium.
     void solve();
-    [[nodiscard]] bool haveRayPath() const noexcept;
+ 
+    /// @result The ray paths from the source-to-receiver sorted in ascending
+    ///         order.
+    /// @throws std::runtime_error if \c haveRayPaths() is false.
+    [[nodiscard]] std::vector<Path2D> getRayPaths() const;
+    [[nodiscard]] const std::vector<Path2D> &getRayPathsReference() const;
+    /// @result True indicates the ray path is available.
+    [[nodiscard]] bool haveRayPaths() const noexcept;
 
     /// @brief Reset the class.
     void clear() noexcept;
