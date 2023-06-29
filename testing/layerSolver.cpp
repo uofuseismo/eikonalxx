@@ -225,5 +225,18 @@ TEST(Ray, LayerSolverVerticalDown)
     EXPECT_TRUE(referenceRayPaths == rayPaths);
 }
 
+TEST(Ray, SourceStationSameDepth)
+{
+    std::vector<double> interfaces{-4500, 40, 15600, 26500, 40500};
+    std::vector<double> velocities{   3500, 5900,  6400,  7500,  7900};
+    LayerSolver solver;
+    solver.setVelocityModel(interfaces, velocities);
+    solver.setSourceDepth(-2000);
+    solver.setStationOffsetAndDepth(120000, -2000);
+    solver.solve();
+//    auto rayPaths = solver.getRayPaths();
+//    EXPECT_EQ(rayPaths.size(), 1);
+}
+
 }
 

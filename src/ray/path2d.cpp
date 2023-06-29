@@ -1,6 +1,9 @@
 #include <cmath>
 #include <vector>
 #include <limits>
+#ifndef NDEBUG
+#include <cassert>
+#endif
 #include "eikonalxx/ray/path2d.hpp"
 #include "eikonalxx/ray/segment2d.hpp"
 #include "eikonalxx/ray/point2d.hpp"
@@ -26,6 +29,26 @@ void checkSegment(const Segment2D &segment)
 class Path2D::Path2DImpl
 {
 public:
+    void reverse()
+    {
+        if (mSegments.empty()){return;}
+        std::reverse(mSegments.begin(), mSegments.end());
+        for (auto &segment : mSegments)
+        {
+            segment.reverse();
+        }
+#ifndef NDEBUG
+        for (int i = 0; i < static_cast<int> (mSegments.size()) - 1; ++i)
+        {
+            auto point0 = mSegments[i].getEndPoint(); 
+            auto point1 = mSegments[i + 1].getStartPoint();
+            assert(std::abs(point0.getPositionInX() - point1.getPositionInX())
+                   < 1.e-8);
+            assert(std::abs(point0.getPositionInZ() - point1.getPositionInZ())
+                   < 1.e-8);
+        }
+#endif
+    }
     void integrate()
     {
         double length = 0;
@@ -124,7 +147,7 @@ void Path2D::append(Segment2D &&segment)
         if (distance > std::numeric_limits<double>::epsilon()*100)
         {
             throw std::invalid_argument(
-               "Segment does no start at last segments's end point"); 
+               "Segment does not start at last segments's end point"); 
         }
         pImpl->mSegmentsConstruction.push_back(std::move(segment));
     }
@@ -231,3 +254,8 @@ const Segment2D& Path2D::at(const size_t index) const
     return pImpl->mSegments.at(index);
 }
 
+void Path2D::reverse()
+{
+    if (isOpen()){throw std::runtime_error("Construction is open");}
+    pImpl->reverse();
+}

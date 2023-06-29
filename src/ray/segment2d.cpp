@@ -175,3 +175,18 @@ bool Segment2D::haveVelocityModelCellIndex() const noexcept
 {
     return (pImpl->mVelocityModelCellIndex >= 0);
 }
+
+void EikonalXX::Ray::swap(Segment2D &lhs, Segment2D &rhs) noexcept
+{
+    std::swap(lhs.pImpl, rhs.pImpl);
+}
+
+/// Reverses the segments
+void Segment2D::reverse()
+{   
+    if (!haveStartAndEndPoint())
+    {
+        throw std::runtime_error("Start and end point not set");
+    }
+    std::swap(pImpl->mStartPoint, pImpl->mEndPoint);
+} 

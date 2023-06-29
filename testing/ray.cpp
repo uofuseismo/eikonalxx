@@ -223,6 +223,23 @@ TEST(Ray, Path2D)
                     segments[is].getVelocity(), 1.e-15);
         is = is + 1;
     }
+
+    copy.reverse();
+    is = copy.size() - 1;
+    for (const auto &s : copy)
+    {
+        EXPECT_NEAR(s.getStartPoint().getPositionInX(), 
+                    segments[is].getEndPoint().getPositionInX(), 1.e-15);
+        EXPECT_NEAR(s.getStartPoint().getPositionInZ(),
+                    segments[is].getEndPoint().getPositionInZ(), 1.e-15);
+        EXPECT_NEAR(s.getEndPoint().getPositionInX(),
+                    segments[is].getStartPoint().getPositionInX(), 1.e-15);
+        EXPECT_NEAR(s.getEndPoint().getPositionInZ(), 
+                    segments[is].getStartPoint().getPositionInZ(), 1.e-15);
+        EXPECT_NEAR(s.getVelocity(),
+                    segments[is].getVelocity(), 1.e-15);
+        is = is - 1;
+    }
 }
 
 TEST(Ray, Path3D)

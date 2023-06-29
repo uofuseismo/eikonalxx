@@ -49,7 +49,7 @@ struct Segment
     int iCellZ1;
 };
 
-void reverseSegments(std::vector<Segment> &segments)
+void reverseSegments(std::vector<::Segment> &segments)
 {
     std::reverse(segments.begin(), segments.end());
     for (auto &segment : segments)

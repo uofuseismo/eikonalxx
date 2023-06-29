@@ -73,6 +73,9 @@ public:
     ///         not equal the i+1'th segment's start point, or the velocity
     ///         is not set on a segment.
     void set(std::vector<Segment2D> &&segments);
+    /// @brief Reverses the ray path.
+    /// @throws std::runtime_error if the ray path construction is open.
+    void reverse();
     /// @}
 
     /// @result The number of segments. 

@@ -72,6 +72,8 @@ public:
     ~Point2D();
     /// @}
 private:
+    friend void swap(Point2D &lhs, Point2D &rhs) noexcept;
+private:
     class Point2DImpl;
     std::unique_ptr<Point2DImpl> pImpl;
 };

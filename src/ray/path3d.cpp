@@ -124,7 +124,7 @@ void Path3D::append(Segment3D &&segment)
         if (distance > std::numeric_limits<double>::epsilon()*100)
         {
             throw std::invalid_argument(
-               "Segment does no start at last segments's end point"); 
+               "Segment does not start at last segments's end point"); 
         }
         pImpl->mSegmentsConstruction.push_back(std::move(segment));
     }

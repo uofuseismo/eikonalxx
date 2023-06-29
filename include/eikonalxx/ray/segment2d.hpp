@@ -37,14 +37,16 @@ public:
     ///         x and z positions.
     void setStartAndEndPoint(const std::pair<Point2D, Point2D> &startAndEndPoint);
     /// @result The start point of the ray. 
-    /// @throws std::invalid_argument if \c haveStartAndEndPoint() is false.
+    /// @throws std::runtime_error if \c haveStartAndEndPoint() is false.
     [[nodiscard]] Point2D getStartPoint() const;
     /// @result The end point of the ray.
-    /// @throws std::invalid_argument if \c haveStartAndEndPoint() is false.
+    /// @throws std::runtime_error if \c haveStartAndEndPoint() is false.
     [[nodiscard]] Point2D getEndPoint() const;
     /// @result True indicates the ray start and end point were set.
     [[nodiscard]] bool haveStartAndEndPoint() const noexcept;
-
+    /// @brief Interchanges the start and end point.
+    /// @throws std::runtime_error if \c haveStartAndEndPoint() is false.
+    void reverse();
     /// @result The ray segment's length in meters.
     /// @throws std::runtime_error if \c haveStartAndEndPoint() is false.
     [[nodiscard]] double getLength() const;
@@ -115,6 +117,8 @@ public:
     /// @brief Destructor.
     ~Segment2D();
     /// @}
+private:
+    friend void swap(Segment2D &lhs, Segment2D &rhs) noexcept;
 private:
     class Segment2DImpl;
     std::unique_ptr<Segment2DImpl> pImpl;

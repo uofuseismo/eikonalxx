@@ -97,3 +97,9 @@ void Point2D::clear() noexcept
 
 /// Destructor
 Point2D::~Point2D() = default;
+
+/// Swap
+void EikonalXX::Ray::swap(Point2D &lhs, Point2D &rhs) noexcept
+{
+    std::swap(lhs.pImpl, rhs.pImpl);
+}
