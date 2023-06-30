@@ -13,7 +13,13 @@ public:
         std::pair{1, 0.05},
         std::pair{2, 0.10},
         std::pair{3, 0.20},
-        std::pair{5, 0.40},
+        std::pair{5, 0.30},
+/*
+        std::pair{1,  0.01},
+        std::pair{10, 0.05},
+        std::pair{20, 0.10},
+        std::pair{30, 0.20},
+*/
         std::pair{std::numeric_limits<int>::max(), 0.45}
     };
 };

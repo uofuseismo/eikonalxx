@@ -415,7 +415,7 @@ void GradientTracer2D::trace(
         double gz110 = 1.e10;
         double stepLength0 = defaultStepLength;
         bool mConverged{false};
-        const int maxSegments{2500};
+        const int maxSegments{std::numeric_limits<int>::max()};
         int nCellsVisited = 1;
         std::vector<::Segment> raySegments;
         raySegments.reserve(3*(nGridX + nGridZ));
@@ -518,9 +518,18 @@ void GradientTracer2D::trace(
         //if (mConverged){std::cout << "Converged!" << std::endl;}
         if (!mConverged)
         {
-            std::cerr << "Ray for station: "
-                      << pImpl->mStations[iStation].getName()
-                      << " did not converge to source" << std::endl;
+            if (!pImpl->mStations[iStation].getName().empty())
+            {
+                std::cerr << "Ray for station: "
+                          << pImpl->mStations[iStation].getName()
+                          << " did not converge to source" << std::endl;
+            }
+            else
+            {
+                std::cerr << "Ray for station: "
+                          << iStation
+                          << " did not converge to source" << std::endl;
+            }
             continue;
         }
         // Traced from receiver to source - flip that around
