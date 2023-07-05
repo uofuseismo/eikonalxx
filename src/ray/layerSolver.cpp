@@ -11,6 +11,12 @@
 #include "eikonalxx/ray/segment2d.hpp"
 #include "eikonalxx/ray/path2d.hpp"
 #include "eikonalxx/ray/point2d.hpp"
+#include "layerTracer.hpp"
+
+/// 1.e-4 changes about 1 m for every 500 km
+#define MIN_DOWNGOING_ANGLE 1.e-4
+#define MAX_DOWNGOING_ANGLE 89.9999
+
 
 using namespace EikonalXX::Ray;
 
@@ -24,220 +30,109 @@ enum class RayType
     Refracted
 };
 
-enum class ReturnCode
-{
-    Undershot,    /*!< The ray exited the of the medium before the station offset. */
-    Overshot,     /*!< The ray exited the medium after the station offset. */
-    ExitedBottom, /*!< The ray exited the bottom of the medium. */
-    ExitedRight,  /*!< The ray exited the right side of the medium. */
-    Hit,          /*!< The ray hit its intended target to within some tolerance. */
-    RayDoesNotTurn,
-    RayTurnsTooEarly
-};
+//enum class ReturnCode
+//{
+//    Undershot,    /*!< The ray exited the of the medium before the station offset. */
+//    Overshot,     /*!< The ray exited the medium after the station offset. */
+//    ExitedBottom, /*!< The ray exited the bottom of the medium. */
+//    ExitedRight,  /*!< The ray exited the right side of the medium. */
+//    Hit,          /*!< The ray hit its intended target to within some tolerance. */
+//    RayDoesNotTurn,
+//    RayTurnsTooEarly
+//};
 
-struct Segment
-{
-    [[nodiscard]] Segment2D toSegment() const
-    {
-        Segment2D result;
-        Point2D point0{x0, z0};
-        Point2D point1{x1, z1};
-        result.setStartAndEndPoint(std::pair {point0, point1});
-        result.setSlowness(slowness);
-        result.setVelocityModelCellIndex(layerIndex);
-        return result;
-    } 
-    double x0;
-    double z0;
-    double x1;
-    double z1;
-    double slowness;
-    int layerIndex;
-};
-
-/// Traces down
+/// Traces down then up where the source/receiver are at the same depth
 /// ------------- Interface 0
-/// x          x    Slowness 0       
+/// *          x    Slowness 0       
 /// ------------- Interface 1
 ///   \      /      Slowness 1
 ///-------------- Interface 2
 ///     \__/        Slowness 2
 ///-------------- Interace 3
 ///                 Slowness 3
-ReturnCode levelTraceDown(const double depth,
-                          const double offset,
-                          const double takeOffAngle,
-                          const int startIndex,
-                          const int endIndex,
-                          const std::vector<double> &interfaces,
-                          const std::vector<double> &slownesses,
-                          Path2D *path,
-                          const double tolerance = 10,
-                          const bool returnToSurface = true)
+
+/// Traces up:
+/// ------------------------
+/// -                   x  -
+/// ------------------------
+/// -                 /    -
+/// -                /     -
+/// ------------------------
+/// -              /       -
+/// -            /         -
+/// -          *           -
+/// ------------------------
+ReturnCode traceDirectUp(const int stationLayer,
+                         const int sourceLayer,
+                         const double stationDepth,
+                         const double sourceDepth,
+                         const double offset,
+                         const double takeOffAngle,
+                         const int startIndex,
+                         const int endIndex,
+                         const std::vector<double> &interfaces,
+                         const std::vector<double> &slownesses,
+                         Path2D *path,
+                         const double tolerance = 10)
 {
     path->clear();
-    // Just deal with same layer problem
-    if (startIndex == endIndex)
-    {
-#ifndef NDEBUG
-        std::cerr << __func__ << " startIndex == endIndex!" << std::endl;
-#endif
-        Point2D point0{0, depth};
-        Point2D point1{offset, depth}; 
-        Segment2D segment;
-        segment.setStartAndEndPoint(std::pair {point0, point1});
-        segment.setSlowness(slownesses.at(startIndex));
-        segment.setVelocityModelCellIndex(startIndex);
-        path->clear();
-        path->open();
-        path->append(segment);
-        path->close();
-        return ReturnCode::Hit;
-    }
-    // This will be problematic
     if (takeOffAngle >= 90)
     {
-        std::cerr << "Ray take-off angle must be less than 90" << std::endl;
-        return ReturnCode::RayDoesNotTurn;
+        throw std::invalid_argument("Ray must be going up");
     }
+    // Turn ray around and make it go up
+    auto takeOffAngleRadians = (180 - takeOffAngle)*(M_PI/180); 
+    // Trace to top layer
     auto nLayers = static_cast<int> (interfaces.size());
-    constexpr double degreesToRadians{M_PI/180};
-    auto takeOffAngleRadians = takeOffAngle*degreesToRadians;
-    //double p = std::sin(takeOffAngleRadians)*slownesses.at(startIndex);
-    auto halfOffset = 0.5*offset;
     double x0{0};
-    double z0{depth};
-    double z1 = interfaces[startIndex + 1];
-    double dz = z1 - depth;
+    double z0{sourceDepth};
+    double z1 = interfaces[startIndex]; 
+    double dz = sourceDepth - z1;
 #ifndef NDEBUG
-    assert(dz >= 0);
+    assert(dz >= 0); 
 #endif
     double x1 = 0;
     if (dz > 0)
     {
-        x1 = dz*std::tan(takeOffAngleRadians);///std::cos(takeOffAngleRadians);
+        x1 = dz*std::tan(takeOffAngleRadians);
     }
     // Trace out first layer
     std::vector<::Segment> segments;
     segments.reserve(2*nLayers);
-    ::Segment firstSegment{x0, z0, x1, z1,
+    ::Segment firstSegment{x0, z0, x1, z1, 
                            slownesses.at(startIndex), startIndex};
     segments.push_back(std::move(firstSegment));
-    // Now trace through the stack 
-    bool criticallyRefracted = false;
-    auto currentAngle = takeOffAngleRadians;
-    for (int layer = startIndex + 1; layer <= endIndex; ++layer)
+    for (int layer = startIndex; layer >= endIndex + 1; --layer)
     {
-        auto s0 = slownesses.at(layer - 1);
-        auto s1 = slownesses.at(layer);
-        auto s0s1 = s0/s1; // V_1/V_0 = (1/s_1)/(1/s_0) = s_0/s_1
-        // Update positions
-        x0 = x1;
-        z0 = z1;
-        z1 = interfaces.at(layer + 1);
-        dz = z1 - z0;
-        x1 = dz*std::tan(currentAngle);///std::cos(currentAngle);
-        // Swing and a miss 
-        if (x1 > halfOffset)
-        {
-            return ReturnCode::RayDoesNotTurn;
-        } 
-        ::Segment segment{x0, z0, x1, z1, 
-                          s1, layer};
-        segments.push_back(std::move(segment));
-        // Note the critical angle
-        double criticalAngle{M_PI_2}; 
-        if (s0s1 > 1){criticalAngle = std::asin(s1/s0);} 
-        // Critical refraction.  Simply move the segment
-        // along the interface to the half-way point.
-        if (currentAngle > criticalAngle)
-        {
-            if (layer != endIndex)
-            {
-                //std::cout << "Ray critically refracted before end" << std::endl;
-                return ReturnCode::RayTurnsTooEarly;
-            }
-            // Went too far.  Just bounce back to the surface.
-            if (x1 >= halfOffset){break;}
-            //std::cout << "Ray critically refracted" << std::endl;
-            auto dOffset2 = 0.5*offset - x1;
-            ::Segment segment{x1, z1, 
-                              x1 + 2*dOffset2, z1,
-                              slownesses.at(layer + 1), layer + 1};
-            segments.push_back(segment);
-            criticallyRefracted = true;
-            break;
-        }
-        // Update angle with Snell's law
-        auto asinArgument = std::sin(currentAngle)*s0s1;
-#ifndef NDEBUG
-        assert(asinArgument >=-1 && asinArgument <= 1);
-#endif
-        //std::cout << "layer-1, layer, current angle, critical angle: " << layer - 1 << " " << layer << " " << currentAngle/degreesToRadians << "," << criticalAngle/degreesToRadians << std::endl;
-        currentAngle = std::asin(asinArgument);
+         
     }
-    // Take the ray back to the `surface'
-    if (returnToSurface)
-    {
-        auto iStart = static_cast<int> (segments.size()) - 1;
-        if (criticallyRefracted)
-        {
-            iStart = iStart - 1;
-        }
-        x0 = segments.back().x1;
-        for (int i = iStart; i >= 0; --i)
-        {
-            auto dx = segments[i].x1 - segments[i].x0;
-#ifndef NDEBUG
-            assert(dx >= 0);
-#endif
-            x1 = x0 + dx;
-            ::Segment newSegment{x0, segments[i].z1,
-                                 x1, segments[i].z0,
-                                 segments[i].slowness,
-                                 segments[i].layerIndex};
-            segments.push_back(std::move(newSegment));
-            // Update x
-            x0 = x1;
-        }
-    }
-    // Build the ray path
-    path->clear();
-    path->open();
-    for (auto &segment : segments)
-    {
-        path->append(segment.toSegment());
-    }
-    path->close();
-    if (std::abs(x1 - offset) < tolerance)
-    {
-        return ReturnCode::Hit;
-    }
-    else
-    {
-        if (x1 < offset)
-        {
-            return ReturnCode::Undershot;
-        }
-    }
-    return ReturnCode::Overshot;
 }
 
-ReturnCode traceDown(const int stationLayer,
-                     const int sourceLayer,
-                     const double stationDepth,
-                     const double sourceDepth,
-                     const double offset,
-                     const double takeOffAngle,
-                     const int startIndex,
-                     const int endIndex,
-                     const std::vector<double> &interfaces,
-                     const std::vector<double> &slownesses,
-                     Path2D *path,
-                     const double tolerance = 10)
+
+
+ReturnCode traceDownThenUp(const int stationLayer,
+                           const int sourceLayer,
+                           const double stationDepth,
+                           const double sourceDepth,
+                           const double offset,
+                           const double takeOffAngle,
+                           const int startIndex,
+                           const int endIndex,
+                           const std::vector<double> &interfaces,
+                           const std::vector<double> &slownesses,
+                           Path2D *path,
+                           const double tolerance = 10)
 {
+/*
     // Ray parameter is constant so we can get the station incidence angle
     // and make that our take-off angle to trace down to the source depth.
+    if (takeOffAngle <= 90)
+    {
+        std::cerr << "Takeoff angle must be greater than 90" << std::endl;
+        return ReturnCode::RayDoesNotTurn;
+    }
+    // Despite the function name, we actually trace a direct ray from the
+    // source depth to the reeiver depth. 
     auto takeOffAngleRadians = takeOffAngle*(M_PI/180);
     double p = std::sin(takeOffAngleRadians)*slownesses.at(startIndex);
     auto stationSlowness = slownesses.at(stationLayer);
@@ -250,7 +145,18 @@ ReturnCode traceDown(const int stationLayer,
     else
     {
         std::cerr << "no clue" << std::endl;
-    }        
+    }
+    // Trace from the source depth to the station
+    int layer = sourceLayer;
+    double x0{0};
+    double z0{sourceDepth};
+    double z1{interfaces[layer]};
+    double x1 =  
+    ::Segment firstSegment{x0, z0, x1, z1, 
+                           slownesses.at(startIndex), startIndex};
+    segments.push_back(std::move(firstSegment));
+
+       
     // Trace from station to source 
     auto nTopLayers = sourceLayer - stationLayer;
     std::vector<double> temporaryInterfaces(nTopLayers);
@@ -273,6 +179,7 @@ ReturnCode traceDown(const int stationLayer,
                                      &directPath,
                                      tolerance,
                                      false);
+*/
 }
 
 void computeTakeOffAngles(
@@ -307,19 +214,22 @@ public:
     /// the direct ray. 
     [[nodiscard]] Path2D computeDirectRayInSameLayer() const
     {
+#ifndef NDEBUG
+        assert(mSourceLayer == 0);
+        assert(mStationLayer == mSourceLayer);
+#endif
         Path2D rayPath;
 #ifndef NDEBUG
-        assert(mSourceLayer == mStationLayer);
+        auto returnCode =
 #endif
-        Segment2D segment;
-        Point2D startPoint{0, mSourceDepth};
-        Point2D endPoint{mStationOffset, mStationDepth};
-        segment.setStartAndEndPoint(std::pair {startPoint, endPoint});
-        segment.setSlowness(mSlownessModel[mSourceLayer]);
-        segment.setVelocityModelCellIndex(mSourceLayer);
-        rayPath.open();
-        rayPath.append(std::move(segment));
-        rayPath.close();
+        ::traceWholeSpace(mSlownessModel[mSourceLayer],
+                          mSourceDepth,
+                          mStationOffset,
+                          mStationDepth,
+                          &rayPath);
+#ifndef NDEBUG
+        assert(returnCode == ReturnCode::Hit);
+#endif
         return rayPath;
     }
     [[nodiscard]] int getLayer(const double depth) const
@@ -353,136 +263,308 @@ public:
 #endif
         return layer;
     }
-    /// @param[in] p   The ray parameter (sin(i)/v) where i is the take-off
-    ///                angle measured positive up from nadir at the source
-    ///                and v the velocity at the source.
+    /// @brief Shoots a ray with the given take-off angle.
     /// @note This cannot handle velocity inversions. 
-    ReturnCode shoot(const double takeOffAngle)
+    std::vector<Path2D> shoot(const double takeOffAngle,
+                              const bool keepOnlyHits = true)
     {
-        Path2D path;
-auto offset = mStationOffset;
-        auto nLayers = static_cast<int> (mInterfaces.size());
-        for (int endLayer = mSourceLayer + 1; endLayer < nLayers - 1; ++endLayer)
+        std::vector<Path2D> result;
+        // 90 degree take-off angles won't converge
+        if (std::abs(takeOffAngle - 90) < 1.e-4){return result;}
+        // Up-going rays
+        if (takeOffAngle > 90)
         {
-            auto returnCode = ::levelTraceDown(mSourceDepth,
-                                               offset,
-                                               takeOffAngle,
-                                               mSourceLayer,
-                                               endLayer,
-                                               mInterfaces,
-                                               mSlownessModel,
-                                               &path);
-            if (returnCode == ReturnCode::Hit ||
-                returnCode == ReturnCode::Undershot ||
-                returnCode == ReturnCode::Overshot)
+            // Not bouncing off above layers so just quit now
+            if (mStationDepth < mSourceDepth){return result;}
+            std::vector<::Segment> segments;
+            try
             {
-                std::cout << std::endl;
-                for (const auto &segment : path)
+                auto returnCode = traceDirect(mAugmentedInterfaces,
+                                              mAugmentedSlownesses,
+                                              takeOffAngle,
+                                              mSourceLayer,
+                                              mSourceDepth,
+                                              mStationLayer,
+                                              mStationOffset,
+                                              mStationDepth,
+                                              &segments,
+                                              mRayHitTolerance); 
+                if (returnCode == ReturnCode::Hit ||
+                    (!keepOnlyHits && returnCode == ReturnCode::UnderShot) ||
+                    (!keepOnlyHits && returnCode == ReturnCode::OverShot))
                 {
-                    std::cout << std::setprecision(12)
-                              << segment.getStartPoint().getPositionInX() << ","
-                              << segment.getStartPoint().getPositionInZ() << ","
-                              << segment.getEndPoint().getPositionInX() << ","
-                              << segment.getEndPoint().getPositionInZ() << ","
-                              << 1./segment.getSlowness() << "," 
-                              << 1./mSlownessModel[segment.getVelocityModelCellIndex()] << std::endl;
-                }
-                if (returnCode == ReturnCode::Hit)
-                {
-                    std::cout << "Takeoff angle, travel time: " << takeOffAngle << "," << path.getTravelTime() << std::endl;
+                    auto rayPath = ::toRayPath(segments);
+                    std::cout << "Takeoff angle, travel time: " << takeOffAngle << "," << rayPath.getTravelTime() << std::endl;
+                    result.push_back(rayPath);
                 }
             }
+            catch (const std::exception &e)
+            {
+                std::cerr << e.what() << std::endl;
+            }
         }
+        else
+        {
+            // Trace down through the velocity model stack and tabulate the
+            // ray paths
+            auto nLayers = static_cast<int> (mInterfaces.size());
+            for (int endLayer = mSourceLayer; endLayer < nLayers; ++endLayer)
+            {
+                std::vector<::Segment> segments;
+                try
+                {
+                    auto returnCode = ::traceDownThenUp(mAugmentedInterfaces,
+                                                        mAugmentedSlownesses,
+                                                        takeOffAngle,
+                                                        mSourceLayer,
+                                                        mSourceDepth,
+                                                        mStationLayer,
+                                                        mStationOffset,
+                                                        mStationOffset,
+                                                        endLayer,
+                                                        &segments,
+                                                        mRayHitTolerance);
+                    if (returnCode == ReturnCode::Hit ||
+                       (!keepOnlyHits && returnCode == ReturnCode::UnderShot) ||
+                       (!keepOnlyHits && returnCode == ReturnCode::OverShot))
+                    {
+                        auto rayPath = ::toRayPath(segments);
 /*
-getchar();
-
-        if (takeOffAngle >= 180)
-        {
-            return ReturnCode::ExitedBottom;
-        }
-        constexpr int maxSegments{std::numeric_limits<int>::max()};
-        constexpr double degreesToRadians{M_PI/180};
-        constexpr double radiansToDegrees{180/M_PI};
-        auto sourceSlowness = mSlownessModel[mSourceLayer]; 
-        const double rayParameter
-        {
-            sourceSlowness*std::sin(takeOffAngle*degreesToRadians)
-        };
-        double x0 = 0;
-        double z0 = mSourceDepth;
-        auto nLayers = static_cast<int> (mSlownessModel.size());
-        auto currentAngle = takeOffAngle;
-        auto currentLayer = mSourceLayer;
-        for (int kSegment = 0; kSegment < maxSegments; ++kSegment)
-        {
-            int nextLayerIncrement =+1; // Going down
-            if (currentAngle > 90)
-            {
-                nextLayerIncrement = 0;
-            }
-            // Go to next interface
-            double dz = 0;
-            if (nextLayerIncrement == 1)
-            {
-                dz = mInterfaces[currentLayer + nextLayerIncrement] - z0;
-            } 
-            else
-            {
-                dz = z0 - mInterfaces[currentLayer + nextLayerIncrement];
-            }
-            double z1 = mInterfaces[currentLayer + nextLayerIncrement];
-            // Laterally moving ray
-            if (std::abs(currentAngle - 90) < 1.e-8)
-            {
-                Point2D endPoint{mMaximumOffset, z0}; 
-                return ReturnCode::ExitedRight;
-            } 
-           
-            double ds = dz/std::cos(currentAngle*degreesToRadians);
-std::cout << std::setprecision(12) << dz << "," << ds << std::endl;
-#ifndef NDEBUG
-            assert(ds >= z1);
-#endif 
-            double x1 = x0 + std::sqrt(ds*ds - z1*z1);
-            // Update the angle in the next layer with Snell's law 
-            double slownessAbove = 0;
-            double slownessBelow = 0;
-            if (nextLayerIncrement == 1)
-            {
-                if (currentLayer == nLayers - 1)
-                {
-                    return ReturnCode::ExitedBottom;
-                }
-                slownessAbove = mSlownessModel[currentLayer];
-                slownessBelow = mSlownessModel[currentLayer + 1];
-            }
-            else
-            {
-                if (currentLayer == 0)
-                {
-                    std::cout << "exited top" << std::endl;
-                    getchar();
-//                    return ReturnCode::ExitedTop;
-                }
-                slownessAbove = mSlownessModel[currentLayer - 1];
-                slownessBelow = mSlownessModel[currentLayer];
-            }
-            // Next layer is faster than this layer - we're alright
-            if (slownessAbove >= slownessBelow)
-            {
-                currentAngle = std::asin(rayParameter/slownessBelow)*radiansToDegrees;
-            }
- std::cout << currentAngle << std::endl;
-            // Ray exited bottom of medium
-            // Update
-            
-getchar();
-        }
+                        std::cout << std::endl;
+                        for (const auto &segment : path)
+                        {
+                            std::cout << std::setprecision(12)
+                                      << segment.getStartPoint().getPositionInX() << ","
+                                      << segment.getStartPoint().getPositionInZ() << ","
+                                      << segment.getEndPoint().getPositionInX() << ","
+                                      << segment.getEndPoint().getPositionInZ() << ","
+                                      << 1./segment.getSlowness() << "," 
+                                      << 1./mSlownessModel[segment.getVelocityModelCellIndex()] << std::endl;
+                        }
 */
+                        std::cout << "Takeoff angle, travel time: " << takeOffAngle << "," << rayPath.getTravelTime() << std::endl;
+                        result.push_back(rayPath);
+                    }
+                }
+                catch (const std::exception &e)
+                {
+                    std::cerr << e.what() << std::endl;
+                }
+            } // Loop on stack of layers
+        } // End check on upgoing vs downgoing
+        // Sort the rays in increasing order based on the travel times
+        if (result.size() > 1)
+        {
+            std::sort(result.begin(), result.end(), 
+                      [](const Path2D &lhs, const Path2D &rhs)
+                      {
+                         return lhs.getTravelTime() < rhs.getTravelTime();
+                      });
+        }
+        return result;
+    }
+    std::pair<double, Path2D>
+         quadraticFitSearch(const std::pair<double, double> &fa,
+                            const std::pair<double, double> &fb,
+                            const std::pair<double, double> &fc,
+                            const int maxFunctionEvaluations = 5)
+    {
+        constexpr bool keepOnlyHits{true};
+        auto a  = fa.first;
+        auto ya = fa.second;        
+        auto b  = fb.first;
+        auto yb = fb.second;
+        auto c  = fc.first;
+        auto yc = fc.second;
+        auto xStar = 1./3.*(a + b + c);
+        auto fStar = std::max(ya, std::max(yb, yc));
+        Path2D fPath;
+        for (int k = 0; k < maxFunctionEvaluations; ++k)
+        {
+#ifndef NDEBUG
+            assert(a < b);
+            assert(b < c);
+#endif
+            auto a2 = a*a;
+            auto b2 = b*b;
+            auto c2 = c*c;
+            auto xNum = ya*(b2 - c2) + yb*(c2 - a2) + yc*(a2 - b2);
+            auto xDen = 2*(ya*(b - c) + yb*(c - a) +  yc*(a - b));
+            xStar = 1./3.*(a + b + c);
+            if (std::abs(xDen) > 1.e-14)
+            {
+                xStar = xNum/xDen;
+            }
+            else
+            {
+                std::cerr << "Division by 0: " << xNum << ","
+                          << xDen << std::endl;
+            }
+            auto paths = shoot(xStar, keepOnlyHits);
+            if (paths.empty())
+            {
+                throw std::runtime_error("No paths converged");
+            }
+            fPath = paths.at(0);
+            fStar = fPath.getTravelTime(); 
+            if (xStar > b)
+            {
+                if (fStar > yb)
+                {
+                    c = xStar;
+                    yc = fStar; 
+                }
+                else
+                {
+                    a  = b;
+                    ya = yb;
+                    b  = xStar;
+                    yb = fStar;
+                }
+            }
+            else if (xStar < b)
+            {
+                if (fStar > yb)
+                {
+                    a = xStar;
+                    ya = fStar;
+                }
+                else
+                {
+                    c  = b;
+                    yc = yb;
+                    b  = xStar;
+                    yb = fStar;
+                }
+            }
+            else
+            {
+                return std::pair {b, fPath};
+            }
+        }
+        return std::pair {xStar, fPath};
+    } 
+    [[nodiscard]] Path2D optimizeDownGoing()
+    {
+        Path2D optimalPath;
+        // Initial bracketing
+        int nInitialAngles{89};
+        std::vector<double> takeOffAngles;
+        computeTakeOffAngles(nInitialAngles,
+                             MIN_DOWNGOING_ANGLE, MAX_DOWNGOING_ANGLE,
+                             &takeOffAngles);
+        auto dAngle2 = std::abs(takeOffAngles.at(1) - takeOffAngles.at(0))/2;
+        std::vector<std::pair<double, double>> angleTravelTime;
+        for (auto &takeOffAngle : takeOffAngles)
+        {
+            auto work = shoot(takeOffAngle);
+            if (!work.empty())
+            {
+                angleTravelTime.push_back(std::pair {takeOffAngle,
+                                                     work[0].getTravelTime()}); 
+            }
+        }
+        // Probably too close
+        if (angleTravelTime.empty())
+        {
+            //std::cout << "No downgoing ray paths converged" << std::endl;
+            return optimalPath;
+        }
+        // Identify each candidate solution region
+        std::vector<std::pair<int, int>> brackets;
+        if (angleTravelTime.size() == 1)
+        {
+            auto theta0 = std::max(MIN_DOWNGOING_ANGLE,
+                                   angleTravelTime[0].first - dAngle2);
+            auto theta1 = std::min(MAX_DOWNGOING_ANGLE,
+                                   angleTravelTime[0].first + dAngle2);
+            brackets.push_back(std::pair {theta0, theta1});
+        }
+        else
+        {
+            auto nAngles = static_cast<int> (angleTravelTime.size());
+            for (int i = 1; i < nAngles - 1; ++i)
+            {
+                auto thisTravelTime = angleTravelTime[i].second;
+/*
+                if (i == 0)
+                {
+                    if (angleTravelTime[i + 1].second > thisTravelTime)
+                    {
+                        auto theta0
+                            = std::max(MIN_DOWNGOING_ANGLE,
+                                       angleTravelTime[i].first - dAngle2);
+                        auto theta1 = angleTravelTime[i + 1].first;
+                        brackets.push_back(std::pair {theta0, theta1});
+                    }
+                }
+*/
+                if (i > 0 && i < nAngles - 1) 
+                {
+                    if (angleTravelTime[i - 1].second > thisTravelTime &&
+                        angleTravelTime[i + 1].second > thisTravelTime)
+                    {
+                        brackets.push_back(std::pair {i - 1, i + 1});
+                    }
+                }
+/*
+                else if (i == nAngles - 1)
+                {
+                    if (angleTravelTime[i - 1].second > thisTravelTime)
+                    {
+                        auto theta0 = angleTravelTime[i - 1].first;
+                        auto theta1
+                            = std::min(MAX_DOWNGOING_ANGLE,
+                                       angleTravelTime[i].first + dAngle2);
+                        brackets.push_back(std::pair {theta0, theta1});
+                    }
+                }
+*/
+#ifndef NDEBUG
+                else
+                {
+                    assert(false);
+                }
+#endif
+            }
+        }
+        // Search through each bracket
+        double optimumTakeOffAngle{0};
+        double minimumTravelTime{std::numeric_limits<double>::max()}; 
+        bool failed{false};
+        for (const auto &bracket : brackets)
+        {
+             auto ia = bracket.first;
+             auto ib = ia + 1;
+             auto ic = bracket.second;
+             try
+             {
+                 auto [takeOffAngle, path]
+                     = quadraticFitSearch(angleTravelTime.at(ia),
+                                          angleTravelTime.at(ib),
+                                          angleTravelTime.at(ic),
+                                          5);
+std::cout << "Take-off angle, travel time: " << takeOffAngle << "," << path.getTravelTime() << std::endl;
+                 if (path.getTravelTime() < minimumTravelTime)
+                 {
+                     optimalPath = path;
+                     optimumTakeOffAngle = takeOffAngle;
+                     minimumTravelTime = path.getTravelTime();
+                 }
+             }
+             catch (const std::exception &e)
+             {
+                 std::cerr << e.what() << std::endl;
+             }
+        }
+        return optimalPath;
     }
     std::vector<Path2D> mRayPaths;
     std::vector<double> mSlownessModel;
     std::vector<double> mInterfaces;
+    std::vector<double> mAugmentedSlownesses;
+    std::vector<double> mAugmentedInterfaces;
+    double mRayHitTolerance{1};
     double mMaximumOffset{500000};
     double mStationDepth{0};
     double mSourceDepth{0};
@@ -561,14 +643,12 @@ void LayerSolver::setVelocityModel(const std::vector<double> &interfaces,
     {
         throw std::invalid_argument("Interfaces must increase with depth");
     }
-    pImpl->mSlownessModel.resize(velocityModel.size());
-    std::transform(velocityModel.begin(), velocityModel.end(),
-                   pImpl->mSlownessModel.begin(),
-                   [=](const double velocity)
-                   {
-                       return 1./velocity;
-                   });
+    pImpl->mSlownessModel = ::toSlownessVector(velocityModel);
     pImpl->mInterfaces = interfaces;
+    pImpl->mAugmentedSlownesses
+         = ::toSlownessVector(::augmentVelocityVector(velocityModel));
+    pImpl->mAugmentedInterfaces
+         = ::augmentInterfacesVector(pImpl->mInterfaces);
 }
 
 bool LayerSolver::haveVelocityModel() const noexcept
@@ -662,6 +742,26 @@ bool LayerSolver::haveRayPaths() const noexcept
     return pImpl->mHaveRayPaths;
 }
 
+/// Shoot
+std::vector<Path2D> LayerSolver::shoot(const double takeOffAngle,
+                                       const bool keepOnlyHits)
+{
+    if (!haveVelocityModel())
+    {   
+        throw std::runtime_error("Velocity model not set");
+    }   
+    if (!haveSourceDepth()){throw std::runtime_error("Source depth not set");}
+    if (!haveStationOffsetAndDepth())
+    {   
+        throw std::runtime_error("Station offset not set");
+    }
+    if (takeOffAngle < 0 || takeOffAngle > 180)
+    {
+        throw std::invalid_argument("Take-off angle must be in range [0,180]");
+    }
+    return pImpl->shoot(takeOffAngle, keepOnlyHits);
+}
+
 /// Solve
 void LayerSolver::solve()
 {
@@ -748,7 +848,36 @@ void LayerSolver::solve()
         return;
     }
     // 
+pImpl->shoot(39);//5);
+getchar();
+//return;
+    // Are we in the same layer?  Then just shoot direct
+    if (pImpl->mSourceLayer == pImpl->mStationLayer)
+    {
+        pImpl->mRayPaths.push_back(pImpl->computeDirectRayInSameLayer());
+    }
     // Solve general case
+    auto optimalDownGoingPath = pImpl->optimizeDownGoing();
+    if (optimalDownGoingPath.size() > 0)
+    {
+        for (const auto &p : optimalDownGoingPath)
+        {
+            std::cout << std::setprecision(12) << p.getStartPoint().getPositionInX() << ","
+                      << p.getStartPoint().getPositionInZ() << ","
+                      << p.getEndPoint().getPositionInX() << ","
+                      << p.getEndPoint().getPositionInZ() << ","
+                      << p.getVelocity() << std::endl;
+        }
+        pImpl->mRayPaths.push_back(std::move(optimalDownGoingPath));
+    }
+    // Sort these
+    std::sort(pImpl->mRayPaths.begin(), pImpl->mRayPaths.end(), 
+              [&](const Path2D &lhs, const Path2D &rhs)
+              {
+                  return lhs.getTravelTime() < rhs.getTravelTime();
+              });
+    pImpl->mHaveRayPaths = true;
+/*
     std::vector<double> takeOffAngles;
     computeTakeOffAngles(45, 1.e-7, 90 - 1.e-7, &takeOffAngles);
     for (const auto &theta : takeOffAngles)
@@ -756,4 +885,5 @@ void LayerSolver::solve()
         pImpl->shoot(theta);
 //break;
     }
+*/
 }

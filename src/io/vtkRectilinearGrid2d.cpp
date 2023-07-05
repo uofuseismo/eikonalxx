@@ -123,7 +123,7 @@ void VTKRectilinearGrid2D::open(const std::string &fileName,
 
         pImpl->mFile << "Z_COORDINATES " << nz << " float" << std::endl;
         std::vector<float> zCoords(nz);
-        for (int i = 0; i < nz; ++i){zCoords[i] = z0 - dz*i;}
+        for (int i = 0; i < nz; ++i){zCoords[i] =-(z0 + dz*i);}
         auto cz = ::pack(zCoords);
         pImpl->mFile.write(cz.data(), cz.size());
         //auto zPtr = reinterpret_cast<const char *> (zCoords.data());

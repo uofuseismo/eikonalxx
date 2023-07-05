@@ -100,7 +100,7 @@ void VTKLines2D::write(
     {
         for (const auto &pi : p)
         {
-            auto zi =-z0 - (pi.second - z0); // Reverse
+            auto zi = -pi.second; //-z0 - (pi.second - z0); // Reverse
             pImpl->mFile << pi.first << " 0 " << zi << std::endl;
         }
     }

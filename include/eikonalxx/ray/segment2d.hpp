@@ -1,5 +1,6 @@
 #ifndef EIKONALXX_RAY_SEGMENT_2D_HPP
 #define EIKONALXX_RAY_SEGMENT_2D_HPP
+#include <ostream>
 #include <memory>
 namespace EikonalXX::Ray
 {
@@ -123,5 +124,6 @@ private:
     class Segment2DImpl;
     std::unique_ptr<Segment2DImpl> pImpl;
 };
+std::ostream& operator<<(std::ostream &os, const Segment2D &segment);
 }
 #endif

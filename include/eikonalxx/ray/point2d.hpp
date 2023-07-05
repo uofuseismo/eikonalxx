@@ -1,5 +1,6 @@
 #ifndef EIKONALXX_RAY_POINT_2D_HPP
 #define EIKONALXX_RAY_POINT_2D_HPP
+#include <ostream>
 #include <memory>
 namespace EikonalXX::Ray
 {
@@ -77,5 +78,6 @@ private:
     class Point2DImpl;
     std::unique_ptr<Point2DImpl> pImpl;
 };
+std::ostream& operator<<(std::ostream &os, const Point2D &point);
 }
 #endif 

@@ -190,3 +190,40 @@ void Segment2D::reverse()
     }
     std::swap(pImpl->mStartPoint, pImpl->mEndPoint);
 } 
+
+std::ostream& EikonalXX::Ray::operator<<(std::ostream &os,
+                                         const Segment2D &segment)
+{
+    std::string result;
+    if (segment.haveStartAndEndPoint())
+    {   
+        auto point0 = segment.getStartPoint();
+        auto point1 = segment.getEndPoint();
+        result = "StartPoint : ("
+               + std::to_string(point0.getPositionInX()) + ","
+               + std::to_string(point0.getPositionInZ()) + ")\n"
+               + "EndPoint : ("
+               + std::to_string(point1.getPositionInX()) + ","
+               + std::to_string(point1.getPositionInZ()) + ")\n"
+               + "Length : " + std::to_string(segment.getLength()); 
+    }
+    if (segment.haveVelocity())
+    {
+        if (!result.empty()){result = result + "\n";}
+        result = result 
+               + "Velocity : " + std::to_string(segment.getVelocity());
+        if (segment.haveStartAndEndPoint())
+        {
+            result = result + "\nTravelTime : "
+                   + std::to_string(segment.getTravelTime());
+        }
+    }
+    if (segment.haveVelocityModelCellIndex())
+    {
+        if (!result.empty()){result = result + "\n";}
+        result = result + "VelocityModelIndex : "
+               + std::to_string(segment.getVelocityModelCellIndex());
+    }
+    return os << result;
+}
+

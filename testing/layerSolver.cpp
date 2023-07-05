@@ -5,6 +5,15 @@
 #include "eikonalxx/ray/point2d.hpp"
 #include "eikonalxx/ray/segment2d.hpp"
 #include "eikonalxx/ray/layerSolver.hpp"
+#include "eikonalxx/ray/gradientTracer2d.hpp"
+#include "eikonalxx/ray/gradientTracerOptions.hpp"
+#include "eikonalxx/solver2d.hpp"
+#include "eikonalxx/solverOptions.hpp"
+#include "eikonalxx/model2d.hpp"
+#include "eikonalxx/geometry2d.hpp"
+#include "eikonalxx/source2d.hpp"
+#include "eikonalxx/station2d.hpp"
+#include "ray/layerTracer.hpp"
 #include <gtest/gtest.h>
 
 namespace
@@ -96,6 +105,292 @@ bool operator==(const std::vector<Path2D> &lhs, const std::vector<Path2D> &rhs)
     return true;
 }
 
+[[maybe_unused]]
+void createReferenceSolution(const double sourceDepth,
+                             const double stationDepth,
+                             const std::vector<double> &interfaces,
+                             const std::vector<double> &velocities,
+                             const std::vector<double> &stationLocations,
+                             const double dx = 50,
+                             const double xWidth = 200000,
+                             const double zWidth =  60000)
+{
+    auto dz = dx;
+    auto z0 = interfaces[0];
+    auto x0 =-2*dx;
+    auto x1 = xWidth + 2*dx;
+    auto nx = static_cast<int> ( (x1 - x0)/dx ) + 1;
+    auto nz = static_cast<int> ( zWidth/dx ) + 1;
+    EikonalXX::Geometry2D geometry;
+    geometry.setGridSpacingInX(dx);
+    geometry.setGridSpacingInZ(dx);
+    geometry.setNumberOfGridPointsInX(nx);
+    geometry.setNumberOfGridPointsInZ(nz);
+    geometry.setOriginInX(x0);
+    geometry.setOriginInZ(z0);
+  
+    std::vector<double> velocityModel(nx*nz);
+    for (int iz = 0; iz < nz; ++iz)
+    {
+        auto depth = z0 + iz*dz; 
+        auto layer = std::distance(interfaces.begin(),
+                                   std::upper_bound(interfaces.begin(),
+                                                    interfaces.end(),
+                                                    depth)) - 1;
+        auto velocity = velocities.at(layer);
+        auto i0 = iz*nx;
+        auto i1 = (iz + 1)*nx;
+        std::fill(velocityModel.data() + i0,
+                  velocityModel.data() + i1,
+                  velocity);
+    }
+    std::cout << "Setting velocity model..." << std::endl;
+    EikonalXX::Model2D<double> model;
+    model.initialize(geometry);
+    model.setNodalVelocities(velocityModel.size(),
+                             velocityModel.data(),
+                             EikonalXX::Ordering2D::Natural);
+
+    EikonalXX::Source2D source;
+    source.setGeometry(geometry);
+    source.setLocationInX(0);
+    source.setLocationInZ(sourceDepth);
+
+    std::vector<EikonalXX::Station2D> stations;
+    for (const auto &stationLocation : stationLocations)
+    {
+        EikonalXX::Station2D station;
+        station.setGeometry(geometry);
+        station.setLocationInX(stationLocation);
+        station.setLocationInZ(stationDepth);
+        stations.push_back(station);
+    }  
+
+    std::cout << "Initializing solver..." << std::endl;
+    EikonalXX::Solver2D<double> solver;
+    EikonalXX::SolverOptions options;
+    options.setFactoredEikonalEquationSolverRadius(15);
+    options.setNumberOfSweeps(4);
+    options.setConvergenceTolerance(1.e-14);
+    options.setAlgorithm(EikonalXX::SolverAlgorithm::FastSweepingMethod);
+
+    solver.initialize(options, geometry);
+    solver.setVelocityModel(model);
+    solver.setSource(source);
+    solver.setStations(stations);
+    std::cout << "Solving..." << std::endl;
+    solver.solve(); 
+    std::cout << "Compute gradient..." << std::endl;
+    solver.computeTravelTimeGradientField();
+    solver.writeVTK("uussTTimes.vtk", "travel_time_field_s", true);
+
+    auto travelTimes = solver.getTravelTimesAtStations();
+    for (const auto &travelTime : travelTimes)
+    {
+        std::cout << std::setprecision(12) << "Eikonal travel times: " << travelTime << std::endl;
+    }
+
+    EikonalXX::Ray::GradientTracerOptions tracerOptions;
+    EikonalXX::Ray::GradientTracer2D gradTracer;
+    gradTracer.initialize(tracerOptions, geometry);
+    gradTracer.setStations(stations);
+    gradTracer.trace(solver);
+    gradTracer.writeVTK("uussRayPaths.vtk");
+    auto rayPaths = gradTracer.getRayPaths();
+    for (const auto &rayPath : rayPaths)
+    {
+        std::cout << "Take off angle: " << rayPath.getTakeOffAngle() << "," << rayPath.getTravelTime() << std::endl;
+    }
+}
+
+TEST(Ray, LayerSolverHalfSpaceInternal)
+{
+    const double velocity{3500};
+    const double sourceDepth{0};
+    const double stationOffset{5000};
+    const double stationDepth{-4500};
+    EikonalXX::Ray::Path2D path;
+    auto returnCode = ::traceWholeSpace(1./velocity,
+                                        sourceDepth,
+                                        stationOffset,
+                                        stationDepth,
+                                        &path);
+    EXPECT_EQ(returnCode, ::ReturnCode::Hit); 
+
+    Point2D point0{0, 0}; 
+    Point2D point1{5000, -4500};
+    Segment2D segment;
+    segment.setStartAndEndPoint(std::pair {point0, point1}); 
+    segment.setVelocity(velocity);
+    segment.setVelocityModelCellIndex(0);
+    Path2D referencePath;
+    referencePath.open();
+    referencePath.append(segment);
+    referencePath.close();
+    EXPECT_TRUE(referencePath == path);
+}
+
+TEST(Ray, LayerSolverVerticalReflectionInternal)
+{
+    constexpr int nLayers = 5;
+    constexpr double convergence{1}; // meters
+    auto interfaces = ::augmentInterfacesVector({-4500,   40,  15600, 26500, 40500});
+    auto velocities = ::augmentVelocityVector({       3500, 5900,  6400,  7500,  7900});
+    auto slownesses = ::toSlownessVector(velocities);
+    const double sourceDepth{20000};
+    const double stationDepth{-4000};
+    const double stationOffset{0};
+    constexpr auto isAugmented{true};
+    auto sourceLayer  = ::getLayer(sourceDepth,  interfaces, isAugmented);
+    auto stationLayer = ::getLayer(stationDepth, interfaces, isAugmented);
+    EXPECT_EQ(sourceLayer,  2);
+    EXPECT_EQ(stationLayer, 0); 
+    // Draw the reference rays
+    Point2D sourcePoint{0, sourceDepth};
+    Point2D stationPoint{0, stationDepth};
+    Point2D interface1{0, 40};
+    Point2D interface2{0, 15600};
+    Point2D interface3{0, 26500};
+    Point2D interface4{0, 40500};  
+
+    Segment2D segmentDown23;
+    segmentDown23.setStartAndEndPoint(std::pair {sourcePoint, interface3});
+    segmentDown23.setVelocity(6400);
+    segmentDown23.setVelocityModelCellIndex(2);
+
+    Segment2D segmentDown34;
+    segmentDown34.setStartAndEndPoint(std::pair {interface3, interface4});
+    segmentDown34.setVelocity(7500);
+    segmentDown34.setVelocityModelCellIndex(3);
+
+    auto segmentUp43 = segmentDown34;
+    segmentUp43.reverse();
+
+    Segment2D segmentUp32;
+    segmentUp32.setStartAndEndPoint(std::pair {interface3, interface2});
+    segmentUp32.setVelocity(6400);
+    segmentUp32.setVelocityModelCellIndex(2);
+
+    Segment2D segmentUp21;
+    segmentUp21.setStartAndEndPoint(std::pair {interface2, interface1});
+    segmentUp21.setVelocity(5900);
+    segmentUp21.setVelocityModelCellIndex(1);
+
+    Segment2D segmentUp10;
+    segmentUp10.setStartAndEndPoint(std::pair {interface1, stationPoint});
+    segmentUp10.setVelocity(3500);
+    segmentUp10.setVelocityModelCellIndex(0);
+
+    std::vector<Segment2D> rayPath1{segmentDown23,
+                                    segmentUp32, segmentUp21, segmentUp10};
+    std::vector<Segment2D> rayPath2{segmentDown23, segmentDown34,
+                                    segmentUp43, segmentUp32, segmentUp21, segmentUp10};
+    Path2D path1;
+    path1.set(rayPath1);
+    Path2D path2;
+    path2.set(rayPath2);
+    std::vector<Path2D> rayPaths{path1, path2};
+    // Shoot down
+    int iPath = 0;
+    for (int layer = sourceLayer; layer < nLayers - 1; ++layer)
+    {
+        std::vector<::Segment> segments;
+        auto returnCode = ::traceVerticalReflectionDown(interfaces,
+                                      slownesses,
+                                      sourceLayer,
+                                      layer,
+                                      sourceDepth,
+                                      stationLayer,
+                                      stationDepth,
+                                      stationOffset,
+                                      &segments,
+                                      convergence);
+        EXPECT_EQ(returnCode, ReturnCode::Hit);
+        auto rayPath = ::toRayPath(segments);
+        EXPECT_TRUE(rayPath == rayPaths[iPath]);
+        iPath = iPath + 1;
+    }
+
+    // Shoot down to station
+    iPath = 0;
+    for (int layer = sourceLayer; layer < nLayers - 1; ++layer) 
+    {
+        std::vector<::Segment> segments;
+        auto returnCode = ::traceVerticalReflectionDown(interfaces,
+                                                        slownesses,
+                                                        stationLayer,
+                                                        layer,
+                                                        stationDepth,
+                                                        sourceLayer,
+                                                        sourceDepth,
+                                                        stationOffset,
+                                                        &segments,
+                                                        convergence);
+        EXPECT_EQ(returnCode, ReturnCode::Hit);
+        auto rayPath = ::toRayPath(segments);
+        auto reversedPath = rayPaths[iPath];
+        reversedPath.reverse(); 
+        EXPECT_TRUE(rayPath == reversedPath);
+        iPath = iPath + 1;
+    } 
+}
+
+TEST(Ray, LayerSolverDownGoingSameSourceStationDepthInternal)
+{
+    constexpr int nLayers{5};
+    constexpr double depth{-2000};
+    auto interfaces = ::augmentInterfacesVector({-4500,   50,  15600, 26500, 40500});
+    auto velocities = ::augmentVelocityVector({       3500, 5900,  6400,  7500,  7900});
+    auto slownesses = ::toSlownessVector(velocities);
+    constexpr double sourceDepth{depth};
+    constexpr double stationDepth{depth};
+    constexpr double stationOffset{20000};
+    constexpr auto isAugmented{true};
+    auto sourceLayer  = ::getLayer(sourceDepth,  interfaces, isAugmented);
+    auto stationLayer = ::getLayer(stationDepth, interfaces, isAugmented);
+    EXPECT_EQ(sourceLayer,  0);
+    EXPECT_EQ(stationLayer, 0);
+
+    const double takeOffAngle{39.2777};
+
+    // Shoot to first layer
+    std::vector<::Segment> segments;
+    auto returnCode = ::traceDownThenUp(interfaces,
+                                        slownesses,
+                                        takeOffAngle,
+                                        sourceLayer,
+                                        sourceDepth,
+                                        stationLayer,
+                                        stationOffset,
+                                        stationDepth,
+                                        0,
+                                        &segments,
+                                        1);
+    Point2D sourcePoint{0, sourceDepth};
+    Point2D point01{1676.5317885936365, 50};
+    Point2D point02{18323.46821140636,  50};
+    Point2D stationPoint{stationOffset, stationDepth};
+    Segment2D segment01;
+    Segment2D segment02;
+    Segment2D segment03; 
+    segment01.setStartAndEndPoint(std::pair {sourcePoint, point01});
+    segment01.setVelocity(3500);
+    segment01.setVelocityModelCellIndex(0);
+
+    segment02.setStartAndEndPoint(std::pair {point01, point02});
+    segment02.setVelocity(5900);
+    segment02.setVelocityModelCellIndex(1);
+
+    segment03.setStartAndEndPoint(std::pair {point02, stationPoint});
+    segment03.setVelocity(3500);
+    segment03.setVelocityModelCellIndex(0);
+
+    Path2D pathTopLayer;
+    pathTopLayer.set(std::vector<Segment2D> {segment01, segment02, segment03});
+    EXPECT_TRUE(pathTopLayer == ::toRayPath(segments));
+}
+
+
 TEST(Ray, LayerSolverHalfSpace)
 {
     std::vector<double> interfaces{-4500};
@@ -124,6 +419,8 @@ TEST(Ray, LayerSolverHalfSpace)
     EXPECT_TRUE(referenceRayPaths == rayPaths);
 }
 
+
+/*
 TEST(Ray, LayerSolverVerticalUp)
 {
     std::vector<double> interfaces{-4500, 40, 15600, 26500, 40500};
@@ -227,16 +524,59 @@ TEST(Ray, LayerSolverVerticalDown)
 
 TEST(Ray, SourceStationSameDepth)
 {
-    std::vector<double> interfaces{-4500, 40, 15600, 26500, 40500};
+    constexpr double depth{-2000};
+    std::vector<double> stationOffsets{1000,
+                                       5000,
+                                       7500,
+                                       10000,
+                                       15000,
+                                       20000,
+                                       30000,
+                                       40000,
+                                       50000,
+                                       60000,
+                                       80000,
+                                       100000,
+                                       120000};
+    std::vector<double> referenceTravelTimes{0.285714285714,
+                                             1.42857142857,
+                                             2.14285714286,
+                                             2.62783136508,
+                                             3.4752889922,
+                                             4.32274661932,
+                                             6.01766187355,
+                                             7.71257712779,
+                                             9.40749238203,
+                                             11.1024076363,
+                                             14.4922381447,
+                                             17.8820686532,
+                                             21.2718991617};
+    std::vector<double> interfaces{-4500, 50, 15600, 26500, 40500};
     std::vector<double> velocities{   3500, 5900,  6400,  7500,  7900};
+    ::createReferenceSolution(depth, depth,
+                            interfaces, velocities, stationOffsets);
     LayerSolver solver;
     solver.setVelocityModel(interfaces, velocities);
-    solver.setSourceDepth(-2000);
-    solver.setStationOffsetAndDepth(120000, -2000);
-    solver.solve();
-//    auto rayPaths = solver.getRayPaths();
+    solver.setSourceDepth(depth);
+    for (int iOffset = 0;
+         iOffset < static_cast<int> (stationOffsets.size());
+         ++iOffset)
+    {
+        solver.setStationOffsetAndDepth(stationOffsets[iOffset], depth);
+        solver.solve();
+        auto rayPaths = solver.getRayPaths();
+        std::cout << "Eikonal vs computed travel time: "
+                  << referenceTravelTimes.at(iOffset) << "," 
+                  << rayPaths.at(0).getTravelTime() << ","
+                  << rayPaths.at(0).getTakeOffAngle() << std::endl;
+        for (const auto &segment : rayPaths[0])
+        {
+            std::cout << segment << std::endl;
+        }
 //    EXPECT_EQ(rayPaths.size(), 1);
+    }
 }
+*/
 
 }
 

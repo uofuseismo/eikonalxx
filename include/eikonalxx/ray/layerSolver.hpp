@@ -56,6 +56,15 @@ public:
     void setStationOffsetAndDepth(double offset, double depth);
     [[nodiscard]] bool haveStationOffsetAndDepth() const noexcept;
 
+    /// @brief Shoots rays through the model at the given take-off angle.
+    /// @param[in] takeOffAngle  The take-off angle at which to shoot in
+    ///                          degrees measured positive up from nadir.
+    /// @param[in] keepOnlyHits  If true, then only ray paths that `hit'
+    ///                          i.e., finish within some offset of the
+    ///                          station will be retained.
+    /// @result The ray paths shot at this angle.
+    [[nodiscard]] std::vector<Path2D> shoot(double takeOffAngle, bool keepOnlyHits = false);
+
     /// @brief Traces rays from the source to the receiver through the 1D
     ///        medium.
     void solve();

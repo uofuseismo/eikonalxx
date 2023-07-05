@@ -103,3 +103,14 @@ void EikonalXX::Ray::swap(Point2D &lhs, Point2D &rhs) noexcept
 {
     std::swap(lhs.pImpl, rhs.pImpl);
 }
+
+std::ostream& EikonalXX::Ray::operator<<(std::ostream &os, const Point2D &point)
+{
+    std::string result;
+    if (point.havePositionInX() && point.havePositionInZ())
+    {   
+        result = "{x : " + std::to_string(point.getPositionInX()) + ","
+               +  "z : " + std::to_string(point.getPositionInZ()) + "}";
+    }   
+    return os << result;
+}

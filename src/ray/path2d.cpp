@@ -201,6 +201,25 @@ size_t Path2D::size() const noexcept
     return static_cast<int> (pImpl->mSegments.size());
 }
 
+bool Path2D::empty() const noexcept
+{
+    return pImpl->mSegments.empty();
+}
+
+/// Take-off angle
+double Path2D::getTakeOffAngle() const
+{
+    if (empty()){throw std::runtime_error("No segments in path");}
+    auto point0 = pImpl->mSegments.at(0).getStartPoint();
+    auto point1 = pImpl->mSegments.at(0).getEndPoint();
+    auto dx = point1.getPositionInX() - point0.getPositionInX();
+    auto dz = point1.getPositionInZ() - point0.getPositionInZ();
+    // +z is down so this is like atan2's +x
+    // +x is is like atan2's +y.  however, i don't care about the sign
+    // function is : atan2(y, x) -> atan2(dx, dz)
+    return std::atan2(std::abs(dx), dz)*(180/M_PI);
+}
+
 /// Travel time
 double Path2D::getTravelTime() const
 {

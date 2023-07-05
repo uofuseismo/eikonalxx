@@ -78,12 +78,17 @@ public:
     void reverse();
     /// @}
 
+    /// @result True indicates that there are no segments.
+    [[nodiscard]] bool empty() const noexcept; 
     /// @result The number of segments. 
     [[nodiscard]] size_t size() const noexcept;
     /// @result The total travel time in seconds along the ray.
     [[nodiscard]] double getTravelTime() const;
     /// @result The total length of the ray in meters.
     [[nodiscard]] double getLength() const;
+    /// @result The takeoff angle in degrees measured positive up from nadir. 
+    /// @throws std::runtime_error if \c size() is 0.
+    [[nodiscard]] double getTakeOffAngle() const;
 
     /// @name Destructors
     /// @{
