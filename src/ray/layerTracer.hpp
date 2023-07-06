@@ -298,7 +298,11 @@ ReturnCode traceDown(const std::vector<double> &interfaces,
                                    slownesses[i + 1]);
         if (currentAngle > criticalAngle)
         {
-            if (i < endLayer - 1){return ReturnCode::RayTurnsTooEarly;}
+            if (i < endLayer - 1)
+            {
+                segments->clear();
+                return ReturnCode::RayTurnsTooEarly;
+            }
             // Add the last segment by hand.  Compute the distance to the
             // half offset.
             auto dxHalf = 0.5*stationOffset - x1;
@@ -361,7 +365,7 @@ ReturnCode traceDirect(const std::vector<double> &interfaces,
     assert(takeOffAngle > 90 && takeOffAngle <= 180);
     assert(sourceLayer >= 0 && sourceLayer < nLayers);
     assert(stationOffset >= 0);
-    assert(sourceDepth < stationDepth);
+    assert(sourceDepth > stationDepth);
     assert(sourceDepth >= interfaces[sourceLayer] &&
            sourceDepth <  interfaces[sourceLayer + 1]);
     assert(stationDepth >= interfaces[stationLayer] &&
@@ -372,12 +376,12 @@ ReturnCode traceDirect(const std::vector<double> &interfaces,
     double currentAngle = std::abs(180 - takeOffAngle)*(M_PI/180);
     if (takeOffAngle == 180){currentAngle = 0;}
     double x0{0};
-    double z1{sourceDepth};
+    double z0{sourceDepth};
     for (int layer = sourceLayer; layer >= stationLayer; --layer) 
     {
-        double z0 = interfaces[layer];
-        if (layer == stationLayer){z0 = stationDepth;}
-        double x1 = x0 + (z1 - z0)*std::tan(currentAngle);
+        double z1 = interfaces[layer];
+        if (layer == stationLayer){z1 = stationDepth;}
+        double x1 = x0 + (z0 - z1)*std::tan(currentAngle);
         if (takeOffAngle == 180){x1 = x0;}
         ::Segment segment{slownesses[layer],
                           x0, z0, x1, z1,
@@ -392,7 +396,7 @@ ReturnCode traceDirect(const std::vector<double> &interfaces,
         //                                            slownesses[layer - 1]);
         // Update
         x0 = x1;
-        z1 = z0;
+        z0 = z1;
         currentAngle = transmissionAngle;
     }
     // Check convergence
