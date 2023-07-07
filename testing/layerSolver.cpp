@@ -902,6 +902,7 @@ TEST(Ray, LayerSolverVerticalDown)
     referenceRayPaths.push_back(std::move(path));
     EXPECT_TRUE(referenceRayPaths == rayPaths);
 }
+*/
 
 TEST(Ray, SourceStationSameDepth)
 {
@@ -919,6 +920,8 @@ TEST(Ray, SourceStationSameDepth)
                                        80000,
                                        100000,
                                        120000};
+    // TODO travel times from numerical ray paths seem more accurate.
+    // Why is eikonal fast by 0.01 seconds?
     std::vector<double> referenceTravelTimes{0.285714285714,
                                              1.42857142857,
                                              2.14285714286,
@@ -934,8 +937,8 @@ TEST(Ray, SourceStationSameDepth)
                                              21.2718991617};
     std::vector<double> interfaces{-4500, 50, 15600, 26500, 40500};
     std::vector<double> velocities{   3500, 5900,  6400,  7500,  7900};
-    ::createReferenceSolution(depth, depth,
-                            interfaces, velocities, stationOffsets);
+    //::createReferenceSolution(depth, depth,
+    //                          interfaces, velocities, stationOffsets);
     LayerSolver solver;
     solver.setVelocityModel(interfaces, velocities);
     solver.setSourceDepth(depth);
@@ -946,18 +949,19 @@ TEST(Ray, SourceStationSameDepth)
         solver.setStationOffsetAndDepth(stationOffsets[iOffset], depth);
         solver.solve();
         auto rayPaths = solver.getRayPaths();
-        std::cout << "Eikonal vs computed travel time: "
-                  << referenceTravelTimes.at(iOffset) << "," 
-                  << rayPaths.at(0).getTravelTime() << ","
-                  << rayPaths.at(0).getTakeOffAngle() << std::endl;
-        for (const auto &segment : rayPaths[0])
-        {
-            std::cout << segment << std::endl;
-        }
-//    EXPECT_EQ(rayPaths.size(), 1);
+        EXPECT_NEAR(referenceTravelTimes.at(iOffset),
+                    rayPaths.at(0).getTravelTime(),
+                    0.02); 
+        //std::cout << "Eikonal vs computed travel time: "
+        //          << referenceTravelTimes.at(iOffset) << "," 
+        //          << rayPaths.at(0).getTravelTime() << ","
+        //          << rayPaths.at(0).getTakeOffAngle() << std::endl;
+        //for (const auto &segment : rayPaths[0])
+        //{
+        //    std::cout << segment << std::endl;
+        //}
     }
 }
-*/
 
 }
 

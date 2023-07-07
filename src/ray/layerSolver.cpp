@@ -352,7 +352,7 @@ public:
             // Trace down through the velocity model stack and tabulate the
             // ray paths
             auto nLayers = static_cast<int> (mInterfaces.size());
-            for (int endLayer = mSourceLayer; endLayer < nLayers; ++endLayer)
+            for (int endLayer = mSourceLayer; endLayer < nLayers - 1; ++endLayer)
             {
                 std::vector<::Segment> segments;
                 try
@@ -364,7 +364,7 @@ public:
                                                         mSourceDepth,
                                                         mStationLayer,
                                                         mStationOffset,
-                                                        mStationOffset,
+                                                        mStationDepth,
                                                         endLayer,
                                                         &segments,
                                                         mRayHitTolerance);
@@ -385,8 +385,8 @@ public:
                                       << 1./segment.getSlowness() << "," 
                                       << 1./mSlownessModel[segment.getVelocityModelCellIndex()] << std::endl;
                         }
-*/
                         std::cout << "Takeoff angle, travel time: " << takeOffAngle << "," << rayPath.getTravelTime() << std::endl;
+*/
                         result.push_back(rayPath);
                     }
                 }
@@ -588,7 +588,7 @@ public:
                                           angleTravelTime.at(ib),
                                           angleTravelTime.at(ic),
                                           5);
-std::cout << "Take-off angle, travel time: " << takeOffAngle << "," << path.getTravelTime() << std::endl;
+                 //std::cout << "Take-off angle, travel time: " << takeOffAngle << "," << path.getTravelTime() << std::endl;
                  if (path.getTravelTime() < minimumTravelTime)
                  {
                      optimalPath = path;
@@ -833,22 +833,21 @@ void LayerSolver::solve()
     {
         pImpl->mRayPaths = pImpl->computeVerticalRayPaths();
         pImpl->mHaveRayPaths = true;
+        return;
     }
     // General case where we have to optimize
-pImpl->shoot(39);//5);
-getchar();
-/*
-//return;
+//pImpl->shoot(39);//5);
+//getchar();
     // Are we in the same layer?  Then just shoot direct
     if (pImpl->mSourceLayer == pImpl->mStationLayer)
     {
-        pImpl->mRayPaths.push_back(pImpl->computeDirectRayInSameLayer());
+        pImpl->mRayPaths.push_back(pImpl->computeDirectRaySameLayer());
     }
-*/
     // Solve general case
     auto optimalDownGoingPath = pImpl->optimizeDownGoing();
     if (optimalDownGoingPath.size() > 0)
     {
+/*
         for (const auto &p : optimalDownGoingPath)
         {
             std::cout << std::setprecision(12) << p.getStartPoint().getPositionInX() << ","
@@ -857,6 +856,7 @@ getchar();
                       << p.getEndPoint().getPositionInZ() << ","
                       << p.getVelocity() << std::endl;
         }
+*/
         pImpl->mRayPaths.push_back(std::move(optimalDownGoingPath));
     }
     // Sort these
