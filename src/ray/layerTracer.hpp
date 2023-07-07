@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <vector>
 #include <cmath>
+#include <numeric>
 #include <algorithm>
 #ifndef NDEBUG
 #include <cassert>
@@ -63,6 +64,89 @@ void reverseSegments(std::vector<::Segment> *segments)
     }
 }
 
+/// @brief Converts the local ray path to the library variant whilst
+///        performing any merging.
+[[nodiscard]]
+EikonalXX::Ray::Path2D
+    toRayPath(const std::vector<::Segment> &segments)
+{
+    EikonalXX::Ray::Path2D rayPath;
+    constexpr double tolerance{0.001}; // 1 millimeter
+    if (segments.empty()){throw std::runtime_error("Segments is empty");}
+    auto nSegments = static_cast<int> (segments.size());
+    std::vector<EikonalXX::Ray::Segment2D> raySegments;
+    raySegments.reserve(nSegments);
+    // Handle edge case
+    if (nSegments == 1)
+    {
+        raySegments.push_back(segments[0].toSegment());
+        rayPath.set(std::move(raySegments));
+        return rayPath;
+    }
+    // Merge ray paths in same layer
+    for (int i = 0; i < nSegments; ++i)
+    {
+        ::Segment segment{segments[i]};
+        std::array<double, 2> vi{segment.x1 - segment.x0,
+                                 segment.z1 - segment.z0};
+        auto viLength = std::hypot(vi[0], vi[1]);
+        int iNext = 0;
+        // Merge chunk of segments
+        for (int j = i + 1; j < nSegments; ++j)
+        {
+            std::array<double, 2> vj{segments[j].x1 - segments[j].x0,
+                                     segments[j].z1 - segments[j].z0};
+            // 0-length segment
+            auto vjLength = std::hypot(vj[0], vj[1]);
+            if (segment.layer == segments[j].layer)
+            {
+#ifndef NDEBUG
+                assert(std::abs(segment.slowness - segments[j].slowness) < 
+                       1.e-10);
+#endif
+                /*
+                // 0-length segment in same layer - merge it
+                if (vjLength < tolerance ||
+                    (j == i + 1 && viLength < tolerance))
+                {
+                    segment.x1 = segments[j].x1;
+                    segment.z1 = segments[j].z1;
+                    iNext = iNext + 1;
+                    continue;
+                }
+                */
+                // Parallel lines in same layer:
+                //    u.v/(|u||v|) = 1 -> |u||v| = u.v
+                // Note, we don't want -1 b/c that is a vertical refrlection.
+                // Additionally, this works for a zero-length segment.
+                auto dotProduct = vi[0]*vj[0] + vi[1]*vj[1];
+                if (std::abs(viLength*vjLength - dotProduct) < tolerance)
+                {
+                    segment.x1 = segments[j].x1;
+                    segment.z1 = segments[j].z1;
+                    iNext = iNext + 1;
+                    continue;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            break;
+        }
+        raySegments.push_back(segment.toSegment());
+        i = i + iNext;
+    }
+/*
+    raySegments.reserve(segments.size());
+    for (const auto &segment : segments)
+    {   
+        raySegments.push_back(segment.toSegment());
+    }
+*/
+    rayPath.set(std::move(raySegments));
+    return rayPath;
+}
 
 [[nodiscard]] int getLayer(const double depth,
                            const std::vector<double> &interfaces,
@@ -191,10 +275,8 @@ ReturnCode traceVerticalReflectionDown(const std::vector<double> &interfaces,
     assert(stationDepth >= interfaces[stationLayer] &&
            stationDepth <  interfaces[stationLayer + 1]);
 #endif
-    // Same layer -> just get out of here
-    constexpr double x0{0};
-    constexpr double x1{0};
-    double z0{sourceDepth};
+/*
+    // N.B. don't do the direct ray b/c the function name says `reflection'
     if (sourceLayer == stationLayer && sourceLayer == endLayer)
     {
         ::Segment segment{slownesses[sourceLayer],
@@ -203,11 +285,15 @@ ReturnCode traceVerticalReflectionDown(const std::vector<double> &interfaces,
         segments->push_back(segment);
         return ::checkRayConvergence(*segments, stationOffset, tolerance);
     } 
+*/
     if (segments->capacity() < 2*interfaces.size() + 1)
     {
         segments->reserve(2*interfaces.size() + 1);
     }
     // Trace from source down
+    constexpr double x0{0};
+    constexpr double x1{0};
+    double z0{sourceDepth};
     for (int i = sourceLayer; i <= endLayer; ++i)
     {
         double z1 = interfaces[i + 1]; 
@@ -315,9 +401,9 @@ ReturnCode traceDown(const std::vector<double> &interfaces,
             break; 
         }
         auto transmissionAngle
-            = computeTransmissionAngle(currentAngle,
-                                       slownesses[i],
-                                       slownesses[i + 1]);
+            = ::computeTransmissionAngle(currentAngle,
+                                         slownesses[i],
+                                         slownesses[i + 1]);
 #ifndef NDEBUG
         assert(transmissionAngle >= 0);
 #endif
@@ -389,9 +475,18 @@ ReturnCode traceDirect(const std::vector<double> &interfaces,
         segments->push_back(segment);
         if (layer == stationLayer){break;}
         double transmissionAngle
-            = computeTransmissionAngle(currentAngle,
-                                       slownesses[layer],
-                                       slownesses.at(layer - 1));
+            = ::computeTransmissionAngle(currentAngle,
+                                         slownesses[layer],
+                                         slownesses.at(layer - 1));
+#ifndef NDEBUG
+        assert(transmissionAngle >= 0); // Should be fine without velocity ivnersions
+#endif
+        if (transmissionAngle < 0)
+        {
+            std::cerr << "TraceDirect may have velocity inversion" << std::endl;
+            segments->clear();
+            return ReturnCode::RayTurnsTooEarly; 
+        }
         //double criticalAngle = computeCriticalAngle(slownesses[layer],
         //                                            slownesses[layer - 1]);
         // Update
@@ -403,48 +498,62 @@ ReturnCode traceDirect(const std::vector<double> &interfaces,
     return checkRayConvergence(*segments, stationOffset, tolerance);
 }
 
-/// 
+/// @brief Traces a ray down from the source, back up to the source depth,
+///        then up to the station. 
 [[nodiscard]]
 ReturnCode traceDownThenUp(const std::vector<double> &interfaces,
                            const std::vector<double> &slownesses,
-                           const double takeOffAngleIn,
-                           const int sourceLayerIn,
-                           const double sourceDepthIn,
-                           const int stationLayerIn,
+                           const double takeOffAngle,
+                           const int sourceLayer,
+                           const double sourceDepth,
+                           const int stationLayer,
                            const double stationOffset,
-                           const double stationDepthIn,
+                           const double stationDepth,
                            const int endLayer,
                            std::vector<::Segment> *segments,
                            const double tolerance = 1)
 {
-    auto takeOffAngle = takeOffAngleIn;
 #ifndef NDEBUG
     assert(takeOffAngle >= 0 && takeOffAngle < 90);
     assert(segments != nullptr);
+    assert(sourceDepth >= interfaces[sourceLayer] &&
+           sourceDepth <  interfaces[sourceLayer + 1]);
+    assert(stationDepth >= interfaces[stationLayer] &&
+           stationDepth <  interfaces[stationLayer + 1]);
 #endif
     segments->clear();
-    if (std::abs(stationDepthIn - sourceDepthIn) < 1.e-10)
+    if (std::abs(stationDepth - sourceDepth) < 1.e-10)
     {
         return ::traceDown(interfaces,
                            slownesses,
                            takeOffAngle,
-                           sourceLayerIn,
+                           sourceLayer,
                            endLayer,
-                           sourceDepthIn,
+                           sourceDepth,
                            stationOffset,
                            segments,
                            tolerance);
     }
-    // Reverse segments? 
-    bool reverseSegments{false};
-    if (stationDepthIn < sourceDepthIn){reverseSegments = true;}
-    // General ray tracing
-    auto sourceLayer = sourceLayerIn;
-    auto sourceDepth = sourceDepthIn;
-    auto stationLayer = stationLayerIn;
-    auto stationDepth = stationDepthIn;
+    // Deal with the station below source by interchanging the values
+    // of the source and station and then reversing the result
+    if (sourceDepth < stationDepth)
+    {
+        auto returnCode = traceDownThenUp(interfaces,
+                                          slownesses,
+                                          takeOffAngle,
+                                          stationLayer, //const int sourceLayer,
+                                          stationDepth, //const double sourceDepth,
+                                          sourceLayer,  //const int stationLayer,
+                                          stationOffset,
+                                          sourceDepth,  // const double stationDepth,
+                                          endLayer,
+                                          segments,
+                                          tolerance);
+        ::reverseSegments(segments);
+        return returnCode;
+    }
     // Trace out the top segments
-    auto takeOffAngleUp = takeOffAngle + 90;
+    auto takeOffAngleUp = 180 - takeOffAngle;
     std::vector<::Segment> upSegments;
     auto result = ::traceDirect(interfaces,
                                 slownesses,
@@ -493,8 +602,8 @@ ReturnCode traceDownThenUp(const std::vector<double> &interfaces,
         upSegment.x0 = upSegment.x0 + downOffset;
         upSegment.x1 = upSegment.x1 + downOffset;
         segments->at(j) = std::move(upSegment);
+        j = j + 1;
     }
-    if (reverseSegments){::reverseSegments(segments);}
     return ::checkRayConvergence(*segments, stationOffset, tolerance);
 }
 
@@ -530,23 +639,6 @@ std::vector<double> augmentInterfacesVector(const std::vector<double> &x)
     auto y = x;
     y.push_back(std::numeric_limits<double>::max());
     return y;
-}
-
-/// @brief Converts the local ray path to the library variant.
-[[nodiscard]]
-EikonalXX::Ray::Path2D
-    toRayPath(const std::vector<::Segment> &segments)
-{
-    if (segments.empty()){throw std::runtime_error("Segments is empty");}
-    std::vector<EikonalXX::Ray::Segment2D> raySegments;
-    raySegments.reserve(segments.size());
-    for (const auto &segment : segments)
-    {
-        raySegments.push_back(segment.toSegment());
-    }
-    EikonalXX::Ray::Path2D rayPath;
-    rayPath.set(std::move(raySegments));
-    return rayPath;
 }
 
 /// Traces a direct wave when the source and receiver are in the smae layer.

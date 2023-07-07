@@ -543,13 +543,13 @@ TEST(Ray, LayerSolverDownGoingSameSourceStationDepthInternal)
 
 TEST(Ray, LayerSolverDirectInternal)
 {
-    constexpr int nLayers{5};
+    //constexpr int nLayers{5};
     auto interfaces = ::augmentInterfacesVector({-4500,   50,  15600, 26500, 40500});
     auto velocities = ::augmentVelocityVector({       3500, 5900,  6400,  7500,  7900});
     auto slownesses = ::toSlownessVector(velocities);
     constexpr double sourceDepth{30000};
     constexpr double stationDepth{-2000};
-    constexpr double stationOffset{20000};
+    constexpr double stationOffset{9275.402998};
     constexpr auto isAugmented{true};
     auto sourceLayer  = ::getLayer(sourceDepth,  interfaces, isAugmented);
     auto stationLayer = ::getLayer(stationDepth, interfaces, isAugmented);
@@ -568,6 +568,7 @@ TEST(Ray, LayerSolverDirectInternal)
                                     stationDepth,
                                     &segments,
                                     1.0);
+    EXPECT_EQ(returnCode, ReturnCode::Hit);
     auto rayPath = ::toRayPath(segments);
 
     auto dz3 = sourceDepth - interfaces[3];
@@ -610,6 +611,165 @@ TEST(Ray, LayerSolverDirectInternal)
     path.set( {segment1, segment2, segment3, segment4} );
 
     EXPECT_TRUE(path == rayPath);
+}
+
+TEST(Ray, LayerSolverGeneralSourceBelowStationInternal)
+{
+    constexpr int nLayers{5};
+    auto interfaces = ::augmentInterfacesVector({-4500,   50,  15600, 26500, 40500});
+    auto velocities = ::augmentVelocityVector({       3500, 5900,  6400,  7500,  7900});
+    auto slownesses = ::toSlownessVector(velocities);
+    constexpr double sourceDepth{8000};
+    constexpr double stationDepth{-1400};
+    constexpr double stationOffset{20000};
+    constexpr auto isAugmented{true};
+    auto sourceLayer  = ::getLayer(sourceDepth,  interfaces, isAugmented);
+    auto stationLayer = ::getLayer(stationDepth, interfaces, isAugmented);
+    EXPECT_EQ(sourceLayer,  1); 
+    EXPECT_EQ(stationLayer, 0); 
+
+    double takeOffAngle{25};
+
+
+    /// Snell's law
+    double theta1Down = takeOffAngle*(M_PI/180);
+    double theta2Down = std::asin((velocities[2]/velocities[1])*std::sin(theta1Down));
+    double theta3Down = std::asin((velocities[3]/velocities[2])*std::sin(theta2Down));
+    double theta3Up   = theta3Down;
+    double theta2Up   = theta2Down;
+    double theta1Up   = theta1Down; //M_PI - theta1Down;
+    double theta0Up   = std::asin((velocities[0]/velocities[1]*std::sin(theta1Up)));
+    //std::cout << theta0Up*180/M_PI << "," << theta1Up*180/M_PI << "," << theta1Down*180/M_PI << "," << theta0Up*180/M_PI << std::endl;
+    //std::cout << theta0Up << std::endl;
+    auto dz0Up   = interfaces[1] - stationDepth;
+    auto dz1Down = interfaces[2] - sourceDepth;
+    auto dz1Up   = interfaces[2] - interfaces[1];
+    auto dz2Down = interfaces[3] - interfaces[2];
+    auto dz2Up   = dz2Down;
+    auto dz3Down = interfaces[4] - interfaces[3];
+    auto dz3Up   = dz3Down;
+
+    double dx1Down = dz1Down*std::tan(theta1Down); //10972.622618039548
+    double dx2Down = dz2Down*std::tan(theta2Down); //8736.34515155134
+    double dx3Down = dz3Down*std::tan(theta3Down); //15081.670759818773
+    double dx3Up   = dz3Up*std::tan(theta3Up);
+    double dx2Up   = dz2Up*std::tan(theta2Up);
+    double dx1Up   = dz1Up*std::tan(theta1Up);
+    double dx0Up   = dz0Up*std::tan(theta0Up);
+
+    Path2D path1;
+    {   
+    Point2D point1{0, sourceDepth},
+            point2{dx1Down, 15600.0},
+            point3{dx1Down + dx1Up, 50},
+            point4{dx1Down + dx1Up + dx0Up, stationDepth};
+    Segment2D segment1, segment2, segment3, segment4;
+    segment1.setStartAndEndPoint(std::pair {point1, point2});
+    segment1.setSlowness(slownesses[1]);
+    segment1.setVelocityModelCellIndex(1);
+    segment2.setStartAndEndPoint(std::pair {point2, point3});
+    segment2.setSlowness(slownesses[1]);
+    segment2.setVelocityModelCellIndex(1);
+    segment3.setStartAndEndPoint(std::pair {point3, point4});
+    segment3.setSlowness(slownesses[0]);
+    segment3.setVelocityModelCellIndex(0);
+
+    path1.set( {segment1, segment2, segment3} );
+    }
+
+    Path2D path2;
+    {   
+    Point2D point1{0, sourceDepth},
+            point2{dx1Down, 15600.0},
+            point3{dx1Down + dx2Down, 26500},
+            point4{dx1Down + dx2Down + dx2Up, 15600},
+            point5{dx1Down + dx2Down + dx2Up + dx1Up, 50},
+            point6{dx1Down + dx2Down + dx2Up + dx1Up + dx0Up, stationDepth};
+    Segment2D segment1, segment2, segment3, segment4, segment5;
+    segment1.setStartAndEndPoint(std::pair {point1, point2});
+    segment1.setSlowness(slownesses[1]);
+    segment1.setVelocityModelCellIndex(1);
+    segment2.setStartAndEndPoint(std::pair {point2, point3});
+    segment2.setSlowness(slownesses[2]);
+    segment2.setVelocityModelCellIndex(2);
+    segment3.setStartAndEndPoint(std::pair {point3, point4});
+    segment3.setSlowness(slownesses[2]);
+    segment3.setVelocityModelCellIndex(2);
+    segment4.setStartAndEndPoint(std::pair {point4, point5});
+    segment4.setSlowness(slownesses[1]);
+    segment4.setVelocityModelCellIndex(1);
+    segment5.setStartAndEndPoint(std::pair {point5, point6});
+    segment5.setSlowness(slownesses[0]);
+    segment5.setVelocityModelCellIndex(0);
+
+    path2.set( {segment1, segment2, segment3, segment4, segment5} );
+    } 
+
+    Path2D path3;
+    {
+    Point2D point1{0, sourceDepth},
+            point2{dx1Down, 15600.0},
+            point3{dx1Down + dx2Down, 26500},
+            point4{dx1Down + dx2Down + dx3Down, 40500},
+            point5{dx1Down + dx2Down + dx3Down + dx3Up, 26500},
+            point6{dx1Down + dx2Down + dx3Down + dx3Up + dx2Up, 15600},
+            point7{dx1Down + dx2Down + dx3Down + dx3Up + dx2Up + dx1Up, 50},
+            point8{dx1Down + dx2Down + dx3Down + dx3Up + dx2Up + dx1Up + dx0Up, stationDepth};
+    Segment2D segment1, segment2, segment3, segment4, segment5, segment6, segment7;
+    segment1.setStartAndEndPoint(std::pair {point1, point2});
+    segment1.setSlowness(slownesses[1]);
+    segment1.setVelocityModelCellIndex(1);
+    segment2.setStartAndEndPoint(std::pair {point2, point3});
+    segment2.setSlowness(slownesses[2]);
+    segment2.setVelocityModelCellIndex(2);
+    segment3.setStartAndEndPoint(std::pair {point3, point4});
+    segment3.setSlowness(slownesses[3]);
+    segment3.setVelocityModelCellIndex(3);
+    segment4.setStartAndEndPoint(std::pair {point4, point5});
+    segment4.setSlowness(slownesses[3]);
+    segment4.setVelocityModelCellIndex(3);
+    segment5.setStartAndEndPoint(std::pair {point5, point6});
+    segment5.setSlowness(slownesses[2]);
+    segment5.setVelocityModelCellIndex(2);
+    segment6.setStartAndEndPoint(std::pair {point6, point7});
+    segment6.setSlowness(slownesses[1]);
+    segment6.setVelocityModelCellIndex(1);
+    segment7.setStartAndEndPoint(std::pair {point7, point8});
+    segment7.setSlowness(slownesses[0]);
+    segment7.setVelocityModelCellIndex(0);
+
+    path3.set( {segment1, segment2, segment3, segment4, segment5, segment6, segment7} );
+    }
+
+    std::vector<Path2D> paths{path1, path2, path3};
+    int iPath = 0;
+    for (int layer = sourceLayer; layer < nLayers - 1; ++layer)
+    {
+        std::vector<::Segment> segments;
+        auto returnCode = ::traceDownThenUp(interfaces,
+                                            slownesses,
+                                            takeOffAngle,
+                                            sourceLayer,
+                                            sourceDepth,
+                                            stationLayer,
+                                            stationOffset,
+                                            stationDepth,
+                                            layer,
+                                            &segments,
+                                            1);
+        EXPECT_TRUE(returnCode == ReturnCode::Hit ||
+                    returnCode == ReturnCode::UnderShot ||
+                    returnCode == ReturnCode::OverShot);
+        auto rayPath = ::toRayPath(segments);
+        //for (const auto &segment : rayPath){std::cout << segment << std::endl;}
+        //std::cout << std::endl;
+        //for (const auto &segment : paths[iPath]){std::cout << segment << std::endl;}
+        //std::cout << std::endl;
+        //getchar();
+        EXPECT_TRUE(rayPath == paths[iPath]);
+        iPath = iPath + 1;
+    }
+
 }
 
 TEST(Ray, LayerSolverHalfSpace)

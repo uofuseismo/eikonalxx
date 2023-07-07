@@ -1,3 +1,4 @@
+#include <string>
 #include <cmath>
 #include "eikonalxx/ray/segment2d.hpp"
 #include "eikonalxx/ray/point2d.hpp"
@@ -120,13 +121,20 @@ bool Segment2D::haveStartAndEndPoint() const noexcept
 /// Velocity
 void Segment2D::setVelocity(const double velocity)
 {
-    if (velocity <= 0){throw std::runtime_error("Velocity must be positive");}
+    if (velocity <= 0)
+    {
+        throw std::runtime_error("Velocity = " + std::to_string(velocity)
+                               + " must be positive");
+    }
     setSlowness(1./velocity);
 }
 
 void Segment2D::setSlowness(const double slowness)
 {
-    if (slowness <= 0){throw std::runtime_error("Slowness must be positive");}
+    if (slowness <= 0)
+    {
+        throw std::runtime_error("Slowness = " + std::to_string(slowness)
+                              + " must be positive");}
     pImpl->mSlowness = slowness;
 }
 
