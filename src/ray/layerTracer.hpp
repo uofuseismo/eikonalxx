@@ -451,7 +451,7 @@ ReturnCode traceDirect(const std::vector<double> &interfaces,
     assert(takeOffAngle > 90 && takeOffAngle <= 180);
     assert(sourceLayer >= 0 && sourceLayer < nLayers);
     assert(stationOffset >= 0);
-    assert(sourceDepth > stationDepth);
+    assert(sourceDepth >= stationDepth);
     assert(sourceDepth >= interfaces[sourceLayer] &&
            sourceDepth <  interfaces[sourceLayer + 1]);
     assert(stationDepth >= interfaces[stationLayer] &&

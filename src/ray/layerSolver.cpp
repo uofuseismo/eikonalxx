@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include <functional>
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -12,10 +13,14 @@
 #include "eikonalxx/ray/path2d.hpp"
 #include "eikonalxx/ray/point2d.hpp"
 #include "layerTracer.hpp"
+#include "optimize.hpp"
 
 /// 1.e-4 changes about 1 m for every 500 km
-#define MIN_DOWNGOING_ANGLE 1.e-4
+#define MIN_DOWNGOING_ANGLE 0.0
+//1.e-4
 #define MAX_DOWNGOING_ANGLE 89.9999
+#define MIN_UPGOING_ANGLE 90.0001
+#define MAX_UPGOING_ANGLE 180
 
 
 using namespace EikonalXX::Ray;
@@ -282,14 +287,13 @@ public:
     }
     /// @brief Shoots a ray with the given take-off angle.
     /// @note This cannot handle velocity inversions. 
-    std::vector<Path2D> shoot(const double takeOffAngle,
-                              const bool keepOnlyHits = true)
+    std::vector<Path2D> shoot(const double takeOffAngle)
     {
         std::vector<Path2D> result;
         // Edge case - straight down or up
         if (takeOffAngle < 1.e-4 || std::abs(180 - takeOffAngle) < 1.e-4)
         {
-            if (keepOnlyHits && mStationOffset > 1.e-4)
+            if (mKeepOnlyHits && mStationOffset < 1.e-4)
             {
                 auto temporaryRays = computeVerticalRayPaths();
                 result.reserve(temporaryRays.size());
@@ -334,8 +338,8 @@ public:
                                                 &segments,
                                                 mRayHitTolerance); 
                 if (returnCode == ReturnCode::Hit ||
-                    (!keepOnlyHits && returnCode == ReturnCode::UnderShot) ||
-                    (!keepOnlyHits && returnCode == ReturnCode::OverShot))
+                    (!mKeepOnlyHits && returnCode == ReturnCode::UnderShot) ||
+                    (!mKeepOnlyHits && returnCode == ReturnCode::OverShot))
                 {
                     auto rayPath = ::toRayPath(segments);
                     //std::cout << "Takeoff angle, travel time: " << takeOffAngle << "," << rayPath.getTravelTime() << std::endl;
@@ -347,7 +351,7 @@ public:
                 std::cerr << e.what() << std::endl;
             }
         }
-        else
+        else // Down-going rays
         {
             // Trace down through the velocity model stack and tabulate the
             // ray paths
@@ -369,8 +373,8 @@ public:
                                                         &segments,
                                                         mRayHitTolerance);
                     if (returnCode == ReturnCode::Hit ||
-                       (!keepOnlyHits && returnCode == ReturnCode::UnderShot) ||
-                       (!keepOnlyHits && returnCode == ReturnCode::OverShot))
+                       (!mKeepOnlyHits && returnCode == ReturnCode::UnderShot)||
+                       (!mKeepOnlyHits && returnCode == ReturnCode::OverShot))
                     {
                         auto rayPath = ::toRayPath(segments);
 /*
@@ -407,6 +411,7 @@ public:
         }
         return result;
     }
+/*
     std::pair<double, Path2D>
          quadraticFitSearch(const std::pair<double, double> &fa,
                             const std::pair<double, double> &fb,
@@ -444,7 +449,7 @@ public:
                 std::cerr << "Division by 0: " << xNum << ","
                           << xDen << std::endl;
             }
-            auto paths = shoot(xStar, keepOnlyHits);
+            auto paths = shoot(xStar);
             if (paths.empty())
             {
                 throw std::runtime_error("No paths converged");
@@ -487,18 +492,53 @@ public:
             }
         }
         return std::pair {xStar, fPath};
-    } 
-    [[nodiscard]] Path2D optimizeDownGoing()
+    }
+*/
+/*
+    [[nodiscard]] Path2D optimizeUpGoing()
     {
         Path2D optimalPath;
         // Initial bracketing
         int nInitialAngles{89};
         std::vector<double> takeOffAngles;
         computeTakeOffAngles(nInitialAngles,
+                             MAX_UPGOING_ANGLE, MIN_UPGOING_ANGLE,
+                             &takeOffAngles);
+        // Initially we'll take everything 
+        auto dAngle2 = std::abs(takeOffAngles.at(1) - takeOffAngles.at(0))/2;
+        std::vector<std::pair<double, double>> angleRayPath;
+        angleTravelTime.reserve(takeOffAngles.size());
+        auto tempKeepOnlyHits = mKeepOnlyHits;
+        mKeepOnlyHits = false;
+        for (auto &takeOffAngle : takeOffAngles)
+        {
+            auto work = shoot(takeOffAngle);
+            if (!work.empty())
+            {
+                angleTravelTime.push_back(std::pair {takeOffAngle,
+                                                     work[0].getTravelTime()});
+            }
+        }
+        // Now, let's make those misses as small as possible
+        for (int i = 0; i < nInitialAngles - 1; ++i)
+        {
+            angleTravelTime[i].second.getOffset(); 
+        }
+    }
+*/
+    [[nodiscard]] Path2D optimizeDownGoing()
+    {
+        Path2D optimalPath;
+        // Initial bracketing
+        int nInitialAngles{90};
+        std::vector<double> takeOffAngles;
+        computeTakeOffAngles(nInitialAngles,
                              MIN_DOWNGOING_ANGLE, MAX_DOWNGOING_ANGLE,
                              &takeOffAngles);
         auto dAngle2 = std::abs(takeOffAngles.at(1) - takeOffAngles.at(0))/2;
         std::vector<std::pair<double, double>> angleTravelTime;
+        auto tempKeepOnlyHits = mKeepOnlyHits;
+        mKeepOnlyHits = true;
         for (auto &takeOffAngle : takeOffAngles)
         {
             auto work = shoot(takeOffAngle);
@@ -512,6 +552,7 @@ public:
         if (angleTravelTime.empty())
         {
             //std::cout << "No downgoing ray paths converged" << std::endl;
+            mKeepOnlyHits = tempKeepOnlyHits;
             return optimalPath;
         }
         // Identify each candidate solution region
@@ -584,10 +625,11 @@ public:
              try
              {
                  auto [takeOffAngle, path]
-                     = quadraticFitSearch(angleTravelTime.at(ia),
-                                          angleTravelTime.at(ib),
-                                          angleTravelTime.at(ic),
-                                          5);
+                     = ::quadraticFitSearch(mShootRay,
+                                            angleTravelTime.at(ia),
+                                            angleTravelTime.at(ib),
+                                            angleTravelTime.at(ic),
+                                            5);
                  //std::cout << "Take-off angle, travel time: " << takeOffAngle << "," << path.getTravelTime() << std::endl;
                  if (path.getTravelTime() < minimumTravelTime)
                  {
@@ -601,6 +643,7 @@ public:
                  std::cerr << e.what() << std::endl;
              }
         }
+        mKeepOnlyHits = tempKeepOnlyHits;
         return optimalPath;
     }
     std::vector<Path2D> mRayPaths;
@@ -608,6 +651,10 @@ public:
     std::vector<double> mInterfaces;
     std::vector<double> mAugmentedSlownesses;
     std::vector<double> mAugmentedInterfaces;
+    std::function<std::vector<Path2D> (const double )> 
+        mShootRay{std::bind(&LayerSolverImpl::shoot,
+                            this,
+                            std::placeholders::_1)};
     double mRayHitTolerance{1};
     double mMaximumOffset{500000};
     double mStationDepth{0};
@@ -618,6 +665,7 @@ public:
     bool mHaveStationOffsetAndDepth{false};
     bool mHaveSourceDepth{false};
     bool mHaveRayPaths{false};
+    bool mKeepOnlyHits{true};
 };
 
 /// Constructor
@@ -803,7 +851,8 @@ std::vector<Path2D> LayerSolver::shoot(const double takeOffAngle,
     {
         throw std::invalid_argument("Take-off angle must be in range [0,180]");
     }
-    return pImpl->shoot(takeOffAngle, keepOnlyHits);
+    pImpl->mKeepOnlyHits = keepOnlyHits;
+    return pImpl->shoot(takeOffAngle);
 }
 
 /// Solve
@@ -836,8 +885,6 @@ void LayerSolver::solve()
         return;
     }
     // General case where we have to optimize
-//pImpl->shoot(39);//5);
-//getchar();
     // Are we in the same layer?  Then just shoot direct
     if (pImpl->mSourceLayer == pImpl->mStationLayer)
     {
