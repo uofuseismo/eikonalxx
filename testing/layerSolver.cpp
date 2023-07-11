@@ -346,6 +346,8 @@ TEST(Ray, LayerSolverDownGoingSameSourceStationDepthInternal)
     constexpr double stationDepth{depth};
     constexpr double stationOffset{20000};
     constexpr auto isAugmented{true};
+    constexpr bool allowCriticalRefractions{true};
+    constexpr double hitTolerance{1};
     auto sourceLayer  = ::getLayer(sourceDepth,  interfaces, isAugmented);
     auto stationLayer = ::getLayer(stationDepth, interfaces, isAugmented);
     EXPECT_EQ(sourceLayer,  0);
@@ -365,7 +367,8 @@ TEST(Ray, LayerSolverDownGoingSameSourceStationDepthInternal)
                                         stationDepth,
                                         0,
                                         &segments,
-                                        1);
+                                        allowCriticalRefractions,
+                                        hitTolerance);
     Point2D sourcePoint{0, sourceDepth};
     Point2D point01{1676.5317885936365, 50};
     Point2D point02{18323.46821140636,  50};
@@ -531,6 +534,7 @@ TEST(Ray, LayerSolverDownGoingSameSourceStationDepthInternal)
                                        stationDepth,
                                        layer,
                                        &segments,
+                                       true,
                                        1);
         EXPECT_TRUE(returnCode == ReturnCode::Hit ||
                     returnCode == ReturnCode::UnderShot ||
@@ -756,6 +760,7 @@ TEST(Ray, LayerSolverGeneralSourceBelowStationInternal)
                                             stationDepth,
                                             layer,
                                             &segments,
+                                            true,
                                             1);
         EXPECT_TRUE(returnCode == ReturnCode::Hit ||
                     returnCode == ReturnCode::UnderShot ||
@@ -937,8 +942,8 @@ TEST(Ray, SourceStationSameDepth)
                                              21.2718991617};
     std::vector<double> interfaces{-4500, 50, 15600, 26500, 40500};
     std::vector<double> velocities{   3500, 5900,  6400,  7500,  7900};
-    //::createReferenceSolution(depth, depth,
-    //                          interfaces, velocities, stationOffsets);
+//    ::createReferenceSolution(depth, depth,
+//                              interfaces, velocities, stationOffsets);
     LayerSolver solver;
     solver.setVelocityModel(interfaces, velocities);
     solver.setSourceDepth(depth);
@@ -952,10 +957,10 @@ TEST(Ray, SourceStationSameDepth)
         EXPECT_NEAR(referenceTravelTimes.at(iOffset),
                     rayPaths.at(0).getTravelTime(),
                     0.02); 
-        //std::cout << "Eikonal vs computed travel time: "
-        //          << referenceTravelTimes.at(iOffset) << "," 
-        //          << rayPaths.at(0).getTravelTime() << ","
-        //          << rayPaths.at(0).getTakeOffAngle() << std::endl;
+        std::cout << "Eikonal vs computed travel time: "
+                  << referenceTravelTimes.at(iOffset) << "," 
+                  << rayPaths.at(0).getTravelTime() << ","
+                  << rayPaths.at(0).getTakeOffAngle() << std::endl;
         //for (const auto &segment : rayPaths[0])
         //{
         //    std::cout << segment << std::endl;

@@ -25,119 +25,6 @@
 
 using namespace EikonalXX::Ray;
 
-namespace
-{
-
-enum class RayType
-{
-    Direct,
-    Reflected,
-    Refracted
-};
-
-//enum class ReturnCode
-//{
-//    Undershot,    /*!< The ray exited the of the medium before the station offset. */
-//    Overshot,     /*!< The ray exited the medium after the station offset. */
-//    ExitedBottom, /*!< The ray exited the bottom of the medium. */
-//    ExitedRight,  /*!< The ray exited the right side of the medium. */
-//    Hit,          /*!< The ray hit its intended target to within some tolerance. */
-//    RayDoesNotTurn,
-//    RayTurnsTooEarly
-//};
-
-/// Traces down then up where the source/receiver are at the same depth
-/// ------------- Interface 0
-/// *          x    Slowness 0       
-/// ------------- Interface 1
-///   \      /      Slowness 1
-///-------------- Interface 2
-///     \__/        Slowness 2
-///-------------- Interace 3
-///                 Slowness 3
-
-/// Traces up:
-/// ------------------------
-/// -                   x  -
-/// ------------------------
-/// -                 /    -
-/// -                /     -
-/// ------------------------
-/// -              /       -
-/// -            /         -
-/// -          *           -
-/// ------------------------
-ReturnCode traceDirectUp(const int stationLayer,
-                         const int sourceLayer,
-                         const double stationDepth,
-                         const double sourceDepth,
-                         const double offset,
-                         const double takeOffAngle,
-                         const int startIndex,
-                         const int endIndex,
-                         const std::vector<double> &interfaces,
-                         const std::vector<double> &slownesses,
-                         Path2D *path,
-                         const double tolerance = 10)
-{
-    path->clear();
-    if (takeOffAngle >= 90)
-    {
-        throw std::invalid_argument("Ray must be going up");
-    }
-    // Turn ray around and make it go up
-    auto takeOffAngleRadians = (180 - takeOffAngle)*(M_PI/180); 
-    // Trace to top layer
-    auto nLayers = static_cast<int> (interfaces.size());
-    double x0{0};
-    double z0{sourceDepth};
-    double z1 = interfaces[startIndex]; 
-    double dz = sourceDepth - z1;
-#ifndef NDEBUG
-    assert(dz >= 0); 
-#endif
-    double x1 = 0;
-    if (dz > 0)
-    {
-        x1 = dz*std::tan(takeOffAngleRadians);
-    }
-    // Trace out first layer
-    std::vector<::Segment> segments;
-    segments.reserve(2*nLayers);
-    ::Segment firstSegment{x0, z0, x1, z1, 
-                           slownesses.at(startIndex), startIndex};
-    segments.push_back(std::move(firstSegment));
-    for (int layer = startIndex; layer >= endIndex + 1; --layer)
-    {
-         
-    }
-}
-
-void computeTakeOffAngles(
-    const int n, const double theta0, const double theta1,
-    std::vector<double> *takeOffAngles)
-{
-#ifndef NDEBUG
-    assert(n > 0);
-#endif
-    if (static_cast<int> (takeOffAngles->size()) != n)
-    {
-        takeOffAngles->resize(n);
-    }
-    if (n == 1)
-    {
-        takeOffAngles->at(0) = 0.5*(theta0 + theta1);
-    }
-    auto dTheta = (theta1 - theta0)/(n - 1);
-    auto *__restrict__ takeOffAnglePointer = takeOffAngles->data();
-    for (int i = 0; i < n; ++i)
-    {
-        takeOffAnglePointer[i] = theta0 + dTheta*i;
-    }
-}
-
-}
-
 class LayerSolver::LayerSolverImpl
 {
 public:
@@ -289,6 +176,20 @@ public:
     /// @note This cannot handle velocity inversions. 
     std::vector<Path2D> shoot(const double takeOffAngle)
     {
+        auto lastLayer = static_cast<int> (mAugmentedInterfaces.size()) - 2;
+        constexpr bool allowCriticalRefractions{true};
+        return ::shoot(takeOffAngle,
+                       mAugmentedInterfaces,
+                       mAugmentedSlownesses,
+                       mSourceLayer,
+                       mSourceDepth,
+                       mStationLayer,
+                       mStationOffset,
+                       mStationDepth,
+                       allowCriticalRefractions,
+                       mRayHitTolerance,
+                       mKeepOnlyHits,
+                       lastLayer);
         std::vector<Path2D> result;
         // Edge case - straight down or up
         if (takeOffAngle < 1.e-4 || std::abs(180 - takeOffAngle) < 1.e-4)
@@ -371,6 +272,7 @@ public:
                                                         mStationDepth,
                                                         endLayer,
                                                         &segments,
+                                                        mAllowCriticalRefractions,
                                                         mRayHitTolerance);
                     if (returnCode == ReturnCode::Hit ||
                        (!mKeepOnlyHits && returnCode == ReturnCode::UnderShot)||
@@ -535,17 +437,22 @@ public:
         computeTakeOffAngles(nInitialAngles,
                              MIN_DOWNGOING_ANGLE, MAX_DOWNGOING_ANGLE,
                              &takeOffAngles);
+        takeOffAngles.push_back(::computeCriticalAngle(mAugmentedSlownesses.at(mSourceLayer), mAugmentedSlownesses.at(mSourceLayer + 1))*180/M_PI + 1.e-8);
+        std::sort(takeOffAngles.begin(), takeOffAngles.end());
+
         auto dAngle2 = std::abs(takeOffAngles.at(1) - takeOffAngles.at(0))/2;
         std::vector<std::pair<double, double>> angleTravelTime;
         auto tempKeepOnlyHits = mKeepOnlyHits;
         mKeepOnlyHits = true;
         for (auto &takeOffAngle : takeOffAngles)
         {
-            auto work = shoot(takeOffAngle);
+            auto work = this->shoot(takeOffAngle);
             if (!work.empty())
             {
                 angleTravelTime.push_back(std::pair {takeOffAngle,
                                                      work[0].getTravelTime()}); 
+auto nSegments = work[0].size() - 1;
+std::cout << mStationOffset << "," << takeOffAngle << "," << work[0].getTravelTime() << "," << work[0].at(nSegments).getEndPoint().getPositionInX() << std::endl;
             }
         }
         // Probably too close
@@ -560,14 +467,15 @@ public:
         if (angleTravelTime.size() == 1)
         {
             auto theta0 = std::max(MIN_DOWNGOING_ANGLE,
-                                   angleTravelTime[0].first - dAngle2);
+                                   angleTravelTime.at(0).first - dAngle2);
             auto theta1 = std::min(MAX_DOWNGOING_ANGLE,
-                                   angleTravelTime[0].first + dAngle2);
+                                   angleTravelTime.at(0).first + dAngle2);
             brackets.push_back(std::pair {theta0, theta1});
         }
         else
         {
             auto nAngles = static_cast<int> (angleTravelTime.size());
+std::cout << nAngles << std::endl;
             for (int i = 1; i < nAngles - 1; ++i)
             {
                 auto thisTravelTime = angleTravelTime[i].second;
@@ -622,6 +530,7 @@ public:
              auto ia = bracket.first;
              auto ib = ia + 1;
              auto ic = bracket.second;
+             if (ib >= angleTravelTime.size()){continue;} // kludge
              try
              {
                  auto [takeOffAngle, path]
@@ -633,6 +542,7 @@ public:
                  //std::cout << "Take-off angle, travel time: " << takeOffAngle << "," << path.getTravelTime() << std::endl;
                  if (path.getTravelTime() < minimumTravelTime)
                  {
+                     //std::cout << mStationOffset << "," << path.getTravelTime() << std::endl;
                      optimalPath = path;
                      optimumTakeOffAngle = takeOffAngle;
                      minimumTravelTime = path.getTravelTime();
@@ -655,7 +565,7 @@ public:
         mShootRay{std::bind(&LayerSolverImpl::shoot,
                             this,
                             std::placeholders::_1)};
-    double mRayHitTolerance{1};
+    double mRayHitTolerance{150};
     double mMaximumOffset{500000};
     double mStationDepth{0};
     double mSourceDepth{0};
@@ -665,6 +575,7 @@ public:
     bool mHaveStationOffsetAndDepth{false};
     bool mHaveSourceDepth{false};
     bool mHaveRayPaths{false};
+    bool mAllowCriticalRefractions{true};
     bool mKeepOnlyHits{true};
 };
 
@@ -890,22 +801,35 @@ void LayerSolver::solve()
     {
         pImpl->mRayPaths.push_back(pImpl->computeDirectRaySameLayer());
     }
-    // Solve general case
-    auto optimalDownGoingPath = pImpl->optimizeDownGoing();
-    if (optimalDownGoingPath.size() > 0)
+    // Optimize the critically refracted rays
+    auto refractedRayPaths = optimizeCriticallyRefracted(
+        pImpl->mAugmentedInterfaces,
+        pImpl->mAugmentedSlownesses,
+        pImpl->mSourceLayer,
+        pImpl->mSourceDepth,
+        pImpl->mStationLayer,
+        pImpl->mStationDepth,
+        pImpl->mStationOffset);
+    if (!refractedRayPaths.empty())
     {
-/*
-        for (const auto &p : optimalDownGoingPath)
-        {
-            std::cout << std::setprecision(12) << p.getStartPoint().getPositionInX() << ","
-                      << p.getStartPoint().getPositionInZ() << ","
-                      << p.getEndPoint().getPositionInX() << ","
-                      << p.getEndPoint().getPositionInZ() << ","
-                      << p.getVelocity() << std::endl;
-        }
-*/
-        pImpl->mRayPaths.push_back(std::move(optimalDownGoingPath));
+        pImpl->mRayPaths.insert(pImpl->mRayPaths.end(),
+                                refractedRayPaths.begin(),
+                                refractedRayPaths.end());
     }
+    // Solve general case
+    //auto optimalDownGoingPath = pImpl->optimizeDownGoing();
+    //if (optimalDownGoingPath.size() > 0)
+    //{
+        //for (const auto &p : optimalDownGoingPath)
+        //{
+        //    std::cout << std::setprecision(12) << p.getStartPoint().getPositionInX() << ","
+        //              << p.getStartPoint().getPositionInZ() << ","
+        //              << p.getEndPoint().getPositionInX() << ","
+        //              << p.getEndPoint().getPositionInZ() << ","
+        //              << p.getVelocity() << std::endl;
+        //}
+        //pImpl->mRayPaths.push_back(std::move(optimalDownGoingPath));
+    //}
     // Sort these
     std::sort(pImpl->mRayPaths.begin(), pImpl->mRayPaths.end(), 
               [&](const Path2D &lhs, const Path2D &rhs)
