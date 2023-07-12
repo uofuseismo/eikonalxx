@@ -7,10 +7,86 @@
 #ifndef NDEBUG
 #include <cassert>
 #endif
+#include <boost/math/tools/roots.hpp>
+#include <boost/math/tools/minima.hpp>
 #include "layerTracer.hpp"
 #include "eikonalxx/ray/path2d.hpp"
 namespace
 {
+
+struct IObjectiveFunction 
+{
+    virtual double operator()(const double &) const = 0;
+};
+
+struct DirectObjectiveFunction : public IObjectiveFunction
+{
+    DirectObjectiveFunction(const std::vector<double> &augmentedInterfacesIn,
+                            const std::vector<double> &augmentedSlownessesIn,
+                            const double sourceDepthIn,
+                            const double stationDepthIn,
+                            const double stationOffsetIn,
+                            const int sourceLayerIn,
+                            const int stationLayerIn) :
+        augmentedInterfaces(augmentedInterfacesIn),
+        augmentedSlownesses(augmentedSlownessesIn),
+        sourceDepth(sourceDepthIn),
+        stationDepth(stationDepthIn),
+        stationOffset(stationOffsetIn),
+        sourceLayer(sourceLayerIn),
+        stationLayer(stationLayerIn)
+    {
+    }
+
+    double operator()(const double &takeOffAngle) const override
+    {
+        nEvaluations = nEvaluations + 1;
+        constexpr bool allowCriticalRefractions{false};
+        constexpr bool keepOnlyHits{false};
+        constexpr double rayHitTolerance{1};
+        int lastLayer =-1; // Doesn't matter
+        auto paths = ::shoot(takeOffAngle,
+                             augmentedInterfaces,
+                             augmentedSlownesses,
+                             sourceLayer,
+                             sourceDepth,
+                             stationLayer,
+                             stationOffset,
+                             stationDepth,
+                             allowCriticalRefractions,
+                             rayHitTolerance,
+                             keepOnlyHits,
+                             lastLayer);
+        if (!paths.empty())
+        {
+            // Otherwise the fastest ray
+            if (paths.size() > 1 && std::abs(takeOffAngle - 180) > 1.e-10)
+            {
+                std::cerr << "Should be only 1 direct ray; size = "
+                          << paths.size() << std::endl;
+            }
+            rayPath = paths.at(0);
+            auto nSegments = rayPath.size();
+            auto lastSegment = rayPath.at(nSegments - 1); 
+            auto xOffset = stationOffset
+                         - lastSegment.getEndPoint().getPositionInX();
+            if (takeAbsoluteValue){xOffset = std::abs(xOffset);}
+            return xOffset;
+        }
+        throw std::runtime_error("No paths for direct wave");
+    }
+    mutable EikonalXX::Ray::Path2D rayPath;
+    std::vector<double> augmentedInterfaces;
+    std::vector<double> augmentedSlownesses;
+    double sourceDepth;
+    double stationDepth;
+    double stationOffset;
+    int sourceLayer;
+    int stationLayer;
+    bool takeAbsoluteValue{false};
+    mutable int nEvaluations{0};
+};
+
 /// @result 
 void computeTakeOffAngles(
     const int n, const double theta0, const double theta1,
@@ -37,19 +113,17 @@ void computeTakeOffAngles(
 
 [[nodiscard]]
 /// @param[in] shootRay  A function, that given a take-off angle, shoots a
-///                      ray.
-/// @param[in] fa  The left-bracketing take-off angle and travel time.
-/// @param[in] fb  An intermediate take-off angle and travel time.
-/// @param[in] fc  The right-bracketing take-off angle and travel time.
+///                      ray and computes the offset.
+/// @param[in] fa  The left-bracketing take-off angle and offset.
+/// @param[in] fb  An intermediate take-off angle and offset.
+/// @param[in] fc  The right-bracketing take-off angle and offset.
 /// @param[in] nIterations  The number of iterations in the optimization.
 /// @result The optimal take-off angle and ray path.
-std::pair<double, EikonalXX::Ray::Path2D>
-    quadraticFitSearch(std::function< std::vector<EikonalXX::Ray::Path2D>
-                       (const double)> &shootRay,
-                       const std::pair<double, double> &fa,
-                       const std::pair<double, double> &fb,
-                       const std::pair<double, double> &fc,
-                       const int nIterations = 5)
+double quadraticFitSearch(const IObjectiveFunction &objectiveFunction,
+                          const std::pair<double, double> &fa,
+                          const std::pair<double, double> &fb,
+                          const std::pair<double, double> &fc,
+                          const int nIterations = 7)
 {
     constexpr double third{1./3.};
     auto a  = fa.first;
@@ -60,7 +134,6 @@ std::pair<double, EikonalXX::Ray::Path2D>
     auto yc = fc.second;
     auto xStar = third*(a + b + c);
     auto fStar = std::max(ya, std::max(yb, yc));
-    EikonalXX::Ray::Path2D fPath;
     for (int k = 0; k < nIterations; ++k)
     {
 #ifndef NDEBUG
@@ -81,24 +154,21 @@ std::pair<double, EikonalXX::Ray::Path2D>
         {
             std::cerr << "Division by 0: " << xNum << ","
                       << xDen << std::endl;
+            if (ya < yb && ya < yc){return a;}
+            if (yb < ya && yb < yc){return b;}
+            return c;
         }
-        std::vector<EikonalXX::Ray::Path2D> paths;
         try
         {
-            paths = shootRay(xStar);
-            if (paths.empty())
-            {
-                throw std::runtime_error("No paths converged an angle: "
-                                       + std::to_string(xStar));
-            }
+            fStar = objectiveFunction(xStar); 
         }
         catch (const std::exception &e)
         {
-            throw std::runtime_error("Optimization failed: "
-                                   + std::string{e.what()});
+            std::cerr << e.what() << std::endl;
+            if (ya < yb && ya < yc){return a;} 
+            if (yb < ya && yb < yc){return b;} 
+            return c;
         }
-        fPath = paths.at(0);
-        fStar = fPath.getTravelTime();
         if (xStar > b)
         {
             if (fStar > yb) 
@@ -131,21 +201,163 @@ std::pair<double, EikonalXX::Ray::Path2D>
         }
         else
         {
-            return std::pair {b, fPath};
+            return b;
         }
     }
-    return std::pair {xStar, fPath};
+    return xStar;
 }
-
-/*
-void optimizeUpGoing()
-{
-
-}
-*/
 
 std::vector<EikonalXX::Ray::Path2D>
-   optimizeCriticallyRefracted(
+    optimizeDirect(
+    const std::vector<double> &augmentedInterfaces,
+    const std::vector<double> &augmentedSlownesses,
+    const int sourceLayer,
+    const double sourceDepth,
+    const int stationLayer,
+    const double stationDepth,
+    const double stationOffset,
+    const double rayHitTolerance,
+    const int nBits = 30)
+{
+    std::vector<EikonalXX::Ray::Path2D> rayPaths;
+    // Source layer = stations layer -> easy
+    if (sourceLayer == stationLayer)
+    {
+        EikonalXX::Ray::Path2D path;
+#ifndef NDEBUG
+        auto result =
+#endif
+        ::traceDirectSameLayer(augmentedInterfaces,
+                               augmentedSlownesses,
+                               sourceLayer,
+                               sourceDepth,
+                               stationLayer,
+                               stationOffset,
+                               stationDepth,
+                               &path);
+#ifndef NDEBUG
+        assert(result == ReturnCode::Hit);
+#endif
+        rayPaths.push_back(path);
+        return rayPaths;
+    }
+    // Flip the problem around
+    if (stationDepth > sourceDepth)
+    {
+        std::cout << "Station below source for direct" << std::endl;
+        rayPaths = ::optimizeDirect(augmentedInterfaces,
+                                    augmentedSlownesses,
+                                    stationLayer,
+                                    stationDepth,
+                                    sourceLayer,
+                                    sourceDepth,
+                                    stationOffset,
+                                    rayHitTolerance);
+        for (auto &rayPath : rayPaths)
+        {
+            rayPath.reverse();
+        }
+        return rayPaths;
+    }
+    DirectObjectiveFunction objectiveFunction{augmentedInterfaces,
+                                              augmentedSlownesses,
+                                              sourceDepth,
+                                              stationDepth,
+                                              stationOffset,
+                                              sourceLayer,
+                                              stationLayer};
+    // Make a bunch of take-off angles
+    constexpr int nInitialAngles{90};
+    constexpr double thetaMin{ 90.0001};
+    constexpr double thetaMax{180};
+    std::vector<double> takeOffAngles;
+    // Do this in reverse
+    ::computeTakeOffAngles(nInitialAngles, thetaMin, thetaMax, &takeOffAngles);
+    // Shoot these rays
+    std::vector<std::pair<double, double>> angleOffsets;
+    angleOffsets.reserve(takeOffAngles.size());
+    for (const auto &takeOffAngle : takeOffAngles)
+    {
+        try
+        {
+            angleOffsets.push_back(std::pair {takeOffAngle,
+                                              objectiveFunction(takeOffAngle)});
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << e.what() << std::endl;
+        }
+/*
+        constexpr bool allowCriticalRefractions{false};
+        constexpr bool keepOnlyHits{false};
+        auto paths = ::shoot(takeOffAngle,
+                             augmentedInterfaces,
+                             augmentedSlownesses,
+                             sourceLayer,
+                             sourceDepth,
+                             stationLayer,
+                             stationOffset,
+                             stationDepth,
+                             allowCriticalRefractions,
+                             rayHitTolerance,
+                             keepOnlyHits,
+                             lastLayer);
+        if (!paths.empty())
+        {
+            // Otherwise the fastest ray
+            if (paths.size() > 1 && std::abs(takeOffAngle - 180) > 1.e-10)
+            {
+                std::cerr << "Should be only 1 direct ray; size = "
+                          << paths.size() << std::endl;
+            }
+            const auto firstPath = paths.at(0);
+            auto nSegments = firstPath.size();
+            auto lastSegment = firstPath.at(nSegments - 1);
+            auto xOffset = lastSegment.getEndPoint().getPositionInX()
+                         - stationOffset;
+            angleOffsets.push_back(std::pair {takeOffAngle, xOffset});
+        }
+*/
+    }
+    // Nothing hit
+    if (angleOffsets.empty()){return rayPaths;}
+    // Now we optimize in the bracketed solution(s)
+    auto nPaths = static_cast<int> (angleOffsets.size());
+    objectiveFunction.takeAbsoluteValue = true; // Switch to minimization
+    for (int iPath = 0; iPath < nPaths - 1; ++iPath)
+    {
+        if (std::copysign(1.0, angleOffsets[iPath].second) !=
+            std::copysign(1.0, angleOffsets[iPath + 1].second))
+        {
+            std::uintmax_t maxIterations{1000};
+            auto takeOffAngle0 = angleOffsets[iPath].first;
+            auto takeOffAngle1 = angleOffsets[iPath + 1].first;
+            try
+            {
+                std::pair<double, double> result
+                    = boost::math::tools::brent_find_minima(objectiveFunction,
+                                                        takeOffAngle0,
+                                                        takeOffAngle1,
+                                                        nBits,
+                                                        maxIterations);
+                 //std::cout << takeOffAngle0 << " " << result.first << " " << takeOffAngle1 << " | " << result.second << " " << maxIterations << std::endl;
+                 objectiveFunction(result.first);
+                 //std::cout << objectiveFunction.rayPath.getTravelTime() << std::endl;
+                 rayPaths.push_back(objectiveFunction.rayPath);
+            }
+            catch (const std::exception &e)
+            {
+                 std::cerr << e.what() << std::endl;
+            }
+        }
+    }
+    return rayPaths;
+}
+
+/// @brief Optimizes the critically refracted arrivals.  
+/// @note This assumes the velocities increase with depth.
+std::vector<EikonalXX::Ray::Path2D>
+    optimizeCriticallyRefracted(
     const std::vector<double> &augmentedInterfaces,
     const std::vector<double> &augmentedSlownesses,
     const int sourceLayer,
@@ -163,9 +375,9 @@ std::vector<EikonalXX::Ray::Path2D>
         rayPaths = ::optimizeCriticallyRefracted(augmentedInterfaces,
                                                  augmentedSlownesses,
                                                  stationLayer,
-                                                 sourceDepth,
-                                                 stationLayer,
                                                  stationDepth,
+                                                 sourceLayer,
+                                                 sourceDepth,
                                                  stationOffset);
         for (auto &rayPath : rayPaths)
         {
@@ -188,27 +400,60 @@ std::vector<EikonalXX::Ray::Path2D>
     // And following the recursion down we get, in general, for a velocity
     // model where the velocities increase with depth:
     // -> i = asin(V_{sourceLayer}/V_{i+1})
-    // Step 1: Tabulate all the critical angles
+    // However, more generally, I've found it advantageous to simply
+    // try every critical angle.  So that's what we do assuming the
+    // velocities increase with depth.
     std::vector<double> takeOffAngles;
     int nLayers = static_cast<int> (augmentedSlownesses.size()) - 1;
     auto lastLayer = nLayers - 1;
-    takeOffAngles.reserve(nLayers);
-    for (int layer = sourceLayer + 1; layer < nLayers; ++layer)
+    takeOffAngles.reserve(nLayers*(nLayers + 1));
+/*
+    auto startLayer = std::min(sourceLayer, stationLayer);
+    for (int layer = startLayer + 1; layer < nLayers; ++layer)
     {
-        if (augmentedSlownesses[sourceLayer] < augmentedSlownesses[layer])
+        if (augmentedSlownesses[startLayer] < augmentedSlownesses[layer])
         {
             std::cerr << "Velocity inversion exists!" << std::endl;
         }
-        auto angle = ::computeCriticalAngle(augmentedSlownesses[sourceLayer],
+        auto angle = ::computeCriticalAngle(augmentedSlownesses[startLayer],
                                             augmentedSlownesses[layer]);
         // Pad just a touch in case we get burned by inexact math
-        takeOffAngles.push_back(angle*(180/M_PI) + 1.e-10);
+        takeOffAngles.push_back(angle*(180./M_PI) + 1.e-10);
     }
+*/
+    for (int iLayer = 0; iLayer < nLayers - 1; ++iLayer)
+    {
+        if (augmentedSlownesses.at(iLayer) < augmentedSlownesses.at(iLayer + 1))
+        {
+            std::cerr << "Velocity inversion exists!" << std::endl;
+        }
+        for (int jLayer = iLayer + 1; jLayer < nLayers; ++jLayer)
+        {
+
+            auto angle = ::computeCriticalAngle(augmentedSlownesses.at(iLayer), 
+                                                augmentedSlownesses.at(jLayer));
+            // Pad just a touch in case we get burned by inexact math
+            takeOffAngles.push_back(angle*(180./M_PI) + 1.e-10);
+        }
+    }
+/*
+    for (int layer = 1; layer < nLayers; ++layer)
+    {
+        auto angle = ::computeCriticalAngle(augmentedSlownesses[layer - 1],
+                                            augmentedSlownesses[layer]);
+        // Pad just a touch in case we get burned by inexact math
+        takeOffAngles.push_back(angle*(180./M_PI) + 1.e-10);
+    }
+*/
+    std::sort(takeOffAngles.begin(), takeOffAngles.end());
+    takeOffAngles.erase(std::unique(takeOffAngles.begin(),
+                                    takeOffAngles.end()), takeOffAngles.end());
     // Shoot these rays
     for (const auto &takeOffAngle : takeOffAngles)
     {
+        //std::cout << takeOffAngle << std::endl;
         constexpr bool allowCriticalRefractions{true};
-        constexpr bool keepOnlyHits{true}; 
+        constexpr bool keepOnlyHits{true};
         auto paths = ::shoot(takeOffAngle,
                              augmentedInterfaces,
                              augmentedSlownesses,

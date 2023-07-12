@@ -437,7 +437,6 @@ ReturnCode traceDown(const std::vector<double> &interfaces,
 }
 
 /// Traces from a direct ray upwards
-[[nodiscard]]
 ReturnCode traceDirect(const std::vector<double> &interfaces,
                        const std::vector<double> &slownesses,
                        const double takeOffAngle,
@@ -581,7 +580,10 @@ ReturnCode traceDownThenUp(const std::vector<double> &augmentedInterfaces,
         return result;
     }
     // Trace the bottom segments from source to `source'
-    auto offsetUp = upSegments.back().x1 - upSegments.front().x0;
+#ifndef NDEBUG
+    assert(upSegments.front().x0 == 0);
+#endif
+    auto offsetUp = upSegments.back().x1;
     std::vector<::Segment> downSegments;
     result = ::traceDownThenUp(augmentedInterfaces,
                                augmentedSlownesses,
@@ -589,7 +591,7 @@ ReturnCode traceDownThenUp(const std::vector<double> &augmentedInterfaces,
                                sourceLayer,
                                sourceDepth,
                                sourceLayer, 
-                               offsetUp,
+                               std::max(0.0, stationOffset - offsetUp),
                                sourceDepth,
                                endLayer,
                                &downSegments,
@@ -814,22 +816,40 @@ std::vector<EikonalXX::Ray::Path2D>
 {
     std::vector<EikonalXX::Ray::Path2D> result;
     // Edge case - straight down or up
-    if (takeOffAngle < 1.e-4 || std::abs(180 - takeOffAngle) < 1.e-4)
+    if (takeOffAngle < 1.e-7 || std::abs(180 - takeOffAngle) < 1.e-7)
     {
-        if (keepOnlyHits && stationOffset < 1.e-4)
+        if (keepOnlyHits && stationOffset < rayHitTolerance)
         {
             std::vector<EikonalXX::Ray::Path2D> temporaryRays;  
             try
             {
-                temporaryRays
-                   = ::computeVerticalRayPaths(augmentedInterfaces,
-                                               augmentedSlownesses,
-                                               sourceLayer,
-                                               sourceDepth,
-                                               stationLayer,
-                                               stationDepth,
-                                               stationOffset,
-                                               rayHitTolerance);
+                if (takeOffAngle < 1.e-7)
+                {
+                    temporaryRays
+                       = ::computeVerticalRayPaths(augmentedInterfaces,
+                                                   augmentedSlownesses,
+                                                   sourceLayer,
+                                                   sourceDepth,
+                                                   stationLayer,
+                                                   stationDepth,
+                                                   stationOffset,
+                                                   rayHitTolerance);
+                }
+                else
+                {
+                    std::vector<::Segment> segments;
+                    ::traceDirect(augmentedInterfaces,
+                                  augmentedSlownesses,
+                                  180,
+                                  sourceLayer,
+                                  sourceDepth,
+                                  stationLayer,
+                                  stationOffset,
+                                  stationDepth,
+                                  &segments,
+                                  rayHitTolerance); 
+                    temporaryRays.push_back(::toRayPath(segments));
+                }
             }
             catch (const std::exception &e)
             {
@@ -855,14 +875,32 @@ std::vector<EikonalXX::Ray::Path2D>
         {
             try
             {
-                result = ::computeVerticalRayPaths(augmentedInterfaces,
-                                                   augmentedSlownesses,
-                                                   sourceLayer,
-                                                   sourceDepth,
-                                                   stationLayer,
-                                                   stationDepth,
-                                                   stationOffset,
-                                                   rayHitTolerance);
+                if (takeOffAngle < 1.e-7)
+                {
+                    result = ::computeVerticalRayPaths(augmentedInterfaces,
+                                                       augmentedSlownesses,
+                                                       sourceLayer,
+                                                       sourceDepth,
+                                                       stationLayer,
+                                                       stationDepth,
+                                                       stationOffset,
+                                                       rayHitTolerance);
+                }
+                else
+                {
+                    std::vector<::Segment> segments;
+                    ::traceDirect(augmentedInterfaces,
+                                  augmentedSlownesses,
+                                  180,
+                                  sourceLayer,
+                                  sourceDepth,
+                                  stationLayer,
+                                  stationOffset,
+                                  stationDepth,
+                                  &segments,
+                                  rayHitTolerance); 
+                    result.push_back(::toRayPath(segments));
+                }
             }
             catch (const std::exception &e)
             {
@@ -873,12 +911,12 @@ std::vector<EikonalXX::Ray::Path2D>
         return result;
     }
     // 90 degree take-off angles won't converge
-    if (std::abs(takeOffAngle - 90) < 1.e-4){return result;}
+    if (std::abs(takeOffAngle - 90) < 1.e-7){return result;}
     // Up-going rays
     if (takeOffAngle > 90)
     {
         // Not bouncing off above layers so just quit now
-        if (stationDepth < sourceDepth){return result;}
+        if (stationDepth > sourceDepth){return result;}
         std::vector<::Segment> segments;
         try
         {
@@ -897,7 +935,16 @@ std::vector<EikonalXX::Ray::Path2D>
                 (!keepOnlyHits && returnCode == ReturnCode::OverShot))
             {
                 auto rayPath = ::toRayPath(segments);
-                //std::cout << "Offset, takeoff angle, travel time: " << stationOffset << "," << takeOffAngle << "," << rayPath.getTravelTime() << std::endl;
+                //auto descriptor = "Hit";
+                //if (returnCode == ReturnCode::UnderShot)
+                //{
+                //    descriptor = "Under-shot";
+                //}
+                //else if (returnCode == ReturnCode::OverShot)
+                //{
+                //    descriptor = "Over-shot";
+                //}
+                //std::cout << descriptor << " offset, takeoff angle, travel time: " << stationOffset << "," << takeOffAngle << "," << rayPath.getTravelTime() << std::endl;
                 result.push_back(rayPath);
             }
         }

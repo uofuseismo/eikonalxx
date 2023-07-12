@@ -1,3 +1,5 @@
+#include <iostream>
+#include <iomanip>
 #include <cmath>
 #include <vector>
 #include <limits>
@@ -210,14 +212,48 @@ bool Path2D::empty() const noexcept
 double Path2D::getTakeOffAngle() const
 {
     if (empty()){throw std::runtime_error("No segments in path");}
-    auto point0 = pImpl->mSegments.at(0).getStartPoint();
-    auto point1 = pImpl->mSegments.at(0).getEndPoint();
-    auto dx = point1.getPositionInX() - point0.getPositionInX();
-    auto dz = point1.getPositionInZ() - point0.getPositionInZ();
+    auto nSegments = pImpl->mSegments.size();
+    double dx = 0;
+    double dz = 0;
+    bool foundOne = false;
+    // TODO i might want to average the first few
+    double oneTakeOffAngle = 0;
+    double averageTakeOffAngle = 0;
+    int nAverage = 1;
+    int iAverage = 0;
+    for (int i = 0; i < nSegments; ++i)
+    {
+        if (pImpl->mSegments.at(i).getLength() > 0)
+        {
+            auto point0 = pImpl->mSegments.at(i).getStartPoint();
+            auto point1 = pImpl->mSegments.at(i).getEndPoint();
+            dx = point1.getPositionInX() - point0.getPositionInX();
+            dz = point1.getPositionInZ() - point0.getPositionInZ();
+            auto angle = std::atan2(std::abs(dx), dz)*(180/M_PI);
+            if (!foundOne)
+            {
+                oneTakeOffAngle = angle;
+            }
+            averageTakeOffAngle = averageTakeOffAngle + angle;
+            iAverage = iAverage + 1;
+            foundOne = true;
+            if (iAverage == nAverage){break;}
+         }
+    }
+    if (!foundOne)
+    {
+        std::cerr << "There may exist a zero-length segment at start"
+                  << std::endl;
+    }
+//std::cout << std::setprecision(16) << dx << "," << dz << std::endl;
     // +z is down so this is like atan2's +x
     // +x is is like atan2's +y.  however, i don't care about the sign
     // function is : atan2(y, x) -> atan2(dx, dz)
-    return std::atan2(std::abs(dx), dz)*(180/M_PI);
+    if (iAverage == nAverage)
+    {
+        return averageTakeOffAngle/nAverage;
+    }
+    return oneTakeOffAngle;
 }
 
 /// Travel time

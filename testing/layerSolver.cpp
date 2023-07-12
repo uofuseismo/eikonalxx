@@ -909,7 +909,7 @@ TEST(Ray, LayerSolverVerticalDown)
 }
 */
 
-TEST(Ray, SourceStationSameDepth)
+TEST(Ray, FirstArrivalSourceStationSameDepth)
 {
     constexpr double depth{-2000};
     std::vector<double> stationOffsets{1000,
@@ -965,6 +965,64 @@ TEST(Ray, SourceStationSameDepth)
         //{
         //    std::cout << segment << std::endl;
         //}
+    }
+}
+
+TEST(Ray, FirstArrivalSourceDeeperThanStation)
+{
+    constexpr double stationDepth{-1400};
+    constexpr double sourceDepth{18000};
+    std::vector<double> stationOffsets{0,
+                                       1000,
+                                       5000,
+                                       7500,
+                                       10000,
+                                       15000,
+                                       20000,
+                                       30000,
+                                       40000,
+                                       50000,
+                                       60000,
+                                       80000,
+                                       100000,
+                                       120000};
+    // TODO travel times from numerical ray paths seem more accurate.
+    // Why is eikonal fast by 0.01 seconds?
+    std::vector<double> referenceTravelTimes{3.42088702324,
+                                             3.42541195061,
+                                             3.53043481827,
+                                             3.66244781813,
+                                             3.83923874418,
+                                             4.30245895143,
+                                             4.87382792766,
+                                             6.20981834293,
+                                             7.67981680992,
+                                             9.20774986021,
+                                             10.7572145407,
+                                             13.8730672134,
+                                             16.8996388956,
+                                             19.5663055623};
+    std::vector<double> interfaces{-4500, 50, 15600, 26500, 40500};
+    std::vector<double> velocities{   3500, 5900,  6400,  7500,  7900};
+//    ::createReferenceSolution(sourceDepth, stationDepth,
+//                              interfaces, velocities, stationOffsets);
+    LayerSolver solver;
+    solver.setVelocityModel(interfaces, velocities);
+    solver.setSourceDepth(sourceDepth);
+    for (int iOffset = 0;
+         iOffset < static_cast<int> (stationOffsets.size());
+         ++iOffset)
+    {
+        solver.setStationOffsetAndDepth(stationOffsets[iOffset], stationDepth);
+        solver.solve();
+        auto rayPaths = solver.getRayPaths();
+        EXPECT_NEAR(referenceTravelTimes.at(iOffset),
+                    rayPaths.at(0).getTravelTime(),
+                    0.02); 
+        std::cout << "Eikonal vs computed travel time for test 2: "
+                  << referenceTravelTimes.at(iOffset) << ","
+                  << rayPaths.at(0).getTravelTime() << ","
+                  << rayPaths.at(0).getTakeOffAngle() << std::endl;
     }
 }
 
