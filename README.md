@@ -12,6 +12,7 @@ The library requires
    2. A C++20 compliant compiler.
    3. A SYCL v1.2 compliant compiler - e.g., dpcpp or Intel.
    4. spdlog
+   5. Boost
 
 Optionally, to build the Python bindings the following are needed
 

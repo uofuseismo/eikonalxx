@@ -957,10 +957,10 @@ TEST(Ray, FirstArrivalSourceStationSameDepth)
         EXPECT_NEAR(referenceTravelTimes.at(iOffset),
                     rayPaths.at(0).getTravelTime(),
                     0.02); 
-        std::cout << "Eikonal vs computed travel time: "
-                  << referenceTravelTimes.at(iOffset) << "," 
-                  << rayPaths.at(0).getTravelTime() << ","
-                  << rayPaths.at(0).getTakeOffAngle() << std::endl;
+        //std::cout << "Eikonal vs computed travel time: "
+        //          << referenceTravelTimes.at(iOffset) << "," 
+        //          << rayPaths.at(0).getTravelTime() << ","
+        //          << rayPaths.at(0).getTakeOffAngle() << std::endl;
         //for (const auto &segment : rayPaths[0])
         //{
         //    std::cout << segment << std::endl;
@@ -1023,6 +1023,25 @@ TEST(Ray, FirstArrivalSourceDeeperThanStation)
                   << referenceTravelTimes.at(iOffset) << ","
                   << rayPaths.at(0).getTravelTime() << ","
                   << rayPaths.at(0).getTakeOffAngle() << std::endl;
+    }
+    // Try turning this around
+    solver.clear();
+    solver.setVelocityModel(interfaces, velocities);
+    solver.setSourceDepth(stationDepth);
+    for (int iOffset = 0;
+         iOffset < static_cast<int> (stationOffsets.size());
+         ++iOffset)
+    {
+         solver.setStationOffsetAndDepth(stationOffsets[iOffset], sourceDepth);
+         solver.solve();
+         auto rayPaths = solver.getRayPaths();
+         EXPECT_NEAR(referenceTravelTimes.at(iOffset),
+                     rayPaths.at(0).getTravelTime(),
+                     0.02); 
+         std::cout << "Eikonal vs computed travel time for test 2 reversed: "
+                   << referenceTravelTimes.at(iOffset) << ","
+                   << rayPaths.at(0).getTravelTime() << ","
+                   << rayPaths.at(0).getTakeOffAngle() << std::endl;
     }
 }
 

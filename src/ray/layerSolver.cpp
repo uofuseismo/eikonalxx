@@ -79,8 +79,11 @@ public:
     [[nodiscard]] std::vector<Path2D> computeVerticalRayPaths() const
     {
         std::vector<Path2D> rayPaths;
-        // Trace the direct ray path upwards 
-        if (mSourceDepth >= mStationDepth)
+        if (mSourceLayer == mStationLayer)
+        {
+            rayPaths.push_back(computeDirectRaySameLayer());
+        }
+        else
         {
             constexpr double upTakeOffAngle{180};
             std::vector<::Segment> segments;
@@ -103,16 +106,11 @@ public:
 #endif
             if (!segments.empty()){rayPaths.push_back(::toRayPath(segments));}
         }
-        else // Same layer but station below
-        {
-            if (mSourceLayer == mStationLayer)
-            {
-                rayPaths.push_back(computeDirectRaySameLayer());
-            }
-        }
         // Loop through stack and bounce rays
         auto nLayers = static_cast<int> (mInterfaces.size());
-        for (int layer = mSourceLayer; layer < nLayers - 1; ++layer)
+        for (int layer = std::max(mSourceLayer, mStationLayer);
+             layer < nLayers - 1;
+             ++layer)
         {
             std::vector<::Segment> segments;
 #ifndef NDEBUG
@@ -141,6 +139,7 @@ public:
                   });
         return rayPaths;
     }
+/*
     [[nodiscard]] int getLayer(const double depth) const
     {
         auto nLayers = static_cast<int> (mInterfaces.size());
@@ -172,6 +171,7 @@ public:
 #endif
         return layer;
     }
+*/
     /// @brief Shoots a ray with the given take-off angle.
     /// @note This cannot handle velocity inversions. 
     std::vector<Path2D> shoot(const double takeOffAngle)
@@ -306,7 +306,9 @@ void LayerSolver::setSourceDepth(const double depth)
         throw std::invalid_argument("Source is in the air");
     }
     pImpl->mSourceDepth = depth; 
-    pImpl->mSourceLayer = pImpl->getLayer(depth);
+    pImpl->mSourceLayer = ::getLayer(pImpl->mSourceDepth,
+                                     pImpl->mAugmentedInterfaces,
+                                     true);
     pImpl->mHaveSourceDepth = true;
 }
 
@@ -331,7 +333,9 @@ void LayerSolver::setStationOffset(const double offset)
     if (offset < 0){throw std::invalid_argument("Offset must be non-negative");}
     pImpl->mStationOffset = offset;
     pImpl->mStationDepth = pImpl->mInterfaces.at(0);
-    pImpl->mStationLayer = pImpl->getLayer(pImpl->mStationDepth);
+    pImpl->mStationLayer = ::getLayer(pImpl->mStationDepth,
+                                      pImpl->mAugmentedInterfaces,
+                                      true);
     pImpl->mHaveStationOffsetAndDepth = true;
 }
 
@@ -349,7 +353,9 @@ void LayerSolver::setStationOffsetAndDepth(const double offset,
     if (offset < 0){throw std::invalid_argument("Offset must be non-negative");}
     pImpl->mStationOffset = offset;
     pImpl->mStationDepth = depth; 
-    pImpl->mStationLayer = pImpl->getLayer(depth);
+    pImpl->mStationLayer = ::getLayer(pImpl->mStationDepth,
+                                      pImpl->mAugmentedInterfaces,
+                                      true);
     pImpl->mHaveStationOffsetAndDepth = true;
 #ifndef NDEBUG
     assert(pImpl->mStationLayer >= 0 &&
@@ -459,6 +465,27 @@ void LayerSolver::solve()
         pImpl->mRayPaths.insert(pImpl->mRayPaths.end(),
                                 refractedRayPaths.begin(),
                                 refractedRayPaths.end());
+    }
+    // Optimize reflections
+    bool doReflections = false;
+    if (doReflections)
+    {
+        auto reflectedRayPaths
+            = optimizeFirstArrivingDownGoingReflections(
+                 pImpl->mAugmentedInterfaces,
+                 pImpl->mAugmentedSlownesses,
+                 pImpl->mSourceLayer,
+                 pImpl->mSourceDepth,
+                 pImpl->mStationLayer,
+                 pImpl->mStationDepth,
+                 pImpl->mStationOffset,
+                 pImpl->mRayHitTolerance);
+        if (!reflectedRayPaths.empty())
+        {   
+            pImpl->mRayPaths.insert(pImpl->mRayPaths.end(),
+                                    reflectedRayPaths.begin(),
+                                    reflectedRayPaths.end());
+        }   
     }
     // Sort these based on travel time
     std::sort(pImpl->mRayPaths.begin(), pImpl->mRayPaths.end(), 

@@ -1,12 +1,14 @@
 #ifndef PRIVATE_OPTIMIZE_HPP
 #define PRIVATE_OPTIMIZE_HPP
 /// @brief Utilities for optimizing ray paths in ray shooting.
+#include <string>
 #include <cmath>
 #include <vector>
 #include <functional>
 #ifndef NDEBUG
 #include <cassert>
 #endif
+#include <oneapi/tbb.h>
 #include <boost/math/tools/roots.hpp>
 #include <boost/math/tools/minima.hpp>
 #include "layerTracer.hpp"
@@ -65,15 +67,16 @@ struct DirectObjectiveFunction : public IObjectiveFunction
                 std::cerr << "Should be only 1 direct ray; size = "
                           << paths.size() << std::endl;
             }
-            rayPath = paths.at(0);
-            auto nSegments = rayPath.size();
-            auto lastSegment = rayPath.at(nSegments - 1); 
+            auto nSegments = paths[0].size();
+            const auto lastSegment = paths[0].at(nSegments - 1); 
             auto xOffset = stationOffset
                          - lastSegment.getEndPoint().getPositionInX();
             if (takeAbsoluteValue){xOffset = std::abs(xOffset);}
+            if (keepRayPath){rayPath = std::move(paths[0]);}
             return xOffset;
         }
-        throw std::runtime_error("No paths for direct wave");
+        throw std::runtime_error("No path for direct wave with angle "
+                               + std::to_string(takeOffAngle));
     }
     mutable EikonalXX::Ray::Path2D rayPath;
     std::vector<double> augmentedInterfaces;
@@ -84,8 +87,74 @@ struct DirectObjectiveFunction : public IObjectiveFunction
     int sourceLayer;
     int stationLayer;
     bool takeAbsoluteValue{false};
+    bool keepRayPath{false};
     mutable int nEvaluations{0};
 };
+
+struct ReflectionObjectiveFunction : public IObjectiveFunction
+{
+    ReflectionObjectiveFunction(const std::vector<double> &augmentedInterfacesIn,
+                                const std::vector<double> &augmentedSlownessesIn,
+                                const double sourceDepthIn,
+                                const double stationDepthIn,
+                                const double stationOffsetIn,
+                                const int sourceLayerIn,
+                                const int stationLayerIn) :
+        augmentedInterfaces(augmentedInterfacesIn),
+        augmentedSlownesses(augmentedSlownessesIn),
+        sourceDepth(sourceDepthIn),
+        stationDepth(stationDepthIn),
+        stationOffset(stationOffsetIn),
+        sourceLayer(sourceLayerIn),
+        stationLayer(stationLayerIn)
+    {
+        lastLayer = static_cast<int> (augmentedInterfaces.size()) - 2;
+    }   
+
+    double operator()(const double &takeOffAngle) const override
+    {   
+        nEvaluations = nEvaluations + 1;
+        constexpr bool allowCriticalRefractions{false};
+        constexpr bool keepOnlyHits{false};
+        constexpr double rayHitTolerance{1};
+        auto paths = ::shoot(takeOffAngle,
+                             augmentedInterfaces,
+                             augmentedSlownesses,
+                             sourceLayer,
+                             sourceDepth,
+                             stationLayer,
+                             stationOffset,
+                             stationDepth,
+                             allowCriticalRefractions,
+                             rayHitTolerance,
+                             keepOnlyHits,
+                             lastLayer);
+        if (!paths.empty())
+        {
+            auto nSegments = paths[0].size();
+            const auto lastSegment = paths[0].at(nSegments - 1);
+            auto xOffset = stationOffset
+                         - lastSegment.getEndPoint().getPositionInX();
+            if (takeAbsoluteValue){xOffset = std::abs(xOffset);}
+            if (keepRayPath){rayPath = std::move(paths[0]);}
+            return xOffset;
+        }
+        throw std::runtime_error("No paths for reflected wave");
+    }
+    mutable EikonalXX::Ray::Path2D rayPath;
+    std::vector<double> augmentedInterfaces;
+    std::vector<double> augmentedSlownesses;
+    double sourceDepth;
+    double stationDepth;
+    double stationOffset;
+    int sourceLayer;
+    int stationLayer;
+    int lastLayer;
+    bool takeAbsoluteValue{false};
+    bool keepRayPath{false};
+    mutable int nEvaluations{0};
+};
+
 
 /// @result 
 void computeTakeOffAngles(
@@ -111,6 +180,7 @@ void computeTakeOffAngles(
     }
 }
 
+/*
 [[nodiscard]]
 /// @param[in] shootRay  A function, that given a take-off angle, shoots a
 ///                      ray and computes the offset.
@@ -206,7 +276,9 @@ double quadraticFitSearch(const IObjectiveFunction &objectiveFunction,
     }
     return xStar;
 }
+*/
 
+/// @brief Optimize direct arriving waves.
 std::vector<EikonalXX::Ray::Path2D>
     optimizeDirect(
     const std::vector<double> &augmentedInterfaces,
@@ -244,7 +316,7 @@ std::vector<EikonalXX::Ray::Path2D>
     // Flip the problem around
     if (stationDepth > sourceDepth)
     {
-        std::cout << "Station below source for direct" << std::endl;
+        //std::cout << "Station below source for direct" << std::endl;
         rayPaths = ::optimizeDirect(augmentedInterfaces,
                                     augmentedSlownesses,
                                     stationLayer,
@@ -252,13 +324,15 @@ std::vector<EikonalXX::Ray::Path2D>
                                     sourceLayer,
                                     sourceDepth,
                                     stationOffset,
-                                    rayHitTolerance);
+                                    rayHitTolerance,
+                                    nBits);
         for (auto &rayPath : rayPaths)
         {
             rayPath.reverse();
         }
         return rayPaths;
     }
+    // Initialize objective function
     DirectObjectiveFunction objectiveFunction{augmentedInterfaces,
                                               augmentedSlownesses,
                                               sourceDepth,
@@ -266,64 +340,72 @@ std::vector<EikonalXX::Ray::Path2D>
                                               stationOffset,
                                               sourceLayer,
                                               stationLayer};
+    objectiveFunction.keepRayPath = false;
     // Make a bunch of take-off angles
     constexpr int nInitialAngles{90};
     constexpr double thetaMin{ 90.0001};
     constexpr double thetaMax{180};
     std::vector<double> takeOffAngles;
-    // Do this in reverse
     ::computeTakeOffAngles(nInitialAngles, thetaMin, thetaMax, &takeOffAngles);
     // Shoot these rays
-    std::vector<std::pair<double, double>> angleOffsets;
-    angleOffsets.reserve(takeOffAngles.size());
-    for (const auto &takeOffAngle : takeOffAngles)
+    std::vector<std::pair<double, double>> angleOffsets(nInitialAngles);
+/*
+    oneapi::tbb::parallel_for(
+        oneapi::tbb::blocked_range<size_t> (0, takeOffAngles.size()),
+        [&](const oneapi::tbb::blocked_range<size_t> &range)
     {
+        for (size_t i = range.begin(); i != range.end(); ++i)
+        {
+            auto takeOffAngle = takeOffAngles[i];
+            try
+            {
+                auto offset = objectiveFunction(takeOffAngle);
+                angleOffsets[i] = std::pair{takeOffAngle, offset};
+            }
+            catch (const std::exception &e)
+            {
+                angleOffsets[i]
+                    = std::pair {takeOffAngle,
+                                 std::numeric_limits<double>::max()};
+                std::cerr << "Initial parallel shooting with take-off angle: "
+                          << takeOffAngles[i] << " failed with: " 
+                          << e.what() << std::endl;
+
+            }
+        }
+    });
+*/
+    for (int i = 0; i < nInitialAngles; ++i)
+    {
+        auto takeOffAngle = takeOffAngles[i];
         try
         {
-            angleOffsets.push_back(std::pair {takeOffAngle,
-                                              objectiveFunction(takeOffAngle)});
+            auto offset = objectiveFunction(takeOffAngle);
+            angleOffsets[i] = std::pair{takeOffAngle, offset};
         }
         catch (const std::exception &e)
         {
-            std::cerr << e.what() << std::endl;
+            angleOffsets[i] = std::pair {takeOffAngle,
+                                         std::numeric_limits<double>::max()};
+            std::cerr << "Initial shooting with take-off angle: " 
+                      << takeOffAngles[i] << " failed with: " 
+                      << e.what() << std::endl;
         }
-/*
-        constexpr bool allowCriticalRefractions{false};
-        constexpr bool keepOnlyHits{false};
-        auto paths = ::shoot(takeOffAngle,
-                             augmentedInterfaces,
-                             augmentedSlownesses,
-                             sourceLayer,
-                             sourceDepth,
-                             stationLayer,
-                             stationOffset,
-                             stationDepth,
-                             allowCriticalRefractions,
-                             rayHitTolerance,
-                             keepOnlyHits,
-                             lastLayer);
-        if (!paths.empty())
-        {
-            // Otherwise the fastest ray
-            if (paths.size() > 1 && std::abs(takeOffAngle - 180) > 1.e-10)
-            {
-                std::cerr << "Should be only 1 direct ray; size = "
-                          << paths.size() << std::endl;
-            }
-            const auto firstPath = paths.at(0);
-            auto nSegments = firstPath.size();
-            auto lastSegment = firstPath.at(nSegments - 1);
-            auto xOffset = lastSegment.getEndPoint().getPositionInX()
-                         - stationOffset;
-            angleOffsets.push_back(std::pair {takeOffAngle, xOffset});
-        }
-*/
     }
+    // Remove the failures
+    angleOffsets.erase(
+        std::remove_if(angleOffsets.begin(), angleOffsets.end(),
+                       [](const std::pair<double, double> &o)
+                       {
+                          return o.second == std::numeric_limits<double>::max();
+                       }),
+        angleOffsets.end());
     // Nothing hit
     if (angleOffsets.empty()){return rayPaths;}
     // Now we optimize in the bracketed solution(s)
     auto nPaths = static_cast<int> (angleOffsets.size());
     objectiveFunction.takeAbsoluteValue = true; // Switch to minimization
+    objectiveFunction.keepRayPath = true; 
     for (int iPath = 0; iPath < nPaths - 1; ++iPath)
     {
         if (std::copysign(1.0, angleOffsets[iPath].second) !=
@@ -367,11 +449,20 @@ std::vector<EikonalXX::Ray::Path2D>
     const double stationOffset)
 {
     constexpr double rayHitTolerance{1}; // 1 meter
+    auto nLayers = static_cast<int> (augmentedSlownesses.size()) - 1;
+    // Check for velocity inversion
+    for (int iLayer = 0; iLayer < nLayers - 1; ++iLayer)
+    {   
+        if (augmentedSlownesses.at(iLayer) < augmentedSlownesses.at(iLayer + 1)) 
+        {
+            std::cerr << "Velocity inversion exists!" << std::endl;
+        }
+    }
     std::vector<EikonalXX::Ray::Path2D> rayPaths;
     // Flip the problem around
     if (stationDepth > sourceDepth)
     {
-        std::cout << "Station below source for critical refraction" << std::endl;
+        //std::cout << "Station below source for critical refraction" << std::endl;
         rayPaths = ::optimizeCriticallyRefracted(augmentedInterfaces,
                                                  augmentedSlownesses,
                                                  stationLayer,
@@ -404,7 +495,6 @@ std::vector<EikonalXX::Ray::Path2D>
     // try every critical angle.  So that's what we do assuming the
     // velocities increase with depth.
     std::vector<double> takeOffAngles;
-    int nLayers = static_cast<int> (augmentedSlownesses.size()) - 1;
     auto lastLayer = nLayers - 1;
     takeOffAngles.reserve(nLayers*(nLayers + 1));
 /*
@@ -423,15 +513,11 @@ std::vector<EikonalXX::Ray::Path2D>
 */
     for (int iLayer = 0; iLayer < nLayers - 1; ++iLayer)
     {
-        if (augmentedSlownesses.at(iLayer) < augmentedSlownesses.at(iLayer + 1))
-        {
-            std::cerr << "Velocity inversion exists!" << std::endl;
-        }
         for (int jLayer = iLayer + 1; jLayer < nLayers; ++jLayer)
         {
 
-            auto angle = ::computeCriticalAngle(augmentedSlownesses.at(iLayer), 
-                                                augmentedSlownesses.at(jLayer));
+            auto angle = ::computeCriticalAngle(augmentedSlownesses[iLayer],
+                                                augmentedSlownesses[jLayer]);
             // Pad just a touch in case we get burned by inexact math
             takeOffAngles.push_back(angle*(180./M_PI) + 1.e-10);
         }
@@ -485,61 +571,101 @@ std::vector<EikonalXX::Ray::Path2D>
     return rayPaths;
 }
     
-
-/// Slownesses - augmented slownesses
-void optimizeFirstArrivingDownGoing(
+/// Optimizes downgoing waves that reflect
+std::vector<EikonalXX::Ray::Path2D>
+    optimizeFirstArrivingDownGoingReflections(
     const std::vector<double> &augmentedInterfaces,
     const std::vector<double> &augmentedSlownesses,
-    const double sourceOffset,
     const int sourceLayer,
     const double sourceDepth,
     const int stationLayer,
     const double stationDepth,
     const double stationOffset,
-    const double rayHitTolerance)
+    const double rayHitTolerance,
+    const int nBits = 30)
 {
-    constexpr bool allowCriticalRefractions{false};
-    auto nLayers = static_cast<int> (augmentedSlownesses.size()) - 2;
-    if (sourceLayer >= nLayers){return;}
-    // Compute an upper bound on angles
-    double maximumTakeOffAngle = M_PI_2 - 1.e-4;
-    for (int layer = sourceLayer + 1; layer < nLayers; ++layer)
+    std::vector<EikonalXX::Ray::Path2D> rayPaths;
+    // Flip the problem around
+    if (stationDepth > sourceDepth)
     {
-        auto criticalAngle
-            = ::computeCriticalAngle(augmentedSlownesses[sourceLayer],
-                                     augmentedSlownesses[layer]);
-        maximumTakeOffAngle = std::min(maximumTakeOffAngle, criticalAngle);
-    }
-    constexpr double minimumTakeOffAngle{0};
-    maximumTakeOffAngle = std::max(1.e-4, maximumTakeOffAngle - 1.e-8);
-    int nAngles = static_cast<int> (maximumTakeOffAngle) + 1;
-    std::vector<double> takeOffAngles;
-    ::computeTakeOffAngles(nAngles, minimumTakeOffAngle, maximumTakeOffAngle,
-                           &takeOffAngles);
-    // Compute the first batch of ray paths in the coarse grid search
-    auto lastLayer = static_cast<int> (augmentedInterfaces.size()) - 2;
-    for (int i = static_cast<int> (takeOffAngles.size()) - 1; i >= 0; --i)
-    {
-        constexpr bool keepOnlyHits{false};
-        auto paths = ::shoot(takeOffAngles[i],
-                             augmentedInterfaces,
-                             augmentedSlownesses,
-                             sourceLayer,
-                             sourceDepth,
-                             stationLayer,
-                             stationOffset,
-                             stationDepth,
-                             allowCriticalRefractions,
-                             rayHitTolerance,
-                             keepOnlyHits,
-                             lastLayer);
-        if (!paths.empty())
+        std::cout << "Station below source for downgoing" << std::endl;
+        rayPaths
+            = ::optimizeFirstArrivingDownGoingReflections(augmentedInterfaces,
+                                                          augmentedSlownesses,
+                                                          stationLayer,
+                                                          stationDepth,
+                                                          sourceLayer,
+                                                          sourceDepth,
+                                                          stationOffset,
+                                                          rayHitTolerance);
+        for (auto &rayPath : rayPaths)
         {
-            
+            rayPath.reverse();
+        }
+        return rayPaths;
+    }
+    // Initialize objective function
+    ReflectionObjectiveFunction objectiveFunction{augmentedInterfaces,
+                                                  augmentedSlownesses,
+                                                  sourceDepth,
+                                                  stationDepth,
+                                                  stationOffset,
+                                                  sourceLayer,
+                                                  stationLayer};
+    objectiveFunction.keepRayPath = false;
+    // Make a bunch of take-off angles
+    constexpr int nInitialAngles{90};
+    constexpr double thetaMin{0};
+    constexpr double thetaMax{90.0001};
+    std::vector<double> takeOffAngles;
+    ::computeTakeOffAngles(nInitialAngles, thetaMin, thetaMax, &takeOffAngles);
+    // Shoot these rays
+    std::vector<std::pair<double, double>> angleOffsets;
+    angleOffsets.reserve(takeOffAngles.size());
+    for (const auto &takeOffAngle : takeOffAngles)
+    {
+        try
+        {
+            angleOffsets.push_back(std::pair {takeOffAngle,
+                                              objectiveFunction(takeOffAngle)});
+        }
+        catch (const std::exception &e) 
+        {
+            std::cerr << e.what() << std::endl;
         }
     }
-    // If the offset exceeds this then quit
-    
+    // Nothing hit
+    if (angleOffsets.empty()){return rayPaths;}
+    // Now we optimize in the bracketed solution(s)
+    auto nPaths = static_cast<int> (angleOffsets.size());
+    objectiveFunction.takeAbsoluteValue = true; // Switch to minimization
+    objectiveFunction.keepRayPath = true;
+    for (int iPath = 0; iPath < nPaths - 1; ++iPath)
+    {
+        if (std::copysign(1.0, angleOffsets[iPath].second) !=
+            std::copysign(1.0, angleOffsets[iPath + 1].second))
+        {
+            std::uintmax_t maxIterations{1000};
+            auto takeOffAngle0 = angleOffsets[iPath].first;
+            auto takeOffAngle1 = angleOffsets[iPath + 1].first;
+            try
+            {
+                std::pair<double, double> result
+                    = boost::math::tools::brent_find_minima(objectiveFunction,
+                                                            takeOffAngle0,
+                                                            takeOffAngle1,
+                                                            nBits,
+                                                            maxIterations);
+                 objectiveFunction(result.first);
+                 rayPaths.push_back(objectiveFunction.rayPath);
+            }
+            catch (const std::exception &e)
+            {
+                 std::cerr << e.what() << std::endl;
+            }
+        }
+    }
+    return rayPaths;
 }
 
 }

@@ -265,11 +265,37 @@ ReturnCode traceVerticalReflectionDown(const std::vector<double> &interfaces,
 #ifndef NDEBUG
     assert(segments != nullptr);
     assert(interfaces.size() == slownesses.size());
-    assert(sourceLayer >= 0 && sourceLayer <= endLayer);
-    assert(stationLayer >= 0);
-    if (stationDepth > sourceDepth){assert(stationLayer <= endLayer);}
-    assert(endLayer < nLayers - 1); // Can't bounce from whole-space
+    //if (stationDepth > sourceDepth){assert(stationLayer <= endLayer);}
+    //assert(endLayer < nLayers - 1); // Can't bounce from whole-space
     assert(stationOffset >= 0); 
+    //assert(sourceDepth >= interfaces[sourceLayer] &&
+    //       sourceDepth <  interfaces[sourceLayer + 1]);
+    //assert(stationDepth >= interfaces[stationLayer] &&
+    //       stationDepth <  interfaces[stationLayer + 1]);
+#endif
+    if (stationDepth > sourceDepth)
+    {
+        auto returnCode = ::traceVerticalReflectionDown(interfaces,
+                                                        slownesses,
+                                                        stationLayer,
+                                                        endLayer,
+                                                        stationDepth,
+                                                        sourceLayer,
+                                                        sourceDepth,
+                                                        stationOffset,
+                                                        segments,
+                                                        tolerance);
+        std::reverse(segments->begin(), segments->end());
+        for (auto &segment : *segments){segment.reverse();}
+        return returnCode;
+    }
+#ifndef NDEBUG
+    assert(sourceLayer >= 0 && sourceLayer <= endLayer);
+    assert(sourceDepth >= stationDepth);  
+    assert(stationLayer >= 0);
+    assert(stationLayer <= endLayer);
+    assert(endLayer < nLayers - 1); // Can't bounce from whole-space
+    assert(stationLayer <= endLayer);
     assert(sourceDepth >= interfaces[sourceLayer] &&
            sourceDepth <  interfaces[sourceLayer + 1]);
     assert(stationDepth >= interfaces[stationLayer] &&
@@ -452,15 +478,37 @@ ReturnCode traceDirect(const std::vector<double> &interfaces,
     auto nLayers = static_cast<int> (interfaces.size()) - 1; 
 #ifndef NDEBUG
     assert(segments != nullptr);
-    assert(stationLayer <= sourceLayer);
     assert(takeOffAngle > 90 && takeOffAngle <= 180);
     assert(sourceLayer >= 0 && sourceLayer < nLayers);
     assert(stationOffset >= 0);
-    assert(sourceDepth >= stationDepth);
     assert(sourceDepth >= interfaces[sourceLayer] &&
            sourceDepth <  interfaces[sourceLayer + 1]);
     assert(stationDepth >= interfaces[stationLayer] &&
            stationDepth <  interfaces[stationLayer + 1]);
+#endif
+    // Flip this around
+    if (sourceDepth < stationDepth)
+    {
+        auto returnCode = ::traceDirect(interfaces,
+                                        slownesses,
+                                        takeOffAngle,
+                                        stationLayer,
+                                        stationDepth,
+                                        sourceLayer,
+                                        stationOffset,
+                                        sourceDepth,
+                                        segments,
+                                        tolerance);
+        std::reverse(segments->begin(), segments->end()); 
+        for (auto &segment : *segments)
+        {
+            segment.reverse();
+        }
+        return returnCode;
+    }
+#ifndef NDEBUG
+    assert(stationLayer <= sourceLayer);
+    assert(sourceDepth >= stationDepth);
 #endif
     segments->reserve(sourceLayer - stationLayer + 1);
     // Simplify geometry
@@ -505,7 +553,6 @@ ReturnCode traceDirect(const std::vector<double> &interfaces,
 
 /// @brief Traces a ray down from the source, back up to the source depth,
 ///        then up to the station. 
-[[nodiscard]]
 ReturnCode traceDownThenUp(const std::vector<double> &augmentedInterfaces,
                            const std::vector<double> &augmentedSlownesses,
                            const double takeOffAngle,
@@ -686,7 +733,6 @@ ReturnCode
 }
 
 /// @brief Traces a direct ray in a whole space.
-[[nodiscard]]
 ReturnCode
     traceWholeSpace(const double slowness,
                     const double sourceDepth,
@@ -1019,80 +1065,5 @@ std::vector<EikonalXX::Ray::Path2D>
 }
 
 }
- 
-/*
-int main()
-{
-    const std::vector<double> interfaces{-4500,   50, 15600, 26500, 40500};
-    const std::vector<double> velocities{3500, 5900,  6400,  7500,  7900};
-    const std::vector<double> offsets{15000, 20000, 30000, 40000, 50000, 60000, 80000, 100000, 120000};
-    const std::vector<double> eikonalTimes{3.4752889922,
-                                           4.32274661932,
-                                           6.01766187355,
-                                           7.71257712779,
-                                           9.40749238203,
-                                           11.1024076363,
-                                           14.4922381447,
-                                           17.8820686532,
-                                           21.2718991617};
-    auto augmentedInterfaces = ::augmentInterfacesVector(interfaces);
-    auto augmentedSlownesses
-        = ::toSlownessVector(::augmentVelocityVector(velocities));
-    double takeOffAngle{39.2777};
-    double sourceDepth{-2000};
-    auto stationDepth = sourceDepth;
-    auto sourceLayer = ::getLayer(sourceDepth, augmentedInterfaces, true);
-    auto stationLayer = ::getLayer(stationDepth, augmentedInterfaces, true);
-    for (size_t iOffset = 0; iOffset < offsets.size(); ++iOffset)
-    {
-        std::vector<::Segment> segments;
-        auto result = ::traceDownThenUp(augmentedInterfaces,
-                                        augmentedSlownesses,
-                                        takeOffAngle,
-                                        sourceLayer,
-                                        sourceDepth,
-                                        stationLayer,
-                                        offsets[iOffset],
-                                        stationDepth,
-                                        1,
-                                        &segments,
-                                        1.0);
-        if (result == ReturnCode::Hit || result == ReturnCode::UnderShot || result == ReturnCode::OverShot)
-        {
-            double ttTime = 0;
-            for (auto &segment : segments)
-            {
-                ttTime = ttTime + segment.getTravelTime();
-                //std::cout << segment.x0 << "," << segment.z0 << ","
-                //          << segment.x1 << "," << segment.z1 << ","
-                //          << 1./segment.slowness << std::endl;
-            }
-            //std::cout << std::setprecision(12) << offsets[iOffset] << " " << ttTime << " " << eikonalTimes[iOffset] << " " << ttTime - eikonalTimes[iOffset] << std::endl;
-        }
-    }
-    // Trace some direct waves
-    std::vector<::Segment> upSegments;
-    sourceDepth = 30000;
-    sourceLayer = ::getLayer(sourceDepth, augmentedInterfaces, true);
-    auto result = ::traceDirect(augmentedInterfaces,
-                              augmentedSlownesses,
-                              150,
-                              sourceLayer,
-                              sourceDepth,
-                              stationLayer,
-                              12410, //offsets[0],
-                              stationDepth,
-                              &upSegments,
-                              1.01);
-    double ttime = 0;
-    for (const auto &segment : upSegments)
-    {
-        //std::cout << "segment time: " << segment.getTravelTime() << std::endl;
-        ttime = ttime + segment.getTravelTime();
-    }
-    std::cout << ttime << std::endl;
-    return EXIT_SUCCESS;
-}
-*/
 
 #endif

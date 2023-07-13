@@ -13,7 +13,7 @@ endif()
 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package(GTest REQUIRED)
-find_package(Boost COMPONENTS graph)
+find_package(Boost COMPONENTS graph math)
 find_package(spdlog REQUIRED)
 find_package(Threads REQUIRED)
 set(FindTBB_DIR ${CMAKE_SOURCE_DIR}/cmake)
@@ -67,7 +67,7 @@ endif()
 target_include_directories(eikonalxx
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
                            PRIVATE sycl 
-                           PRIVATE spdlog::spdlog Threads::Threads
+                           PRIVATE spdlog::spdlog Threads::Threads Boost::Math
                            PRIVATE ${TBB_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
 #                           PUBLIC $<INSTALL_INTERFACE:${CMAKE_SOURCE_DIR}/include/eikonalxx>)
 target_link_libraries(eikonalxx PRIVATE sycl ${TBB_LIBRARY} Threads::Threads)# stdc++fs)
