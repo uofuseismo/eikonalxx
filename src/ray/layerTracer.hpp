@@ -181,7 +181,7 @@ EikonalXX::Ray::Path2D
     }
 #ifndef NDEBUG
     assert(layer >= 0);
-    if (nLayers > 1){assert(layer < nLayers - 1);} 
+    if (nLayers > 1){assert(layer < nLayers);} 
 #endif
     return layer;
 }   
