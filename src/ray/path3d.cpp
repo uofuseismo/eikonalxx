@@ -1,6 +1,10 @@
 #include <cmath>
 #include <vector>
 #include <limits>
+#include <algorithm>
+#ifndef NDEBUG
+#include <cassert>
+#endif
 #include "eikonalxx/ray/path3d.hpp"
 #include "eikonalxx/ray/segment3d.hpp"
 #include "eikonalxx/ray/point3d.hpp"
