@@ -200,12 +200,12 @@ Path3D::iterator Path3D::begin()
     return pImpl->mSegments.begin();
 }
 
-constexpr Path3D::const_iterator Path3D::begin() const noexcept
+Path3D::const_iterator Path3D::begin() const noexcept
 {
     return pImpl->mSegments.begin();
 }
 
-constexpr Path3D::const_iterator Path3D::cbegin() const noexcept
+Path3D::const_iterator Path3D::cbegin() const noexcept
 {
     return pImpl->mSegments.cbegin();
 }
@@ -215,12 +215,12 @@ Path3D::iterator Path3D::end()
     return pImpl->mSegments.end();
 }
 
-constexpr Path3D::const_iterator Path3D::end() const noexcept
+Path3D::const_iterator Path3D::end() const noexcept
 {
-    return pImpl->mSegments.end();
+    return pImpl->mSegments.cend();
 }
 
-constexpr Path3D::const_iterator Path3D::cend() const noexcept
+Path3D::const_iterator Path3D::cend() const noexcept
 {
     return pImpl->mSegments.cend();
 }

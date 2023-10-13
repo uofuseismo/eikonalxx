@@ -292,7 +292,7 @@ Path2D::iterator Path2D::end()
 
 Path2D::const_iterator Path2D::end() const noexcept
 {
-    return pImpl->mSegments.end();
+    return pImpl->mSegments.cend();
 }
 
 Path2D::const_iterator Path2D::cend() const noexcept

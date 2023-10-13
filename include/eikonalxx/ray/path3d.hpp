@@ -104,16 +104,16 @@ public:
     /// @result A reference to the first ray segment in the path.
     iterator begin();
     /// @result A constant reference to the first ray segment in the path.
-    constexpr const_iterator begin() const noexcept;
+    const_iterator begin() const noexcept;
     /// @result A constant reference to the first ray segment in the path.
-    constexpr const_iterator cbegin() const noexcept;
+    const_iterator cbegin() const noexcept;
 
     /// @result A reference to the last ray segment in the path. 
     iterator end(); 
     /// @result A reference to the last ray segment in the path.
-    constexpr const_iterator end() const noexcept;
+    const_iterator end() const noexcept;
     /// @result A reference to the last ray segment in the path.
-    constexpr const_iterator cend() const noexcept;
+    const_iterator cend() const noexcept;
 
     /// @param[in] index  The index of the desired segment.
     /// @result A reference to the segment at the given position.
