@@ -1045,5 +1045,33 @@ TEST(Ray, FirstArrivalSourceDeeperThanStation)
     }
 }
 
+/*
+TEST(Ray, OneOff)
+{
+    std::vector<double> interfaces{-4500, 40, 15600, 26500, 40500};
+    std::vector<double> velocities{   3500, 5900,  6400,  7500,  7900};
+    const std::vector<double> stationOffsets{27023.43648362034};
+    const double sourceDepth{40000.00};
+    const double stationDepth{-1445.0};
+    ::createReferenceSolution(sourceDepth, stationDepth,
+                              interfaces, velocities, stationOffsets);
+    LayerSolver solver;
+    solver.setVelocityModel(interfaces, velocities);
+    solver.setSourceDepth(sourceDepth);
+    for (int iOffset = 0; 
+         iOffset < static_cast<int> (stationOffsets.size());
+         ++iOffset)
+    {    
+        solver.setStationOffsetAndDepth(stationOffsets[iOffset], stationDepth);
+        solver.solve();
+        auto rayPaths = solver.getRayPaths();
+        std::cout << "Eikonal vs computed travel time for test 2: "
+                  << 7.79635530289 << "," //<< referenceTravelTimes.at(iOffset) << ","
+                  << rayPaths.at(0).getTravelTime() << ","
+                  << rayPaths.at(0).getTakeOffAngle() << std::endl;
+    }
+}
+*/
+
 }
 

@@ -8,7 +8,6 @@
 #ifndef NDEBUG
 #include <cassert>
 #endif
-#include <oneapi/tbb.h>
 #include <boost/math/tools/roots.hpp>
 #include <boost/math/tools/minima.hpp>
 #include "layerTracer.hpp"
