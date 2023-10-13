@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 #include <cmath>
 #include <vector>
 #include <limits>
