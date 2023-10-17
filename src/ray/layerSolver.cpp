@@ -128,7 +128,7 @@ public:
                                                mRayHitTolerance);
 #ifndef NDEBUG
             assert(returnCode == ReturnCode::Hit ||
-                  returnCode == ReturnCode::UnderShot);
+                   returnCode == ReturnCode::UnderShot);
 #endif
             if (!segments.empty()){rayPaths.push_back(::toRayPath(segments));}
         }
@@ -139,39 +139,6 @@ public:
                   });
         return rayPaths;
     }
-/*
-    [[nodiscard]] int getLayer(const double depth) const
-    {
-        auto nLayers = static_cast<int> (mInterfaces.size());
-        int layer = 0;
-        if (depth < mInterfaces.front())
-        {
-            layer = 0;
-        }
-        else if (depth >= mInterfaces.back())
-        {
-            layer = nLayers - 1;
-        }
-        else
-        {
-            layer = std::distance(
-                       mInterfaces.begin(),
-                       std::upper_bound(mInterfaces.begin(),
-                                        mInterfaces.end(),
-                                        depth)) - 1;
-             //std::cout << "layer: " << mInterfaces[layer] << "," << depth << "," << mInterfaces[layer+1]<< std::endl;
-#ifndef NDEBUG
-            assert(depth >= mInterfaces.at(layer) &&
-                   depth < mInterfaces.at(layer + 1));
-#endif
-        }
-#ifndef NDEBUG
-        assert(layer >= 0);
-        if (nLayers > 1){assert(layer < nLayers - 1);}
-#endif
-        return layer;
-    }
-*/
     /// @brief Shoots a ray with the given take-off angle.
     /// @note This cannot handle velocity inversions. 
     std::vector<Path2D> shoot(const double takeOffAngle)
@@ -220,9 +187,8 @@ LayerSolver::LayerSolver() :
 {
 }
 
-/*
 /// Move constructor
-LayerSolver::LayerSolve(LayerSolver &&solver) noexcept
+LayerSolver::LayerSolver(LayerSolver &&solver) noexcept
 {
     *this = std::move(solver);
 }
@@ -234,7 +200,6 @@ LayerSolver& LayerSolver::operator=(LayerSolver &&solver) noexcept
     pImpl = std::move(solver.pImpl);
     return *this;
 }
-*/
 
 /// Reset class
 void LayerSolver::clear() noexcept

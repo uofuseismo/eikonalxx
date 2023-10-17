@@ -845,7 +845,7 @@ ReturnCode
 
 /// @brief Shoots a ray with the given take-off angle.
 /// @note This cannot handle velocity inversions. 
-[[nodiscard]]
+[[nodiscard]] [[maybe_unused]]
 std::vector<EikonalXX::Ray::Path2D> 
     shoot(const double takeOffAngle,
           const std::vector<double> &augmentedInterfaces,

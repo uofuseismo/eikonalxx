@@ -13,8 +13,14 @@ namespace EikonalXX::Ray
 class LayerSolver
 {
 public:
+    /// @name Constructors
+    /// @{
+
     /// @brief Constructor.
     LayerSolver();
+    /// @brief Move constructor.
+    LayerSolver(LayerSolver &&solver) noexcept;
+    /// @}
  
     /// @brief Sets a layer cake model of the form:
     ///        Interface 0 ---------------------------- (Free Surface)
@@ -77,10 +83,19 @@ public:
     /// @result True indicates the ray path is available.
     [[nodiscard]] bool haveRayPaths() const noexcept;
 
+    /// @name Destructors
+    /// @{
+
     /// @brief Reset the class.
     void clear() noexcept;
     /// @brief Destructor.
     ~LayerSolver();
+    /// @}
+
+    LayerSolver& operator=(LayerSolver &&solver) noexcept;
+
+    LayerSolver(const LayerSolver &) = delete;
+    LayerSolver& operator=(const LayerSolver &) = delete;
 private:
     class LayerSolverImpl;
     std::unique_ptr<LayerSolverImpl> pImpl;
