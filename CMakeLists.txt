@@ -1,6 +1,6 @@
 # required cmake version
 cmake_minimum_required(VERSION 3.10)
-project(EikonalXX VERSION 0.1.0 LANGUAGES CXX)
+project(EikonalXX VERSION 0.2.0 LANGUAGES CXX)
 enable_testing()
 
 option(WRAP_PYTHON "Compile the Python bindings" OFF)
@@ -22,11 +22,6 @@ find_package(FindTBB REQUIRED)
 
 configure_file(${CMAKE_SOURCE_DIR}/include/private/version.hpp.in
                ${CMAKE_SOURCE_DIR}/include/eikonalxx/version.hpp)
-
-#include_directories(
-#   ${CMAKE_SOURCE_DIR}/include
-#   ${TBB_INCLUDE_DIR}
-#)
 
 set(PUBLIC_HEADER_DIRECTORIES
     ${CMAKE_SOURCE_DIR}/include/eikonalxx)
@@ -75,7 +70,7 @@ target_link_libraries(eikonalxx PRIVATE sycl ${TBB_LIBRARY} Threads::Threads)# s
 
 
 
-if (WRAP_PYTHON)
+if (${WRAP_PYTHON})
    find_package(pybind11 REQUIRED)
    add_library(pyEikonalXX MODULE
                python/pyEikonalXX.cpp
