@@ -373,7 +373,7 @@ std::vector<Path2D> LayerSolver::shoot(const double takeOffAngle,
 }
 
 /// Solve
-void LayerSolver::solve()
+void LayerSolver::solve(const bool doReflections)
 {
     if (!haveVelocityModel())
     {
@@ -432,7 +432,6 @@ void LayerSolver::solve()
                                 refractedRayPaths.end());
     }
     // Optimize reflections
-    bool doReflections = false;
     if (doReflections)
     {
         auto reflectedRayPaths

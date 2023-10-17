@@ -951,8 +951,9 @@ TEST(Ray, FirstArrivalSourceStationSameDepth)
          iOffset < static_cast<int> (stationOffsets.size());
          ++iOffset)
     {
+        constexpr bool doReflections{false};
         solver.setStationOffsetAndDepth(stationOffsets[iOffset], depth);
-        solver.solve();
+        solver.solve(doReflections);
         auto rayPaths = solver.getRayPaths();
         EXPECT_NEAR(referenceTravelTimes.at(iOffset),
                     rayPaths.at(0).getTravelTime(),
@@ -1013,8 +1014,9 @@ TEST(Ray, FirstArrivalSourceDeeperThanStation)
          iOffset < static_cast<int> (stationOffsets.size());
          ++iOffset)
     {
+        constexpr bool doReflections{false};
         solver.setStationOffsetAndDepth(stationOffsets[iOffset], stationDepth);
-        solver.solve();
+        solver.solve(doReflections);
         auto rayPaths = solver.getRayPaths();
         EXPECT_NEAR(referenceTravelTimes.at(iOffset),
                     rayPaths.at(0).getTravelTime(),
@@ -1032,8 +1034,9 @@ TEST(Ray, FirstArrivalSourceDeeperThanStation)
          iOffset < static_cast<int> (stationOffsets.size());
          ++iOffset)
     {
+         constexpr bool doReflections{true}; // For kicks
          solver.setStationOffsetAndDepth(stationOffsets[iOffset], sourceDepth);
-         solver.solve();
+         solver.solve(doReflections);
          auto rayPaths = solver.getRayPaths();
          EXPECT_NEAR(referenceTravelTimes.at(iOffset),
                      rayPaths.at(0).getTravelTime(),

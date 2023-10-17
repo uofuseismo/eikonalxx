@@ -73,7 +73,11 @@ public:
 
     /// @brief Traces rays from the source to the receiver through the 1D
     ///        medium.
-    void solve();
+    /// @param[in] doReflections   If true then the layer reflections will also
+    ///                            be tabulated.  However, these are never the
+    ///                            first arriving energy so this may be of
+    ///                            limited interest.
+    void solve(bool doReflections = false);
  
     /// @result The ray paths from the source-to-receiver sorted in ascending
     ///         order.

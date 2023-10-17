@@ -587,7 +587,7 @@ std::vector<EikonalXX::Ray::Path2D>
     // Flip the problem around
     if (stationDepth > sourceDepth)
     {
-        std::cout << "Station below source for downgoing" << std::endl;
+        //std::cout << "Station below source for downgoing" << std::endl;
         rayPaths
             = ::optimizeFirstArrivingDownGoingReflections(augmentedInterfaces,
                                                           augmentedSlownesses,
@@ -596,7 +596,8 @@ std::vector<EikonalXX::Ray::Path2D>
                                                           sourceLayer,
                                                           sourceDepth,
                                                           stationOffset,
-                                                          rayHitTolerance);
+                                                          rayHitTolerance,
+                                                          nBits);
         for (auto &rayPath : rayPaths)
         {
             rayPath.reverse();
