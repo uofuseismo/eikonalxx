@@ -260,15 +260,29 @@ bool LayerSolver::haveVelocityModel() const noexcept
 }
 
 /// Source depth
-void LayerSolver::setSourceDepth(const double depth)
+void LayerSolver::setSourceDepth(const double depthIn)
 {
     if (!haveVelocityModel())
     {
         throw std::runtime_error("Velocity model not set");
     }
+    double depth = depthIn;
     if (depth < pImpl->mInterfaces[0])
     {
         throw std::invalid_argument("Source is in the air");
+    }
+    // Something whacky happens if we are exactly at a layer interface.
+    // Basically, I want to trick the critically refracted code
+    // to glide along the interface.  To do this I slightly back the
+    // source depth off.  Note, the top interface does not count.
+    auto nLayers = static_cast<int> (pImpl->mAugmentedInterfaces.size()) - 1;
+    for (int iLayer = 1; iLayer < nLayers; ++iLayer)
+    {
+        if (std::abs(pImpl->mAugmentedInterfaces[iLayer] - depth) < 1.e-10)
+        {
+            depth = depth - 1.e-7;
+            break;
+        }
     }
     pImpl->mSourceDepth = depth; 
     pImpl->mSourceLayer = ::getLayer(pImpl->mSourceDepth,
