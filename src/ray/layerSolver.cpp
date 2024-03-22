@@ -174,6 +174,7 @@ public:
     double mStationOffset{0};
     int mSourceLayer{0};
     int mStationLayer{0};
+    int mBits{30};
     bool mHaveStationOffsetAndDepth{false};
     bool mHaveSourceDepth{false};
     bool mHaveRayPaths{false};
@@ -386,6 +387,21 @@ std::vector<Path2D> LayerSolver::shoot(const double takeOffAngle,
     return pImpl->shoot(takeOffAngle);
 }
 
+/// Sets the ray hit tolerance
+void LayerSolver::setRayHitTolerance(const double tolerance)
+{
+    if (tolerance < 0)
+    {
+        throw std::invalid_argument("Tolerance must be positive");
+    }
+    pImpl->mRayHitTolerance = tolerance;
+}
+
+double LayerSolver::getRayHitTolerance() const noexcept
+{
+    return pImpl->mRayHitTolerance;
+}
+
 /// Solve
 void LayerSolver::solve(const bool doReflections)
 {
@@ -423,7 +439,8 @@ void LayerSolver::solve(const bool doReflections)
                                           pImpl->mStationLayer,
                                           pImpl->mStationDepth,
                                           pImpl->mStationOffset,
-                                          pImpl->mRayHitTolerance);
+                                          getRayHitTolerance(), //pImpl->mRayHitTolerance,
+                                          pImpl->mBits);
     if (!directRayPath.empty())
     {
         pImpl->mRayPaths.insert(pImpl->mRayPaths.end(),
