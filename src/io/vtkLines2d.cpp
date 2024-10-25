@@ -95,7 +95,7 @@ void VTKLines2D::write(
         nPoints = nPoints + static_cast<int> (p.size());
     }
     pImpl->mFile << "POINTS " << nPoints << " float" << std::endl;
-    auto z0 = pImpl->mGeometry.getOriginInZ();
+    //auto z0 = pImpl->mGeometry.getOriginInZ();
     for (const auto &p : polygons)
     {
         for (const auto &pi : p)

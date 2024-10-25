@@ -71,6 +71,7 @@ target_link_libraries(eikonalxx PRIVATE sycl ${TBB_LIBRARY} Threads::Threads)# s
 
 
 if (${WRAP_PYTHON})
+   find_package(Python COMPONENTS Interpreter Development)
    find_package(pybind11 REQUIRED)
    add_library(pyEikonalXX MODULE
                python/pyEikonalXX.cpp

@@ -305,16 +305,22 @@ void Model2D<T>::setCellularVelocities(const int nCellIn,
     }
 
     pImpl->mSlowness.resize(nCell, 0);
-    const T one = 1;
+    constexpr T one{1};
     if (ordering == EikonalXX::Ordering2D::Natural)
     {
 #ifdef USE_PSTL
         std::transform(std::execution::unseq,
                        v, v + nCell, pImpl->mSlowness.begin(),
-                       std::bind1st(std::divides<U> (), one)); 
+                       [](T x)
+                       {
+                          return one/x;
+                       });
 #else
         std::transform(v, v + nCell, pImpl->mSlowness.begin(),
-                       std::bind1st(std::divides<U> (), one));
+                       [](T x)
+                       {
+                          return one/x;
+                       });
 #endif
     }
     else
@@ -377,17 +383,23 @@ std::vector<T> Model2D<T>::getVelocities() const
     {
         throw std::runtime_error("Velocity model not yet set");
     }
-    const T one = 1;
+    constexpr T one{1};
     std::vector<T> velocities(pImpl->mSlowness.size());
 #ifdef USE_PSTL
     std::transform(std::execution::unseq,
                    pImpl->mSlowness.begin(), pImpl->mSlowness.end(),
                    velocities.begin(),
-                   std::bind1st(std::divides<T> (), one));
+                   [](T x)
+                   {
+                      return one/x;
+                   });
 #else
     std::transform(pImpl->mSlowness.begin(), pImpl->mSlowness.end(),
                    velocities.begin(),
-                   std::bind1st(std::divides<T> (), one));
+                   [](T x)
+                   {
+                      return one/x;
+                   });
 #endif
     return velocities;
 }
